@@ -2,22 +2,22 @@
 
 namespace App\Repository;
 
-use App\Entity\Confiduration;
+use App\Entity\Configuration;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Confiduration>
+ * @extends ServiceEntityRepository<Configuration>
  */
 class ConfidurationRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Confiduration::class);
+        parent::__construct($registry, Configuration::class);
     }
 
     //    /**
-    //     * @return Confiduration[] Returns an array of Confiduration objects
+    //     * @return Configuration[] Returns an array of Configuration objects
     //     */
     //    public function findByExampleField($value): array
     //    {
@@ -31,7 +31,7 @@ class ConfidurationRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?Confiduration
+    //    public function findOneBySomeField($value): ?Configuration
     //    {
     //        return $this->createQueryBuilder('c')
     //            ->andWhere('c.exampleField = :val')
