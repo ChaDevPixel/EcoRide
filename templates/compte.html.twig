@@ -1,0 +1,362 @@
+{% extends 'base.html.twig' %}
+{% block title %}Accueil - Ecoride{% endblock %}
+
+{% block body %}
+
+<div class="container-fluid">
+  <div class="row min-vh-100">
+    
+    <!-- Sidebar Profil -->
+    <div class="col-md-2 bg-secondary text-dark p-4 rounded-start">
+        <div class="text-center">
+            <img src="https://i.pravatar.cc/80?img=3" alt="Photo de profil" class="rounded-circle img-thumbnail mb-2">
+            <h4 id="userPseudo">PseudoUtilisateur</h4
+              <p>
+                    <span class="text-warning fs-5">★★★★☆</span><br>
+                    <small>(4.3/5)</small><br>
+                    <a href="#" class="text-dark text-decoration-underline">Voir les avis</a>
+                </p>
+        </div>
+        
+        <hr class="bg-white">
+
+        <h6 class="text-center text-primary fw-bold">Informations personnelles</h6>
+        <ul class="list-unstyled">
+            <li><strong><i class="bi bi-person-fill"></i></strong> Jean-Sébastien Dupont</li>
+            <li><strong><i class="bi bi-telephone-fill"></i></strong> 06 12 34 56 78</li>
+            <li><strong><i class="bi bi-envelope-fill"></i></strong> alice.dupont@email.com</li>
+            <li><strong><i class="bi bi-cake2-fill"></i></strong> 01/01/1997</li>
+        </ul>
+    </div>
+
+    <!-- Contenu principal -->
+    <div class="col-md-10 bg-light p-4 rounded-end">
+      <ul class="nav nav-tabs" id="accountTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles" type="button" role="tab">Rôles & Véhicules</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="trip-tab" data-bs-toggle="tab" data-bs-target="#trip" type="button" role="tab">Saisir un voyage</button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">Historique</button>
+        </li>
+         <li class="nav-item" role="presentation">
+          <button class="nav-link" id="account-tab" data-bs-toggle="tab" data-bs-target="#account" type="button" role="tab">Informations personelles</button>
+        </li>
+      </ul>
+
+      <div class="tab-content mt-3" id="accountTabsContent">
+
+        <!-- Onglet Rôles & Véhicules -->
+        <div class="tab-pane fade show active" id="roles" role="tabpanel">
+          <form id="profileForm">
+            <h5>Rôle(s)</h5>
+
+<div class="form-check form-switch">
+  <input class="form-check-input" type="checkbox" id="rolePassenger" value="passenger" checked disabled>
+  <label class="form-check-label" for="rolePassenger">Passager</label>
+</div>
+<div class="form-check form-switch">
+  <input class="form-check-input" type="checkbox" id="roleDriver" value="driver" disabled>
+  <label class="form-check-label" for="roleDriver">Chauffeur</label>
+</div>
+
+<!-- Boutons -->
+<button type="button" class="btn btn-primary btn-sm mt-3" id="editRolesBtn">Modifier</button>
+
+
+            <div id="driverDetails" class="mt-4">
+              <h5>Vos véhicules</h5>
+              <div id="vehiclesContainer"></div>
+              <button type="button" class="btn btn-secondary btn-sm" id="addVehicleBtn">+ Ajouter un véhicule</button>
+
+<!-- Formulaire d'ajout (caché au départ) -->
+<div id="vehicleFormContainer" class="container mt-3" style="display:none;">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-4">
+      <form id="vehicleForm">
+        <div class="mb-2">
+          <label for="plate" class="form-label">Plaque d’immatriculation</label>
+          <input type="text" id="plate" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label for="firstRegDate" class="form-label">Date de première immatriculation</label>
+          <input type="date" id="firstRegDate" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label for="brand" class="form-label">Marque</label>
+          <input type="text" id="brand" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label for="model" class="form-label">Modèle</label>
+          <input type="text" id="model" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label for="color" class="form-label">Couleur</label>
+          <input type="text" id="color" class="form-control" required>
+        </div>
+        <div class="mb-2">
+          <label for="seats" class="form-label">Nombre de places disponibles</label>
+          <input type="number" id="seats" class="form-control" min="1" max="9" required>
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Type de moteur</label><br>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="engineType" id="engineElectric" value="electric" required>
+            <label class="form-check-label" for="engineElectric">Électrique</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="engineType" id="engineHybrid" value="hybrid">
+            <label class="form-check-label" for="engineHybrid">Hybride</label>
+          </div>
+          <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="engineType" id="engineThermal" value="thermal">
+            <label class="form-check-label" for="engineThermal">Thermique</label>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm mt-2">Enregistrer le véhicule</button>
+        <button type="button" class="btn btn-dark text-light btn-sm mt-2" id="cancelVehicleBtn">Annuler</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<h5 class="mt-4">Préférences</h5>
+
+<div class="form-check">
+  <input class="form-check-input" type="checkbox" id="prefSmoker">
+  <label class="form-check-label" for="prefSmoker">Fumeurs acceptés</label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="checkbox" id="prefAnimal">
+  <label class="form-check-label" for="prefAnimal">Animaux acceptés</label>
+</div>
+
+<div class="mt-3 col-lg-4 p-0"> 
+  <label for="customPrefInput" class="form-label">Ajouter une préférence personnalisée</label>
+  <div class="input-group">
+    <input type="text" id="customPrefInput" class="form-control mb-1" placeholder="Exemple : Musique forte" aria-label="Préférence personnalisée">
+    <button class="btn btn-outline-primary mb-1" type="button" id="addCustomPrefBtn">Ajouter</button>
+  </div>
+  <div id="customPrefList" class="d-flex flex-wrap gap-2"></div>
+</div>
+
+            <button type="submit" class="btn btn-primary mt-3">Enregistrer</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Onglet Saisir un voyage -->
+        <div class="tab-pane fade" id="trip" role="tabpanel">
+          <form id="tripForm">
+            <div class="mb-3">
+              <label for="departure" class="form-label">Adresse de départ</label>
+              <input type="text" id="departure" class="form-control" placeholder="Adresse de départ">
+            </div>
+            <div class="mb-3">
+              <label for="arrival" class="form-label">Adresse d’arrivée</label>
+              <input type="text" id="arrival" class="form-control" placeholder="Adresse d’arrivée">
+            </div>
+            <div class="mb-3">
+              <label for="price" class="form-label">Prix (crédits)</label>
+              <input type="number" id="price" class="form-control" min="0" step="0.01" placeholder="Prix par passager">
+              <div class="form-text">2 crédits seront prélevés par la plateforme</div>
+            </div>
+            <div class="mb-3">
+              <label for="vehicleSelect" class="form-label">Véhicule</label>
+              <select id="vehicleSelect" class="form-select"></select>
+              <button type="button" class="btn btn-secondary btn-sm mt-2" id="addTripVehicleBtn">+ Ajouter un véhicule</button>
+            </div>
+            <button type="submit" class="btn btn-primary">Créer un voyage</button>
+          </form>
+        </div>
+
+        <!-- Onglet Historique -->
+        <div class="tab-pane fade" id="history" role="tabpanel">
+          <div class="table-responsive">
+            <table class="table table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Trajet</th>
+                  <th>Statut</th>
+                  <th>Rôle</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody">
+                <!-- Dynamique -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+//Sélection rôle + détails 
+document.addEventListener('DOMContentLoaded', () => {
+  const rolePassenger = document.getElementById('rolePassenger');
+  const roleDriver = document.getElementById('roleDriver');
+  const driverDetails = document.getElementById('driverDetails');
+  const editBtn = document.getElementById('editRolesBtn');
+
+  // Au départ : driverDetails caché, bouton Modifier visible
+  driverDetails.style.display = 'none';
+  editBtn.textContent = 'Modifier';
+
+  editBtn.addEventListener('click', () => {
+    if (editBtn.textContent === 'Modifier') {
+      // Passage en mode édition : checkboxes activées
+      rolePassenger.disabled = false;
+      roleDriver.disabled = false;
+
+      // Cacher détails chauffeur au cas où
+      driverDetails.style.display = 'none';
+
+      // Changer texte bouton en Appliquer
+      editBtn.textContent = 'Appliquer';
+    } else {
+      // Mode validation : checkboxes désactivées
+      rolePassenger.disabled = true;
+      roleDriver.disabled = true;
+
+      // Afficher détails chauffeur seulement si chauffeur coché
+      if (roleDriver.checked) {
+        driverDetails.style.display = 'block';
+      } else {
+        driverDetails.style.display = 'none';
+      }
+
+      // Revenir au texte Modifier
+      editBtn.textContent = 'Modifier';
+    }
+  });
+});
+
+//Ajouter un véhicule
+document.addEventListener('DOMContentLoaded', () => {
+  const addVehicleBtn = document.getElementById('addVehicleBtn');
+  const vehicleFormContainer = document.getElementById('vehicleFormContainer');
+  const vehicleForm = document.getElementById('vehicleForm');
+  const cancelVehicleBtn = document.getElementById('cancelVehicleBtn');
+  const vehicleList = document.getElementById('vehicleList');
+
+  // Affiche le formulaire d'ajout
+  addVehicleBtn.addEventListener('click', () => {
+    vehicleFormContainer.style.display = 'block';
+    addVehicleBtn.style.display = 'none';
+  });
+
+  // Annuler ajout véhicule
+  cancelVehicleBtn.addEventListener('click', () => {
+    vehicleForm.reset();
+    vehicleFormContainer.style.display = 'none';
+    addVehicleBtn.style.display = 'inline-block';
+  });
+
+  // Enregistrer un véhicule
+  vehicleForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    // Récupère les valeurs
+    const plate = document.getElementById('plate').value.trim();
+    const firstRegDate = document.getElementById('firstRegDate').value;
+    const brand = document.getElementById('brand').value.trim();
+    const model = document.getElementById('model').value.trim();
+    const color = document.getElementById('color').value.trim();
+    const seats = document.getElementById('seats').value;
+    const engineType = vehicleForm.engineType.value; // radio button value
+
+    // Crée la ligne résumé
+    const vehicleDiv = document.createElement('div');
+    vehicleDiv.classList.add('d-flex', 'align-items-center', 'mb-2', 'p-2', 'rounded');
+    vehicleDiv.style.cursor = 'pointer';
+
+    // Classe verte si électrique ou hybride
+    if (engineType === 'electric' || engineType === 'hybrid') {
+      vehicleDiv.classList.add('bg-primary', 'text-white');
+    } else {
+      vehicleDiv.classList.add('bg-light');
+    }
+
+    // Checkbox pour sélectionner le véhicule
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.name = 'selectedVehicle';
+    checkbox.classList.add('form-check-input', 'me-2');
+
+    // Par défaut, coche le premier véhicule ajouté
+    if (vehicleList.children.length === 0) checkbox.checked = true;
+
+    // Description du véhicule
+    const label = document.createElement('label');
+    label.textContent = `${brand} ${plate} ${color} (${model}, ${seats} places)`;
+    label.classList.add('mb-0');
+
+    vehicleDiv.appendChild(checkbox);
+    vehicleDiv.appendChild(label);
+
+    vehicleList.appendChild(vehicleDiv);
+
+    // Reset form et masquer
+    vehicleForm.reset();
+    vehicleFormContainer.style.display = 'none';
+    addVehicleBtn.style.display = 'inline-block';
+  });
+});
+
+//préférences personnalisées
+  const input = document.getElementById('customPrefInput');
+  const addBtn = document.getElementById('addCustomPrefBtn');
+  const prefList = document.getElementById('customPrefList');
+
+  function createPrefTag(text) {
+    const tag = document.createElement('div');
+    tag.className = 'badge bg-dark d-flex align-items-center gap-2';
+
+    const span = document.createElement('span');
+    span.textContent = text;
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-close btn-close-white btn-sm';
+    btn.setAttribute('aria-label', 'Supprimer la préférence');
+    btn.addEventListener('click', () => {
+      prefList.removeChild(tag);
+    });
+
+    tag.appendChild(span);
+    tag.appendChild(btn);
+    return tag;
+  }
+
+addBtn.addEventListener('click', () => {
+  const value = input.value.trim();
+  if (value === '') return; // ne rien faire si vide
+
+  // Optionnel : vérifier qu'on ne double pas la même préférence
+  const existing = Array.from(prefList.children).some(
+    (child) => child.firstChild.textContent.toLowerCase() === value.toLowerCase()
+  );
+  if (existing) {
+    alert("Cette préférence est déjà ajoutée.");
+    return;
+  }
+
+  const newTag = createPrefTag(value);
+  prefList.appendChild(newTag);
+  input.value = '';
+});
+</script>
+
+
+
+{% endblock %}
