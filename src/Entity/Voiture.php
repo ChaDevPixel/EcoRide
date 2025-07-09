@@ -42,7 +42,7 @@ class Voiture
 
     #[ORM\ManyToOne(inversedBy: 'voitures')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?marque $marque = null;
+    private ?Marque $marque = null;
 
     public function __construct()
     {
@@ -161,7 +161,7 @@ class Voiture
         return $this->marque;
     }
 
-    public function setMarque(?marque $marque): static
+    public function setMarque(?Marque $marque): static
     {
         $this->marque = $marque;
 

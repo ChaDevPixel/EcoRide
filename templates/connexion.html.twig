@@ -1,12 +1,39 @@
-
 {% extends 'base.html.twig' %}
 {% block title %}Accueil - Ecoride{% endblock %}
 {% block body %}
 
         <main class="bg-light">
-            <div class="container-auth d-flex bg-light font-family-sans-serif" id="authContainer">
+
+            <div class="container mt-4 mb-3"> {# Ajout de marges et un container pour limiter la largeur #}
+                <div class="row justify-content-center"> {# Centre la colonne #}
+                    <div class="col-12 col-md-8 col-lg-6"> {# Définit la largeur max sur différents écrans #}
+                        {% for message in app.flashes('error') %}
+                            <div class="alert alert-danger text-center" role="alert">{{ message }}</div>
+                        {% endfor %}
+                        {% for message in app.flashes('info') %}
+                            {# CHANGEMENT : alert-info vers alert-warning ET ajout de text-center #}
+                            <div class="alert alert-warning text-center" role="alert">{{ message }}</div>
+                        {% endfor %}
+                        {% for message in app.flashes('success') %}
+                            <div class="alert alert-success text-center" role="alert">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+                  
+            {% for message in app.flashes('error') %}
+                <div class="alert alert-danger" role="alert">{{ message }}</div>
+            {% endfor %}
+            {% for message in app.flashes('info') %}
+                <div class="alert alert-success" role="alert">{{ message }}</div>
+            {% endfor %}
+            {% for message in app.flashes('success') %}
+                <div class="alert alert-success" role="alert">{{ message }}</div>
+            {% endfor %}
+
+            <div class="container-auth d-md-flex bg-light font-family-sans-serif" id="authContainer">
                 <div class="form-container sign-in-container">
-                    <form method="post" actio="">
+                    <form method="post" action="">
                         <h2 class="mb-4">Se connecter</h2>
                         <input type="email" class="form-control mb-2" placeholder="Email" required>
                         <input type="password" class="form-control mb-2" placeholder="Mot de passe" required>
@@ -15,17 +42,18 @@
                 </div>
 
                 <div class="form-container sign-up-container">
-                    <form method="post" action="">
+                    <form method="post" action="{{ path('app_register_prepare') }}">
                         <h2 class="mb-4">S'inscrire</h2>
-                        <input type="text" class="form-control mb-2" placeholder="Nom" required>
-                        <input type="email" class="form-control mb-2" placeholder="Email" required>
-                        <input type="password" class="form-control mb-2" placeholder="Mot de passe" required>
-                        <button type="submit" class="btn btn-success w-100">Inscription</button>
+                        <input type="text" name="nom" class="form-control mb-2" placeholder="Nom" required>
+                        <input type="text" name="prenom" class="form-control mb-2" placeholder="Prénom" required>
+                        <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
+                        <input type="password" name="password" class="form-control mb-2" placeholder="Mot de passe" required>
+                        <button type="submit" class="btn btn-success w-100 mb-2">Inscription</button>
                     </form>
                 </div>
 
                 <div class="overlay-container">
-                    <div class="overlay bg-primary text-light">
+                    <div class="overlay bg-primary text-light d-md-flex"> {# Ajoutez d-md-flex ici aussi #}
                     
                         <div class="overlay-panel overlay-left d-flex flex-column align-items-center text-center justify-content-center">
                             <div class="position-absolute top-0 pt-4">

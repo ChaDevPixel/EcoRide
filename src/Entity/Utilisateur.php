@@ -7,9 +7,12 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
-class Utilisateur
+class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -28,46 +31,44 @@ class Utilisateur
     #[ORM\Column(length: 50)]
     private ?string $password = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $telephone = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $adresse = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $date_naissance = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $photo = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 50, nullable: true)]
     private ?string $pseudo = null;
 
     /**
-     * @var Collection<int, avis>
+     * @var Collection<int, Avis>
      */
-    #[ORM\OneToMany(targetEntity: avis::class, mappedBy: 'utilisateur')]
+    #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur')]
     private Collection $avis;
 
     #[ORM\ManyToOne(inversedBy: 'utilisateurs')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?role $role = null;
+    private ?Role $role = null;
 
+     #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $credits = 0; // 
     /**
-     * @var Collection<int, covoiturage>
+     * @var Collection<int, Covoiturage>
      */
-    #[ORM\ManyToMany(targetEntity: covoiturage::class, inversedBy: 'utilisateurs')]
+    #[ORM\ManyToMany(targetEntity: Covoiturage::class, inversedBy: 'utilisateurs')]
     private Collection $covoiturage;
 
     /**
-     * @var Collection<int, voiture>
+     * @var Collection<int, Voiture>
      */
-    #[ORM\OneToMany(targetEntity: voiture::class, mappedBy: 'utilisateur')]
+    #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'utilisateur')]
     private Collection $voiture;
-
-    #[ORM\ManyToOne(inversedBy: 'utilisateurs')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?configuration $configuration = null;
 
     public function __construct()
     {
@@ -189,15 +190,34 @@ class Utilisateur
         return $this;
     }
 
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
+
+    public function getRoles(): array
+    {
+        if ($this->role) {
+            return [$this->role->getLibelle()];
+        }
+
+        return ['ROLE_USER'];
+    }
+
+    public function eraseCredentials(): void
+    {
+
+    }
+
     /**
-     * @return Collection<int, avis>
+     * @return Collection<int, Avis>
      */
     public function getAvis(): Collection
     {
         return $this->avis;
     }
 
-    public function addAvi(avis $avi): static
+    public function addAvi(Avis $avi): static
     {
         if (!$this->avis->contains($avi)) {
             $this->avis->add($avi);
@@ -207,10 +227,9 @@ class Utilisateur
         return $this;
     }
 
-    public function removeAvi(avis $avi): static
+    public function removeAvi(Avis $avi): static
     {
         if ($this->avis->removeElement($avi)) {
-            // set the owning side to null (unless already changed)
             if ($avi->getUtilisateur() === $this) {
                 $avi->setUtilisateur(null);
             }
@@ -219,12 +238,12 @@ class Utilisateur
         return $this;
     }
 
-    public function getRole(): ?role
+    public function getRole(): ?Role
     {
         return $this->role;
     }
 
-    public function setRole(?role $role): static
+    public function setRole(?Role $role): self
     {
         $this->role = $role;
 
@@ -232,14 +251,14 @@ class Utilisateur
     }
 
     /**
-     * @return Collection<int, covoiturage>
+     * @return Collection<int, Covoiturage>
      */
     public function getCovoiturage(): Collection
     {
         return $this->covoiturage;
     }
 
-    public function addCovoiturage(covoiturage $covoiturage): static
+    public function addCovoiturage(Covoiturage $covoiturage): static
     {
         if (!$this->covoiturage->contains($covoiturage)) {
             $this->covoiturage->add($covoiturage);
@@ -248,7 +267,7 @@ class Utilisateur
         return $this;
     }
 
-    public function removeCovoiturage(covoiturage $covoiturage): static
+    public function removeCovoiturage(Covoiturage $covoiturage): static
     {
         $this->covoiturage->removeElement($covoiturage);
 
@@ -256,14 +275,14 @@ class Utilisateur
     }
 
     /**
-     * @return Collection<int, voiture>
+     * @return Collection<int, Voiture>
      */
     public function getVoiture(): Collection
     {
         return $this->voiture;
     }
 
-    public function addVoiture(voiture $voiture): static
+    public function addVoiture(Voiture $voiture): static
     {
         if (!$this->voiture->contains($voiture)) {
             $this->voiture->add($voiture);
@@ -273,10 +292,9 @@ class Utilisateur
         return $this;
     }
 
-    public function removeVoiture(voiture $voiture): static
+    public function removeVoiture(Voiture $voiture): static
     {
         if ($this->voiture->removeElement($voiture)) {
-            // set the owning side to null (unless already changed)
             if ($voiture->getUtilisateur() === $this) {
                 $voiture->setUtilisateur(null);
             }
@@ -285,15 +303,16 @@ class Utilisateur
         return $this;
     }
 
-    public function getConfiguration(): ?configuration
+    public function getCredits(): int
     {
-        return $this->configuration;
+        return $this->credits;
     }
 
-    public function setConfiguration(?configuration $configuration): static
+    public function setCredits(int $credits): static
     {
-        $this->configuration = $configuration;
+        $this->credits = $credits;
 
         return $this;
     }
 }
+

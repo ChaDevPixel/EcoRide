@@ -1,0 +1,85 @@
+{# templates/inscription_etape2.html.twig #}
+
+{% extends 'base.html.twig' %}
+
+{% block title %}Complétez votre profil - EcoRide{% endblock %}
+
+{% block body %}
+<div class="container d-flex justify-content-center align-items-center mt-3 mb-3 bg-light">
+    <div class="card bg-secondary text-dark shadow-lg px-5 py-3 rounded-4">
+        <h2 class="mb-4 text-center fw-bolder">Complétez votre profil</h2>
+
+        
+        {% for message in app.flashes('error') %}
+            <div class="alert alert-danger" role="alert">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('info') %}
+            <div class="alert alert-success" role="alert">{{ message }}</div>
+        {% endfor %}
+        {% for message in app.flashes('success') %}
+            <div class="alert alert-success" role="alert">{{ message }}</div>
+        {% endfor %}
+
+        <form method="post" enctype="multipart/form-data" class="mt-2">
+
+           
+            <div class="mb-3">
+                <label for="nom" class="form-label fw-bold">Nom</label>
+                <input type="text" id="nom" name="nom" class="form-control" value="{{ utilisateur.nom ?? '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="prenom" class="form-label fw-bold">Prénom</label>
+                <input type="text" id="prenom" name="prenom" class="form-control" value="{{ utilisateur.prenom ?? '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label fw-bold">Email</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ utilisateur.email ?? '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label fw-bold">Mot de passe</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="Entrez votre mot de passe à nouveau" required>
+            </div>
+
+            {# Champs de l'étape 2 - Vides au premier affichage, mais pré-remplis en cas d'erreur de soumission #}
+            <div class="mb-3">
+                <label for="pseudo" class="form-label fw-bold">Pseudo</label>
+                <input type="text" id="pseudo" name="pseudo" class="form-control" value="{{ utilisateur.pseudo ?? '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="adresse" class="form-label fw-bold">Adresse</label>
+                <input type="text" id="adresse" name="adresse" class="form-control" value="{{ utilisateur.adresse ?? '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="telephone" class="form-label fw-bold">Téléphone</label>
+                <input type="text" id="telephone" name="telephone" class="form-control" value="{{ utilisateur.telephone ?? '' }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label for="date_naissance" class="form-label fw-bold">Date de naissance</label>
+                <input type="date" id="date_naissance" name="date_naissance" class="form-control" value="{{ utilisateur.dateNaissance ? utilisateur.dateNaissance|date('Y-m-d') : '' }}" required>
+            </div>
+
+            <div class="mb-4">
+                <label for="photo" class="form-label fw-bold">Photo</label>
+                <input type="file" id="photo" name="photo" class="form-control mb-1" accept="image/*">
+                {% if utilisateur.photo and utilisateur.photo != 'default.png' %}
+                    <small class="form-text text-muted">Photo actuelle : <a href="{{ asset('uploads/photos/' ~ utilisateur.photo) }}" target="_blank">{{ utilisateur.photo }}</a></small>
+                {% else %}
+                    <small class="form-text text-muted">Aucune photo sélectionnée (une photo par défaut sera utilisée si vous n'en téléchargez pas).</small>
+                {% endif %}
+            </div>
+
+            <div class="text-center">
+                <button type="submit" class="btn btn-success px-4 shadow-sm rounded-4">
+                    Valider l'inscription
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
