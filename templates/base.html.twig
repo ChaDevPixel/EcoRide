@@ -48,7 +48,8 @@
                         <!-- VERSION DESKTOP -->
                         <div class="d-none d-lg-flex">
                             {% if app.user %}
-                                <a href="{{ path('mon_compte') }}" class="btn btn-light">Mon compte</a>
+                                <a href="{{ path('app_account') }}" class="btn btn-light">Mon compte</a>
+                                <a href="{{ path('app_logout') }}" class="btn btn-danger ms-2">Déconnexion</a>
                             {% else %}
                                 <a href="{{ path('app_login') }}" class="btn btn-light">Connexion</a>
                             {% endif %}
@@ -57,7 +58,7 @@
 
                         <!-- VERSION MOBILE -->
                         {% if app.user %}
-                            <button class="navbar-toggler d-flex d-lg-none flex-column align-items-center px-2 py-1" type="button" onclick="location.href='{{ path('mon_compte') }}'">
+                             <button class="navbar-toggler d-flex d-lg-none flex-column align-items-center px-2 py-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAccount" aria-controls="offcanvasAccount" aria-expanded="false" aria-label="Ouvrir le menu compte">
                                 <i class="bi bi-person-circle fs-1 text-light"></i>
                                 <small class="btn-header text-light">Mon compte</small>
                             </button>
@@ -90,6 +91,28 @@
                             </li>
                         </ul>
                     </div>
+                </div>
+
+                 <!-- NOUVEL Offcanvas pour le Compte Utilisateur (Mobile) -->
+                <div class="offcanvas offcanvas-end bg-primary text-light" tabindex="-1" id="offcanvasAccount" aria-labelledby="offcanvasAccountLabel">
+                    <div class="offcanvas-header">
+                        <h5 class="offcanvas-title" id="offcanvasAccountLabel">Mon compte</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fermer"></button>
+                    </div>
+                    <div class="offcanvas-body p-0">
+                        <ul class="navbar-nav flex-column">
+                            <li class="nav-item">
+                                <a class="nav-link text-light px-3 py-2" href="{{ path('app_account') }}">Mon profil</a>
+                            </li>
+                            {# Ajoutez d'autres liens de compte ici plus tard #}
+                            <li class="nav-item">
+                                <hr class="dropdown-divider border-light mx-3"> {# Utiliser border-light pour la couleur #}
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-danger px-3 py-2" href="{{ path('app_logout') }}">Déconnexion</a>
+                            </li>
+                        </ul>
+                    </div>   
                 </div>
             </nav>
         </header>

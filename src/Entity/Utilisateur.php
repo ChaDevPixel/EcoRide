@@ -9,9 +9,11 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
-
+use Symfony\Component\Validator\Constraints as Assert;
+use Doctrine\ORM\Mapping\UniqueConstraint;
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
+#[ORM\Table(name: "utilisateur", uniqueConstraints: [new UniqueConstraint(name: "unique_email", columns: ["email"])])]
 class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -25,20 +27,23 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 50)]
     private ?string $prenom = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 180, unique: true)] 
+    #[Assert\NotBlank(message: "L'adresse email est obligatoire.")]
+    #[Assert\Email(message: "Veuillez saisir une adresse email valide.")]
     private ?string $email = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(length: 255)] 
+    #[Assert\NotBlank(message: "Le mot de passe est obligatoire.")]
     private ?string $password = null;
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $telephone = null;
 
-    #[ORM\Column(length: 50, nullable: true)]
+    #[ORM\Column(length: 255, nullable: true)] 
     private ?string $adresse = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
-    private ?\DateTime $date_naissance = null;
+    private ?\DateTimeInterface $date_naissance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $photo = null;
@@ -56,8 +61,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\JoinColumn(nullable: false)]
     private ?Role $role = null;
 
-     #[ORM\Column(type: 'integer', options: ['default' => 0])]
-    private int $credits = 0; // 
+    #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    private int $credits = 0;
+
     /**
      * @var Collection<int, Covoiturage>
      */
@@ -90,7 +96,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
-
         return $this;
     }
 
@@ -102,7 +107,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
-
         return $this;
     }
 
@@ -114,11 +118,13 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
-    public function getPassword(): ?string
+    /**
+     * @see PasswordAuthenticatedUserInterface
+     */
+    public function getPassword(): string
     {
         return $this->password;
     }
@@ -126,7 +132,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
 
@@ -135,10 +140,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->telephone;
     }
 
-    public function setTelephone(string $telephone): static
+    public function setTelephone(?string $telephone): static
     {
         $this->telephone = $telephone;
-
         return $this;
     }
 
@@ -147,22 +151,20 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->adresse;
     }
 
-    public function setAdresse(string $adresse): static
+    public function setAdresse(?string $adresse): static
     {
         $this->adresse = $adresse;
-
         return $this;
     }
 
-    public function getDateNaissance(): ?\DateTime
+    public function getDateNaissance(): ?\DateTimeInterface
     {
         return $this->date_naissance;
     }
 
-    public function setDateNaissance(\DateTime $date_naissance): static
+    public function setDateNaissance(?\DateTimeInterface $date_naissance): static
     {
         $this->date_naissance = $date_naissance;
-
         return $this;
     }
 
@@ -171,10 +173,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->photo;
     }
 
-    public function setPhoto(string $photo): static
+    public function setPhoto(?string $photo): static
     {
         $this->photo = $photo;
-
         return $this;
     }
 
@@ -183,30 +184,42 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->pseudo;
     }
 
-    public function setPseudo(string $pseudo): static
+    public function setPseudo(?string $pseudo): static
     {
         $this->pseudo = $pseudo;
-
         return $this;
     }
 
+    /**
+     * @see UserInterface
+     */
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
 
+    /**
+     * @see UserInterface
+     */
     public function getRoles(): array
     {
+        $roles = [];
         if ($this->role) {
-            return [$this->role->getLibelle()];
+            $roles[] = $this->role->getLibelle();
         }
 
-        return ['ROLE_USER'];
+        if (empty($roles)) {
+            $roles[] = 'ROLE_PASSENGER';
+        }
+
+        return array_unique($roles);
     }
 
+    /**
+     * @see PasswordAuthenticatedUserInterface
+     */
     public function eraseCredentials(): void
     {
-
     }
 
     /**
@@ -223,7 +236,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
             $this->avis->add($avi);
             $avi->setUtilisateur($this);
         }
-
         return $this;
     }
 
@@ -234,7 +246,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
                 $avi->setUtilisateur(null);
             }
         }
-
         return $this;
     }
 
@@ -246,7 +257,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRole(?Role $role): self
     {
         $this->role = $role;
-
         return $this;
     }
 
@@ -263,14 +273,12 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         if (!$this->covoiturage->contains($covoiturage)) {
             $this->covoiturage->add($covoiturage);
         }
-
         return $this;
     }
 
     public function removeCovoiturage(Covoiturage $covoiturage): static
     {
         $this->covoiturage->removeElement($covoiturage);
-
         return $this;
     }
 
@@ -288,7 +296,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
             $this->voiture->add($voiture);
             $voiture->setUtilisateur($this);
         }
-
         return $this;
     }
 
@@ -299,7 +306,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
                 $voiture->setUtilisateur(null);
             }
         }
-
         return $this;
     }
 
@@ -311,8 +317,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCredits(int $credits): static
     {
         $this->credits = $credits;
-
         return $this;
     }
 }
-

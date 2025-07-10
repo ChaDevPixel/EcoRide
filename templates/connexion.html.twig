@@ -1,105 +1,101 @@
-{% extends 'base.html.twig' %}
-{% block title %}Accueil - Ecoride{% endblock %}
+{% extends 'base.html.twig' %} 
+
+{% block title %}Connexion - Ecoride{% endblock %}
+
 {% block body %}
 
-        <main class="bg-light">
+    <main class="bg-light">
 
-            <div class="container mt-4 mb-3"> {# Ajout de marges et un container pour limiter la largeur #}
-                <div class="row justify-content-center"> {# Centre la colonne #}
-                    <div class="col-12 col-md-8 col-lg-6"> {# Définit la largeur max sur différents écrans #}
-                        {% for message in app.flashes('error') %}
-                            <div class="alert alert-danger text-center" role="alert">{{ message }}</div>
-                        {% endfor %}
-                        {% for message in app.flashes('info') %}
-                            {# CHANGEMENT : alert-info vers alert-warning ET ajout de text-center #}
-                            <div class="alert alert-warning text-center" role="alert">{{ message }}</div>
-                        {% endfor %}
-                        {% for message in app.flashes('success') %}
-                            <div class="alert alert-success text-center" role="alert">{{ message }}</div>
-                        {% endfor %}
+        <div class="container mt-4 mb-3"> 
+            <div class="row justify-content-center"> 
+                <div class="col-12 col-md-8 col-lg-6"> 
+                
+                    {% for message in app.flashes('error') %}
+                        <div class="alert alert-danger text-center" role="alert">{{ message }}</div>
+                    {% endfor %}
+                    {% for message in app.flashes('info') %}
+                        <div class="alert alert-warning text-center" role="alert">{{ message }}</div>
+                    {% endfor %}
+                    {% for message in app.flashes('success') %}
+                        <div class="alert alert-success text-center" role="alert">{{ message }}</div>
+                    {% endfor %}
+                    {% if error %}
+                        <div class="alert alert-danger text-center" role="alert">
+                            {{ error.messageKey|trans(error.messageData, 'security') }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="container-auth d-md-flex bg-light font-family-sans-serif" id="authContainer">
+            <div class="form-container sign-in-container">
+                
+                <form method="post" action="{{ path('app_login') }}"> 
+                    <h2 class="mb-4">Se connecter</h2>
+                    <input type="email" class="form-control mb-2" placeholder="Email" name="email" value="{{ last_username }}" required> 
+                    <input type="password" class="form-control mb-2" placeholder="Mot de passe" name="password" required> 
+                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}"> 
+                    <button type="submit" class="btn btn-success w-100">Connexion</button>
+                </form>
+            </div>
+
+            <div class="form-container sign-up-container">
+             
+                <form method="post" action="{{ path('app_register_prepare') }}">
+                    <h2 class="mb-4">S'inscrire</h2>
+                    <input type="text" name="nom" class="form-control mb-2" placeholder="Nom" required>
+                    <input type="text" name="prenom" class="form-control mb-2" placeholder="Prénom" required>
+                    <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
+                    <input type="password" name="password" class="form-control mb-2" placeholder="Mot de passe" required>
+                    <button type="submit" class="btn btn-success w-100 mb-2">Inscription</button>
+                </form>
+            </div>
+
+            <div class="overlay-container">
+                <div class="overlay bg-primary text-light d-md-flex">
+                    <div class="overlay-panel overlay-left d-flex flex-column align-items-center text-center justify-content-center">
+                        <div class="position-absolute top-0 pt-4">
+                            <a href="{{ path('app_home') }}">
+                                <img src="{{ asset('assets/img/logoEcoride.png') }}" alt="Logo Ecoride" class="logo-ecoride-signin">
+                            </a>
+                        </div>
+                        <div>
+                            <h2>Déjà inscrit ?</h2>
+                            <p>Connecte-toi pour accéder à ton compte.</p>
+                            <button class="btn btn-light" id="signIn">Se connecter</button>
+                        </div>
+                    </div>
+
+                    <div class="overlay-panel overlay-right d-flex flex-column align-items-center text-center justify-content-center">
+                        <div class="position-absolute top-0 pt-4">
+                            <a href="{{ path('app_home') }}">
+                                <img src="{{ asset('assets/img/logoEcoride.png') }}" alt="Logo Ecoride" class="logo-ecoride-signin">
+                            </a>
+                        </div>
+                        <div>
+                            <h2>Pas encore inscrit ?</h2>
+                            <p>Inscris-toi pour rejoindre la communauté EcoRide !</p>
+                            <button class="btn btn-light" id="signUp">S'inscrire</button>
+                        </div>
                     </div>
                 </div>
             </div>
-                  
-            {% for message in app.flashes('error') %}
-                <div class="alert alert-danger" role="alert">{{ message }}</div>
-            {% endfor %}
-            {% for message in app.flashes('info') %}
-                <div class="alert alert-success" role="alert">{{ message }}</div>
-            {% endfor %}
-            {% for message in app.flashes('success') %}
-                <div class="alert alert-success" role="alert">{{ message }}</div>
-            {% endfor %}
+        </div>
 
-            <div class="container-auth d-md-flex bg-light font-family-sans-serif" id="authContainer">
-                <div class="form-container sign-in-container">
-                    <form method="post" action="">
-                        <h2 class="mb-4">Se connecter</h2>
-                        <input type="email" class="form-control mb-2" placeholder="Email" required>
-                        <input type="password" class="form-control mb-2" placeholder="Mot de passe" required>
-                        <button type="submit" class="btn btn-success w-100">Connexion</button>
-                    </form>
-                </div>
+        <script>
+            const container = document.getElementById('authContainer');
+            const signUpButton = document.getElementById('signUp');
+            const signInButton = document.getElementById('signIn');
 
-                <div class="form-container sign-up-container">
-                    <form method="post" action="{{ path('app_register_prepare') }}">
-                        <h2 class="mb-4">S'inscrire</h2>
-                        <input type="text" name="nom" class="form-control mb-2" placeholder="Nom" required>
-                        <input type="text" name="prenom" class="form-control mb-2" placeholder="Prénom" required>
-                        <input type="email" name="email" class="form-control mb-2" placeholder="Email" required>
-                        <input type="password" name="password" class="form-control mb-2" placeholder="Mot de passe" required>
-                        <button type="submit" class="btn btn-success w-100 mb-2">Inscription</button>
-                    </form>
-                </div>
+            signUpButton.addEventListener('click', () => {
+                container.classList.add('right-panel-active');
+            });
 
-                <div class="overlay-container">
-                    <div class="overlay bg-primary text-light d-md-flex"> {# Ajoutez d-md-flex ici aussi #}
-                    
-                        <div class="overlay-panel overlay-left d-flex flex-column align-items-center text-center justify-content-center">
-                            <div class="position-absolute top-0 pt-4">
-                                <a href="{{ path('app_home') }}">
-                                    <img src="{{ asset('assets/img/logoEcoride.png') }}" alt="Logo Ecoride" class="logo-ecoride-signin">>
-                                </a>  
-                            </div>
-                                <div>   
-                                <h2>Déjà inscrit ?</h2>
-                                <p>Connecte-toi pour accéder à ton compte.</p>
-                                <button class="btn btn-light" id="signIn">Se connecter</button>
-                                </div>
-                            </div>
-                    
-                            <div class="overlay-panel overlay-right d-flex flex-column align-items-center text-center justify-content-center">
-                                <div class="position-absolute top-0 pt-4">
-                                    <a href="{{ path('app_home') }}">
-                                        <img src="{{ asset('assets/img/logoEcoride.png') }}" alt="Logo Ecoride" class="logo-ecoride-signin">
-                                    </a>
-                                </div>
-                                <div> 
-                                    <h2>Pas encore inscrit ?</h2>
-                                    <p>Inscris-toi pour rejoindre la communauté EcoRide !</p>
-                                    <button class="btn btn-light" id="signUp">S'inscrire</button>
-                                </div>  
-                            </div>
-                        </div>
+            signInButton.addEventListener('click', () => {
+                container.classList.remove('right-panel-active');
+            });
+        </script>
 
-                    </div>
-
-                </div>
-
-                <script>
-                const container = document.getElementById('authContainer');
-                const signUpButton = document.getElementById('signUp');
-                const signInButton = document.getElementById('signIn');
-
-                signUpButton.addEventListener('click', () => {
-                    container.classList.add('right-panel-active');
-                });
-
-                signInButton.addEventListener('click', () => {
-                    container.classList.remove('right-panel-active');
-                });
-                </script>
-
-        </main>      
-                       
-{% endblock %}    
+    </main>
+{% endblock %}
