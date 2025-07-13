@@ -1,9 +1,13 @@
-# see https://symfony.com/doc/current/reference/configuration/framework.html
+# config/packages/framework.yaml
 framework:
     secret: '%env(APP_SECRET)%'
 
     # Note that the session will be started ONLY if you read or write from it.
     session: true
+
+    # Définition de la locale par défaut de l'application
+    default_locale: fr
+    translator: { fallbacks: ['fr'] }
 
     #esi: true
     #fragments: true

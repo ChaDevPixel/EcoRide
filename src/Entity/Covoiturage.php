@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups; // Pour la sérialisation JSON
 
 #[ORM\Entity(repositoryClass: CovoiturageRepository::class)]
 class Covoiturage
@@ -14,48 +15,72 @@ class Covoiturage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private ?\DateTime $date_depart = null;
-
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
-    private ?\DateTime $heure_depart = null;
-
-    #[ORM\Column(length: 50)]
-    private ?string $lieu_depart = null;
+    #[ORM\Column(length: 255)]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])]
+    private ?string $villeDepart = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    private ?\DateTime $date_arrivee = null;
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?\DateTimeInterface $dateDepart = null;
 
-    #[ORM\Column(type: Types::TIME_MUTABLE)]
-    private ?\DateTime $heure_arrivee = null;
+    #[ORM\Column(length: 5)] // Format HH:MM
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?string $heureDepart = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $lieu_arrivee = null;
+    #[ORM\Column(length: 255)]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?string $villeArrivee = null;
 
-    #[ORM\Column(length: 50)]
+    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?\DateTimeInterface $dateArrivee = null;
+
+    #[ORM\Column(length: 5)] // Format HH:MM
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?string $heureArrivee = null;
+
+    #[ORM\Column]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?int $prix = null; // Prix en crédits
+
+    #[ORM\Column]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?bool $estAccompagne = false;
+
+    #[ORM\Column(nullable: true)] // Peut être nul si non accompagné
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?int $nombreAccompagnateurs = null;
+
+    #[ORM\Column]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?int $placesDisponibles = null; // Places pour les autres utilisateurs
+
+    #[ORM\Column(length: 50)] // Ex: 'initialise', 'en_cours', 'termine'
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
     private ?string $statut = null;
 
-    #[ORM\Column]
-    private ?int $nb_place = null;
+    #[ORM\ManyToOne(inversedBy: 'covoituragesConduits')] // MODIFIÉ: inversedBy doit correspondre à la propriété dans Utilisateur
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    private ?Utilisateur $chauffeur = null;
 
-    #[ORM\Column]
-    private ?float $prix_personne = null;
+    #[ORM\ManyToOne(targetEntity: Voiture::class, inversedBy: 'covoiturages')] // MODIFIÉ: inversedBy doit correspondre à la propriété dans Voiture
+    #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["covoiturage_read", "covoiturage_search_read"])] // AJOUT: Groupe pour la recherche
+    private ?Voiture $voiture = null;
 
     /**
      * @var Collection<int, Utilisateur>
      */
-    #[ORM\ManyToMany(targetEntity: Utilisateur::class, mappedBy: 'covoiturage')]
-    private Collection $utilisateurs;
-
-    #[ORM\ManyToOne(inversedBy: 'covoiturage')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Voiture $voiture = null;
+    #[ORM\ManyToMany(targetEntity: Utilisateur::class, mappedBy: 'covoituragesPassager')] // MODIFIÉ: mappedBy doit correspondre à la propriété dans Utilisateur
+    private Collection $passagers; // Les passagers qui rejoignent le covoiturage (nom plus clair)
 
     public function __construct()
     {
-        $this->utilisateurs = new ArrayCollection();
+        $this->passagers = new ArrayCollection(); // MODIFIÉ
     }
 
     public function getId(): ?int
@@ -63,74 +88,122 @@ class Covoiturage
         return $this->id;
     }
 
-    public function getDateDepart(): ?\DateTime
+    public function getVilleDepart(): ?string
     {
-        return $this->date_depart;
+        return $this->villeDepart;
     }
 
-    public function setDateDepart(\DateTime $date_depart): static
+    public function setVilleDepart(string $villeDepart): static
     {
-        $this->date_depart = $date_depart;
+        $this->villeDepart = $villeDepart;
 
         return $this;
     }
 
-    public function getHeureDepart(): ?\DateTime
+    public function getDateDepart(): ?\DateTimeInterface
     {
-        return $this->heure_depart;
+        return $this->dateDepart;
     }
 
-    public function setHeureDepart(\DateTime $heure_depart): static
+    public function setDateDepart(\DateTimeInterface $dateDepart): static
     {
-        $this->heure_depart = $heure_depart;
+        $this->dateDepart = $dateDepart;
 
         return $this;
     }
 
-    public function getLieuDepart(): ?string
+    public function getHeureDepart(): ?string
     {
-        return $this->lieu_depart;
+        return $this->heureDepart;
     }
 
-    public function setLieuDepart(string $lieu_depart): static
+    public function setHeureDepart(string $heureDepart): static
     {
-        $this->lieu_depart = $lieu_depart;
+        $this->heureDepart = $heureDepart;
 
         return $this;
     }
 
-    public function getDateArrivee(): ?\DateTime
+    public function getVilleArrivee(): ?string
     {
-        return $this->date_arrivee;
+        return $this->villeArrivee;
     }
 
-    public function setDateArrivee(\DateTime $date_arrivee): static
+    public function setVilleArrivee(string $villeArrivee): static
     {
-        $this->date_arrivee = $date_arrivee;
+        $this->villeArrivee = $villeArrivee;
 
         return $this;
     }
 
-    public function getHeureArrivee(): ?\DateTime
+    public function getDateArrivee(): ?\DateTimeInterface
     {
-        return $this->heure_arrivee;
+        return $this->dateArrivee;
     }
 
-    public function setHeureArrivee(\DateTime $heure_arrivee): static
+    public function setDateArrivee(\DateTimeInterface $dateArrivee): static
     {
-        $this->heure_arrivee = $heure_arrivee;
+        $this->dateArrivee = $dateArrivee;
 
         return $this;
     }
 
-    public function getLieuArrivee(): ?string
+    public function getHeureArrivee(): ?string
     {
-        return $this->lieu_arrivee;
+        return $this->heureArrivee;
     }
 
-    public function setLieuArrivee(string $lieu_arrivee): static
+    public function setHeureArrivee(string $heureArrivee): static
     {
-        $this->lieu_arrivee = $lieu_arrivee;
+        $this->heureArrivee = $heureArrivee;
+
+        return $this;
+    }
+
+    public function getPrix(): ?int
+    {
+        return $this->prix;
+    }
+
+    public function setPrix(int $prix): static
+    {
+        $this->prix = $prix;
+
+        return $this;
+    }
+
+    public function isEstAccompagne(): ?bool
+    {
+        return $this->estAccompagne;
+    }
+
+    public function setEstAccompagne(bool $estAccompagne): static
+    {
+        $this->estAccompagne = $estAccompagne;
+
+        return $this;
+    }
+
+    public function getNombreAccompagnateurs(): ?int
+    {
+        return $this->nombreAccompagnateurs;
+    }
+
+    public function setNombreAccompagnateurs(?int $nombreAccompagnateurs): static
+    {
+        $this->nombreAccompagnateurs = $nombreAccompagnateurs;
+
+        return $this;
+    }
+
+    public function getPlacesDisponibles(): ?int
+    {
+        return $this->placesDisponibles;
+    }
+
+    public function setPlacesDisponibles(int $placesDisponibles): static
+    {
+        $this->placesDisponibles = $placesDisponibles;
 
         return $this;
     }
@@ -147,53 +220,14 @@ class Covoiturage
         return $this;
     }
 
-    public function getNbPlace(): ?int
+    public function getChauffeur(): ?Utilisateur
     {
-        return $this->nb_place;
+        return $this->chauffeur;
     }
 
-    public function setNbPlace(int $nb_place): static
+    public function setChauffeur(?Utilisateur $chauffeur): static
     {
-        $this->nb_place = $nb_place;
-
-        return $this;
-    }
-
-    public function getPrixPersonne(): ?float
-    {
-        return $this->prix_personne;
-    }
-
-    public function setPrixPersonne(float $prix_personne): static
-    {
-        $this->prix_personne = $prix_personne;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Utilisateur>
-     */
-    public function getUtilisateurs(): Collection
-    {
-        return $this->utilisateurs;
-    }
-
-    public function addUtilisateur(Utilisateur $utilisateur): static
-    {
-        if (!$this->utilisateurs->contains($utilisateur)) {
-            $this->utilisateurs->add($utilisateur);
-            $utilisateur->addCovoiturage($this);
-        }
-
-        return $this;
-    }
-
-    public function removeUtilisateur(Utilisateur $utilisateur): static
-    {
-        if ($this->utilisateurs->removeElement($utilisateur)) {
-            $utilisateur->removeCovoiturage($this);
-        }
+        $this->chauffeur = $chauffeur;
 
         return $this;
     }
@@ -206,6 +240,33 @@ class Covoiturage
     public function setVoiture(?Voiture $voiture): static
     {
         $this->voiture = $voiture;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Utilisateur>
+     */
+    public function getPassagers(): Collection // MODIFIÉ
+    {
+        return $this->passagers;
+    }
+
+    public function addPassager(Utilisateur $passager): static // MODIFIÉ
+    {
+        if (!$this->passagers->contains($passager)) {
+            $this->passagers->add($passager);
+            $passager->addCovoiturage($this); // Assurez-vous que cette méthode existe dans Utilisateur
+        }
+
+        return $this;
+    }
+
+    public function removePassager(Utilisateur $passager): static // MODIFIÉ
+    {
+        if ($this->passagers->removeElement($passager)) {
+            $passager->removeCovoiturage($this); // Assurez-vous que cette méthode existe dans Utilisateur
+        }
 
         return $this;
     }

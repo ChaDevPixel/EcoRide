@@ -11,6 +11,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 use Doctrine\ORM\Mapping\UniqueConstraint;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: UtilisateurRepository::class)]
 #[ORM\Table(name: "utilisateur", uniqueConstraints: [new UniqueConstraint(name: "unique_email", columns: ["email"])])]
@@ -19,6 +20,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['covoiturage_read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
@@ -27,61 +29,103 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 50)]
     private ?string $prenom = null;
 
-    #[ORM\Column(length: 180, unique: true)] 
+    #[ORM\Column(length: 180, unique: true)]
     #[Assert\NotBlank(message: "L'adresse email est obligatoire.")]
     #[Assert\Email(message: "Veuillez saisir une adresse email valide.")]
     private ?string $email = null;
 
-    #[ORM\Column(length: 255)] 
+    #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le mot de passe est obligatoire.")]
     private ?string $password = null;
 
     #[ORM\Column(length: 50, nullable: true)]
     private ?string $telephone = null;
 
-    #[ORM\Column(length: 255, nullable: true)] 
+    #[ORM\Column(length: 255, nullable: true)]
     private ?string $adresse = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $date_naissance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['covoiturage_search_read'])] // AJOUT: Pour afficher la photo dans les résultats
     private ?string $photo = null;
 
     #[ORM\Column(length: 50, nullable: true)]
+    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Pour afficher le pseudo
     private ?string $pseudo = null;
 
     /**
      * @var Collection<int, Avis>
      */
-    #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur')]
+    #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur', orphanRemoval: true)]
     private Collection $avis;
 
-    #[ORM\ManyToOne(inversedBy: 'utilisateurs')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Role $role = null;
+    /**
+     * @var Collection<int, Role>
+     */
+    #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'utilisateurs')]
+    private Collection $roles;
 
     #[ORM\Column(type: 'integer', options: ['default' => 0])]
     private int $credits = 0;
 
     /**
      * @var Collection<int, Covoiturage>
+     * Covoiturages où l'utilisateur est PASSAGER.
      */
-    #[ORM\ManyToMany(targetEntity: Covoiturage::class, inversedBy: 'utilisateurs')]
-    private Collection $covoiturage;
+    #[ORM\ManyToMany(targetEntity: Covoiturage::class, inversedBy: 'passagers')] // MODIFIÉ: inversedBy pointe vers 'passagers' dans Covoiturage
+    private Collection $covoituragesPassager;
 
     /**
      * @var Collection<int, Voiture>
      */
-    #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'utilisateur')]
-    private Collection $voiture;
+    #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'utilisateur', orphanRemoval: true)]
+    private Collection $voitures;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    #[Groups(['covoiturage_search_read'])] // AJOUT: Pour les détails du voyage (US 5)
+    private ?array $preferences = [];
+
+    /**
+     * @var Collection<int, Covoiturage>
+     * Covoiturages où l'utilisateur est le CHAUFFEUR.
+     */
+    #[ORM\OneToMany(mappedBy: 'chauffeur', targetEntity: Covoiturage::class)]
+    private Collection $covoituragesConduits;
 
     public function __construct()
     {
         $this->avis = new ArrayCollection();
-        $this->covoiturage = new ArrayCollection();
-        $this->voiture = new ArrayCollection();
+        $this->roles = new ArrayCollection();
+        $this->covoituragesPassager = new ArrayCollection();
+        $this->voitures = new ArrayCollection();
+        $this->preferences = [];
+        $this->covoituragesConduits = new ArrayCollection();
     }
+    
+    /**
+     * NOUVEAU: Calcule et retourne la note moyenne de l'utilisateur.
+     * Respecte l'US 3 pour l'affichage de la note.
+     */
+    #[Groups(['covoiturage_search_read'])]
+    public function getNoteMoyenne(): ?float
+    {
+        if ($this->avis->isEmpty()) {
+            return null; // ou 0 si vous préférez
+        }
+
+        $total = 0;
+        foreach ($this->avis as $avi) {
+            $total += $avi->getNote(); // Assurez-vous d'avoir une méthode getNote() dans l'entité Avis
+        }
+
+        return round($total / $this->avis->count(), 1);
+    }
+
+
+    // --- GETTERS AND SETTERS ---
+    // Le reste des getters et setters est inchangé...
 
     public function getId(): ?int
     {
@@ -121,9 +165,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
     public function getPassword(): string
     {
         return $this->password;
@@ -190,36 +231,43 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    /**
-     * @see UserInterface
-     */
     public function getUserIdentifier(): string
     {
         return (string) $this->email;
     }
 
-    /**
-     * @see UserInterface
-     */
     public function getRoles(): array
     {
         $roles = [];
-        if ($this->role) {
-            $roles[] = $this->role->getLibelle();
+        foreach ($this->roles as $role) {
+            $roles[] = $role->getLibelle();
         }
-
-        if (empty($roles)) {
-            $roles[] = 'ROLE_PASSENGER';
-        }
-
+        $roles[] = 'ROLE_USER'; // Chaque utilisateur a au moins ce rôle
         return array_unique($roles);
     }
+    
+    public function getRolesCollection(): Collection
+    {
+        return $this->roles;
+    }
 
-    /**
-     * @see PasswordAuthenticatedUserInterface
-     */
+    public function addRole(Role $role): static
+    {
+        if (!$this->roles->contains($role)) {
+            $this->roles->add($role);
+        }
+        return $this;
+    }
+
+    public function removeRole(Role $role): static
+    {
+        $this->roles->removeElement($role);
+        return $this;
+    }
+
     public function eraseCredentials(): void
     {
+        // $this->plainPassword = null;
     }
 
     /**
@@ -249,66 +297,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getRole(): ?Role
-    {
-        return $this->role;
-    }
-
-    public function setRole(?Role $role): self
-    {
-        $this->role = $role;
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Covoiturage>
-     */
-    public function getCovoiturage(): Collection
-    {
-        return $this->covoiturage;
-    }
-
-    public function addCovoiturage(Covoiturage $covoiturage): static
-    {
-        if (!$this->covoiturage->contains($covoiturage)) {
-            $this->covoiturage->add($covoiturage);
-        }
-        return $this;
-    }
-
-    public function removeCovoiturage(Covoiturage $covoiturage): static
-    {
-        $this->covoiturage->removeElement($covoiturage);
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Voiture>
-     */
-    public function getVoiture(): Collection
-    {
-        return $this->voiture;
-    }
-
-    public function addVoiture(Voiture $voiture): static
-    {
-        if (!$this->voiture->contains($voiture)) {
-            $this->voiture->add($voiture);
-            $voiture->setUtilisateur($this);
-        }
-        return $this;
-    }
-
-    public function removeVoiture(Voiture $voiture): static
-    {
-        if ($this->voiture->removeElement($voiture)) {
-            if ($voiture->getUtilisateur() === $this) {
-                $voiture->setUtilisateur(null);
-            }
-        }
-        return $this;
-    }
-
     public function getCredits(): int
     {
         return $this->credits;
@@ -317,6 +305,98 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function setCredits(int $credits): static
     {
         $this->credits = $credits;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Covoiturage>
+     */
+    public function getCovoituragesPassager(): Collection
+    {
+        return $this->covoituragesPassager;
+    }
+
+    public function addCovoituragesPassager(Covoiturage $covoiturage): static
+    {
+        if (!$this->covoituragesPassager->contains($covoiturage)) {
+            $this->covoituragesPassager->add($covoiturage);
+            $covoiturage->addPassager($this); // Assure la liaison bidirectionnelle
+        }
+        return $this;
+    }
+
+    public function removeCovoituragesPassager(Covoiturage $covoiturage): static
+    {
+        if ($this->covoituragesPassager->removeElement($covoiturage)) {
+            $covoiturage->removePassager($this); // Assure la liaison bidirectionnelle
+        }
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Voiture>
+     */
+    public function getVoitures(): Collection
+    {
+        return $this->voitures;
+    }
+
+    public function addVoiture(Voiture $voiture): static
+    {
+        if (!$this->voitures->contains($voiture)) {
+            $this->voitures->add($voiture);
+            $voiture->setUtilisateur($this);
+        }
+        return $this;
+    }
+
+    public function removeVoiture(Voiture $voiture): static
+    {
+        if ($this->voitures->removeElement($voiture)) {
+            if ($voiture->getUtilisateur() === $this) {
+                $voiture->setUtilisateur(null);
+            }
+        }
+        return $this;
+    }
+
+    public function getPreferences(): ?array
+    {
+        return $this->preferences;
+    }
+
+    public function setPreferences(?array $preferences): static
+    {
+        $this->preferences = $preferences;
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Covoiturage>
+     */
+    public function getCovoituragesConduits(): Collection
+    {
+        return $this->covoituragesConduits;
+    }
+
+    public function addCovoituragesConduit(Covoiturage $covoituragesConduit): static
+    {
+        if (!$this->covoituragesConduits->contains($covoituragesConduit)) {
+            $this->covoituragesConduits->add($covoituragesConduit);
+            $covoituragesConduit->setChauffeur($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCovoituragesConduit(Covoiturage $covoituragesConduit): static
+    {
+        if ($this->covoituragesConduits->removeElement($covoituragesConduit)) {
+            if ($covoituragesConduit->getChauffeur() === $this) {
+                $covoituragesConduit->setChauffeur(null);
+            }
+        }
+
         return $this;
     }
 }

@@ -18,7 +18,10 @@ class Role
     #[ORM\Column(length: 50)]
     private ?string $libelle = null;
 
-    #[ORM\OneToMany(mappedBy: 'role', targetEntity: Utilisateur::class)]
+    /**
+     * @var Collection<int, Utilisateur>
+     */
+    #[ORM\ManyToMany(targetEntity: Utilisateur::class, mappedBy: 'roles')]
     private Collection $utilisateurs;
 
     public function __construct()
@@ -55,7 +58,6 @@ class Role
     {
         if (!$this->utilisateurs->contains($utilisateur)) {
             $this->utilisateurs->add($utilisateur);
-            $utilisateur->setRole($this);
         }
 
         return $this;
@@ -63,12 +65,7 @@ class Role
 
     public function removeUtilisateur(Utilisateur $utilisateur): static
     {
-        if ($this->utilisateurs->removeElement($utilisateur)) {
-            // set the owning side to null (unless already changed)
-            if ($utilisateur->getRole() === $this) {
-                $utilisateur->setRole(null);
-            }
-        }
+        $this->utilisateurs->removeElement($utilisateur);
 
         return $this;
     }
