@@ -1,58 +1,38 @@
-// public/js/roles_vehicles.js
-
-// Ce script gère les interactions sur la page "Mon Compte" pour les sections :
-// - Rôles (Passager/Chauffeur)
-// - Préférences (Fumeurs, Animaux, Personnalisées)
-// - Véhicules (Ajout, affichage, gestion des plaques)
-
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOMContentLoaded: Script roles_vehicles.js chargé.');
+// On encapsule toute la logique dans une fonction pour la rendre compatible avec Turbo
+const initializeRolesAndVehicles = () => {
+    console.log("roles_vehicles.js: Initialisation du script pour les rôles et véhicules...");
 
     // =====================================================================
-    // FONCTIONS UTILITAIRES (Dupliquées pour l'indépendance des fichiers JS)
+    // FONCTIONS UTILITAIRES
     // =====================================================================
-
     /**
-     * Affiche un message d'alerte (succès/erreur/info) dans un conteneur spécifié.
-     * @param {string|HTMLElement} container L'ID du conteneur ou l'élément HTML où afficher le message.
-     * @param {string} message Le texte du message à afficher.
-     * @param {string} type Le type d'alerte (par exemple, 'success', 'danger', 'info', 'warning').
+     * Affiche un message temporaire dans un conteneur spécifié.
+     * @param {string|HTMLElement} container L'ID du conteneur ou l'élément HTML lui-même.
+     * @param {string} message Le message à afficher.
+     * @param {'success'|'danger'|'warning'|'info'} type Le type d'alerte Bootstrap.
      */
     function displayMessage(container, message, type) {
         const targetContainer = typeof container === 'string' ? document.getElementById(container) : container;
         if (!targetContainer) {
-            console.error(`Conteneur de message "${container}" introuvable.`);
+            console.error(`roles_vehicles.js: Conteneur de message "${container}" introuvable.`);
             return;
         }
-        targetContainer.innerHTML = ''; // Efface les messages précédents
+        // Nettoie les messages précédents pour éviter l'accumulation
+        targetContainer.innerHTML = ''; 
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.setAttribute('role', 'alert');
-        alertDiv.innerHTML = `
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
+        alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
         targetContainer.appendChild(alertDiv);
-
-        // Fait disparaître le message après 5 secondes
+        // Disparition automatique après 5 secondes
         setTimeout(() => {
-            alertDiv.classList.remove('show');
-            alertDiv.classList.add('fade');
-            // Supprime l'élément du DOM après la fin de l'animation de fondu
-            alertDiv.addEventListener('transitionend', () => alertDiv.remove());
+            if (alertDiv) {
+                alertDiv.classList.remove('show');
+                alertDiv.classList.add('fade');
+                // Supprime l'élément après la transition de fade-out
+                alertDiv.addEventListener('transitionend', () => alertDiv.remove());
+            }
         }, 5000);
-    }
-
-    /**
-     * Formate une date au format YYYY-MM-DD.
-     * @param {Date} date L'objet Date à formater.
-     * @returns {string} La date formatée.
-     */
-    function formatDate(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
     }
 
     // =====================================================================
@@ -61,34 +41,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const rolePassenger = document.getElementById('rolePassenger');
     const roleDriver = document.getElementById('roleDriver');
     const driverDetails = document.getElementById('driverDetails');
-    const preferencesCard = document.getElementById('preferencesCard'); // Assurez-vous que cette carte existe dans HTML
     const editRolesBtn = document.getElementById('editRolesBtn');
     const rolesMessageContainer = document.getElementById('rolesMessageContainer');
 
     let userRoles = [];
     const userRolesDataElement = document.getElementById('user-roles-data');
-    if (userRolesDataElement && userRolesDataElement.textContent.trim() !== '') {
-        try {
-            userRoles = JSON.parse(userRolesDataElement.textContent);
-        } catch (e) {
-            console.error("Erreur lors du parsing des rôles de l'utilisateur:", e);
-            displayMessage(rolesMessageContainer, "Erreur au chargement des rôles. Veuillez recharger la page.", 'danger');
+    if (userRolesDataElement) {
+        const rawData = userRolesDataElement.textContent.trim();
+        console.log("roles_vehicles.js: Rôles bruts (user-roles-data):", rawData);
+        if (rawData !== '') {
+            try {
+                userRoles = JSON.parse(rawData);
+                console.log("roles_vehicles.js: Rôles parsés:", userRoles);
+            } catch (e) {
+                console.error("roles_vehicles.js: Erreur parsing des rôles:", e);
+                if (rolesMessageContainer) displayMessage(rolesMessageContainer, "Erreur au chargement des rôles.", 'danger');
+            }
+        } else {
+            console.log("roles_vehicles.js: user-roles-data est vide.");
         }
+    } else {
+        console.warn("roles_vehicles.js: Élément 'user-roles-data' non trouvé.");
     }
 
-    const isPassenger = userRoles.includes('ROLE_PASSENGER');
     const isDriver = userRoles.includes('ROLE_DRIVER');
-
-    if (rolePassenger) rolePassenger.checked = isPassenger;
+    if (rolePassenger) rolePassenger.checked = userRoles.includes('ROLE_PASSENGER');
     if (roleDriver) roleDriver.checked = isDriver;
-
     if (rolePassenger) rolePassenger.disabled = true;
     if (roleDriver) roleDriver.disabled = true;
-
-    // Afficher/masquer la section des véhicules et préférences en fonction du rôle de chauffeur
     if (driverDetails) driverDetails.style.display = isDriver ? 'block' : 'none';
-    // if (preferencesCard) preferencesCard.style.display = isDriver ? 'block' : 'none'; // Les préférences sont toujours visibles, même pour passager
-
     if (editRolesBtn) editRolesBtn.textContent = 'Modifier';
 
     if (editRolesBtn) {
@@ -96,56 +77,36 @@ document.addEventListener('DOMContentLoaded', () => {
             if (editRolesBtn.textContent === 'Modifier') {
                 if (rolePassenger) rolePassenger.disabled = false;
                 if (roleDriver) roleDriver.disabled = false;
-
-                // On ne masque plus les détails du chauffeur lors de la modification des rôles
-                // car les préférences sont maintenant toujours visibles.
-                // if (driverDetails) driverDetails.style.display = 'none'; 
-                // if (preferencesCard) preferencesCard.style.display = 'none';
-
                 editRolesBtn.textContent = 'Appliquer';
             } else {
                 if (!rolePassenger || (!rolePassenger.checked && (!roleDriver || !roleDriver.checked))) {
-                    displayMessage(rolesMessageContainer, "Au moins un rôle (Passager ou Chauffeur) doit être sélectionné.", 'danger');
+                    displayMessage(rolesMessageContainer, "Au moins un rôle doit être sélectionné.", 'danger');
                     return;
                 }
-
                 const data = {
                     isPassengerChecked: rolePassenger ? rolePassenger.checked : false,
                     isDriverChecked: roleDriver ? roleDriver.checked : false
                 };
-
                 try {
                     const response = await fetch('/mon-compte/update-roles', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
+                        headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                         body: JSON.stringify(data)
                     });
-
                     const result = await response.json();
-
                     if (result.success) {
                         displayMessage(rolesMessageContainer, result.message, 'success');
-                        location.reload(); // Recharger pour mettre à jour les sections visibles
+                        setTimeout(() => location.reload(), 1500); 
                     } else {
                         displayMessage(rolesMessageContainer, result.message, 'danger');
-                        if (rolePassenger) rolePassenger.disabled = false;
-                        if (roleDriver) roleDriver.disabled = false;
-                        editRolesBtn.textContent = 'Appliquer';
                     }
                 } catch (error) {
-                    console.error('Erreur lors de la requête AJAX de mise à jour des rôles:', error);
+                    console.error("roles_vehicles.js: Erreur lors de la mise à jour des rôles:", error);
                     displayMessage(rolesMessageContainer, "Une erreur inattendue est survenue lors de la mise à jour des rôles.", 'danger');
-                    if (rolePassenger) rolePassenger.disabled = false;
-                    if (roleDriver) roleDriver.disabled = false;
-                    editRolesBtn.textContent = 'Appliquer';
                 }
             }
         });
     }
-
 
     // =====================================================================
     // GESTION DES VÉHICULES
@@ -157,455 +118,351 @@ document.addEventListener('DOMContentLoaded', () => {
     const vehiclesContainer = document.getElementById('vehiclesContainer');
     const vehicleMessageContainer = document.getElementById('vehicleMessageContainer');
     const brandSelect = document.getElementById('brandSelect');
-    const modelInput = document.getElementById('model');
-    const firstRegDateInput = document.getElementById('firstRegDate');
-    const colorInput = document.getElementById('color');
 
-    const plateInput = document.getElementById('plateInput');
+    // NOUVEAU: Éléments pour le sélecteur de pays et la plaque
     const countryDropdownButton = document.getElementById('countryDropdownButton');
     const countryDropdownMenu = document.getElementById('countryDropdownMenu');
     const selectedFlag = document.getElementById('selectedFlag');
+    const selectedCountryCodeSpan = document.getElementById('selectedCountryCode');
+    const plateInput = document.getElementById('plateInput');
     const hiddenCountryCode = document.getElementById('hiddenCountryCode');
+    const firstRegDateInput = document.getElementById('firstRegDate'); // Pour la validation de date
 
-    const plateFormats = {
-        'FR': { placeholder: 'AA-123-BB', pattern: /^[A-Z]{2}-\d{3}-[A-Z]{2}$/ },
-        'DE': { placeholder: 'AAA-B-1234', pattern: /^[A-Z]{1,3}-[A-Z]{1,2} \d{1,4}$/ },
-        'BE': { placeholder: '1-ABC-123', pattern: /^\d-[A-Z]{3}-\d{3}$/ },
-        'LU': { placeholder: 'AB1234', pattern: /^[A-Z]{1,2}\d{4}$|^\d{5}$/ },
-        'CH': { placeholder: 'ZH 123456', pattern: /^[A-Z]{2} \d{1,6}$/ },
-        'IT': { placeholder: 'AA 123 BB', pattern: /^[A-Z]{2} \d{3} [A-Z]{2}$/ },
-        'ES': { placeholder: '1234 ABC', pattern: /^\d{4} [A-Z]{3}$/ }
-    };
-
-    let userVehiclesData = []; // Déclaré ici pour être accessible dans ce fichier JS
-
-    function updatePlateInputDisplay(countryCode, flagSrc, placeholder) {
-        if (!plateInput || !selectedFlag || !hiddenCountryCode) return;
-
-        selectedFlag.src = flagSrc;
-        selectedFlag.classList.remove('d-none');
-        plateInput.placeholder = placeholder;
-        plateInput.disabled = false;
-        plateInput.value = '';
-        hiddenCountryCode.value = countryCode;
-        plateInput.focus();
-    }
-
-    function formatPlateInput(e) {
-        const input = e.target;
-        let value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-
-        const countryCode = hiddenCountryCode ? hiddenCountryCode.value : 'FR';
-        let formattedValue = value;
-
-        switch (countryCode) {
-            case 'FR':
-                if (value.length > 2) formattedValue = value.substring(0, 2) + '-' + value.substring(2);
-                if (value.length > 5) formattedValue = formattedValue.substring(0, 6) + '-' + formattedValue.substring(6);
-                formattedValue = formattedValue.substring(0, 9);
-                break;
-            case 'DE':
-                let cityCode = '';
-                let distLetters = '';
-                let numbers = '';
-                let tempValue = value;
-
-                const cityMatch = tempValue.match(/^([A-Z]{1,3})/);
-                if (cityMatch) {
-                    cityCode = cityMatch[1];
-                    tempValue = tempValue.substring(cityCode.length);
-                }
-
-                const distMatch = tempValue.match(/^([A-Z]{1,2})/);
-                if (distMatch) {
-                    distLetters = distMatch[1];
-                    tempValue = tempValue.substring(distLetters.length);
-                }
-
-                numbers = tempValue.match(/^(\d{1,4})/)?.[1] || '';
-
-                formattedValue = cityCode;
-                if (distLetters || numbers) {
-                    formattedValue += '-';
-                }
-                formattedValue += distLetters;
-                if (numbers) {
-                    formattedValue += ' ';
-                }
-                formattedValue += numbers;
-
-                formattedValue = formattedValue.substring(0, 11);
-                break;
-            case 'BE':
-                if (value.length > 1) formattedValue = value.substring(0, 1) + '-' + value.substring(1);
-                if (value.length > 5) formattedValue = formattedValue.substring(0, 6) + '-' + formattedValue.substring(6);
-                formattedValue = formattedValue.substring(0, 10);
-                break;
-            case 'LU':
-                formattedValue = value.substring(0, 6);
-                break;
-            case 'CH':
-                if (value.length > 2) formattedValue = value.substring(0, 2) + ' ' + value.substring(2);
-                formattedValue = formattedValue.substring(0, 9);
-                break;
-            case 'IT':
-                if (value.length > 2) formattedValue = value.substring(0, 2) + ' ' + value.substring(2);
-                if (value.length > 6) formattedValue = formattedValue.substring(0, 6) + ' ' + formattedValue.substring(6);
-                formattedValue = formattedValue.substring(0, 10);
-                break;
-            case 'ES':
-                if (value.length > 4) formattedValue = value.substring(0, 4) + ' ' + value.substring(4);
-                formattedValue = formattedValue.substring(0, 8);
-                break;
-            default:
-                formattedValue = value;
-                break;
-        }
-        input.value = formattedValue;
-    }
-
-    const userVehiclesDataElement = document.getElementById('user-vehicles-data');
-    if (userVehiclesDataElement && userVehiclesDataElement.textContent.trim() !== '') {
-        try {
-            userVehiclesData = JSON.parse(userVehiclesDataElement.textContent);
-        } catch (e) {
-            console.error("Erreur lors du parsing des données véhicules:", e);
-            displayMessage(vehicleMessageContainer, "Erreur au chargement des véhicules. Veuillez recharger la page.", 'danger');
-            userVehiclesData = [];
-        }
-    }
-
-    /**
-     * Affiche la liste des véhicules de l'utilisateur.
-     * @param {Array<Object>} vehicles Tableau d'objets véhicule.
-     */
-    function displayVehicles(vehicles) {
-        if (vehiclesContainer) {
-            vehiclesContainer.innerHTML = '';
-            if (vehicles.length === 0) {
-                vehiclesContainer.innerHTML = '<p class="text-muted">Aucun véhicule enregistré pour le moment.</p>';
-                return;
-            }
-
-            const energieMap = {
-                'electric': 'Électrique',
-                'hybrid': 'Hybride',
-                'thermal': 'Thermique'
-            };
-
-            vehicles.forEach(vehicle => {
-                const colDiv = document.createElement('div');
-                colDiv.classList.add('col-12', 'mb-3');
-
-                const vehicleDiv = document.createElement('div');
-                vehicleDiv.classList.add('d-flex', 'align-items-center', 'px-3', 'py-2', 'rounded', 'border', 'h-100', 'vehicle-card-responsive-width');
-
-                const carIcon = document.createElement('i');
-                carIcon.className = `bi bi-car-front-fill fs-5 me-2`;
-                carIcon.style.color = vehicle.couleur || 'currentColor';
-
-                const mainInfoSpan = document.createElement('span');
-                mainInfoSpan.classList.add('mb-0', 'flex-grow-1', 'text-sm');
-                
-                const energieText = energieMap[vehicle.energie] || vehicle.energie;
-
-                const marqueLibelle = vehicle.marque && vehicle.marque.libelle ? vehicle.marque.libelle : 'Marque inconnue';
-                const modeleText = vehicle.modele || 'Modèle inconnu';
-                
-                const countryCodeForFlag = vehicle.paysImmatriculation ? vehicle.paysImmatriculation.toLowerCase() : '';
-                const countryFlag = countryCodeForFlag ? `<img src="https://flagcdn.com/w20/${countryCodeForFlag}.png" alt="${vehicle.paysImmatriculation}" class="flag-icon me-1">` : '';
-                const immatriculationText = vehicle.immatriculation || 'N/A';
-                
-                mainInfoSpan.innerHTML = `${countryFlag} ${energieText} - ${immatriculationText} - ${marqueLibelle} ${modeleText}`;
-
-                const seatsSpan = document.createElement('span');
-                seatsSpan.classList.add('fw-bold', 'ms-auto', 'text-sm');
-                
-                let leafIconHtml = '';
-                if (vehicle.energie === 'electric' || vehicle.energie === 'hybrid') {
-                    leafIconHtml = `<i class="bi bi-leaf-fill text-primary me-1"></i>`;
-                }
-                seatsSpan.innerHTML = `${leafIconHtml}${vehicle.nombreDePlaces} places`;
-
-                vehicleDiv.appendChild(carIcon);
-                vehicleDiv.appendChild(mainInfoSpan);
-                vehicleDiv.appendChild(seatsSpan);
-
-                colDiv.appendChild(vehicleDiv);
-                vehiclesContainer.appendChild(colDiv);
-            });
-        }
-    }
-
-    /**
-     * Charge les marques de véhicules depuis l'API et remplit le select.
-     */
-    async function loadBrandsIntoSelect() {
-        if (!brandSelect) return;
-        try {
-            const response = await fetch('/api/marques');
-            if (!response.ok) {
-                throw new Error('Erreur lors du chargement des marques.');
-            }
-            let brands = await response.json();
-
-            brands.sort((a, b) => a.libelle.localeCompare(b.libelle));
-
-            brandSelect.innerHTML = '<option value="">Sélectionnez une marque</option>';
-            brands.forEach(brand => {
-                const option = document.createElement('option');
-                option.value = brand.id;
-                option.textContent = brand.libelle;
-                brandSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Erreur lors du chargement des marques:', error);
-            displayMessage(vehicleMessageContainer, 'Impossible de charger les marques de véhicules.', 'danger');
-        }
-    }
-
-    // Initialisation au chargement de la page: Définit la France comme défaut
-    const defaultCountryCode = 'FR';
-    const defaultFlagSrc = 'https://flagcdn.com/w20/fr.png';
-    const defaultPlaceholder = plateFormats[defaultCountryCode].placeholder;
-    updatePlateInputDisplay(defaultCountryCode, defaultFlagSrc, defaultPlaceholder);
-
-    // Appels initiaux pour les véhicules
-    displayVehicles(userVehiclesData);
-    loadBrandsIntoSelect();
-
-    const today = new Date();
-    const todayString = formatDate(today);
+    // Initialisation de la date maximale (aujourd'hui) pour le champ de date d'immatriculation
     if (firstRegDateInput) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const todayString = `${year}-${month}-${day}`;
         firstRegDateInput.setAttribute('max', todayString);
     }
 
+    // Fonction de validation de la date de première immatriculation
     function validateFirstRegDate(dateString) {
         if (!dateString) {
-            return 'La date de première immatriculation est obligatoire.';
+            return "La date de première immatriculation est requise.";
         }
-
         const selectedDate = new Date(dateString);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Comparer juste la date, pas l'heure
+        
         const minDate = new Date();
-        minDate.setFullYear(minDate.getFullYear() - 100);
-
-        selectedDate.setHours(0, 0, 0, 0);
-        today.setHours(0, 0, 0, 0);
+        minDate.setFullYear(today.getFullYear() - 100); // 100 ans avant aujourd'hui
         minDate.setHours(0, 0, 0, 0);
 
         if (selectedDate > today) {
-            return 'La date de première immatriculation ne peut pas être dans le futur.';
+            return "La date de première immatriculation ne peut pas être dans le futur.";
         }
         if (selectedDate < minDate) {
-            return 'La date de première immatriculation ne peut pas être antérieure à 100 ans.';
+            return "La date de première immatriculation ne peut pas être antérieure à 100 ans.";
         }
-        return null;
+        return null; // Date valide
     }
 
+    // Écouteur pour la validation en temps réel de la date
     if (firstRegDateInput) {
         firstRegDateInput.addEventListener('change', () => {
             const errorMessage = validateFirstRegDate(firstRegDateInput.value);
             if (errorMessage) {
                 displayMessage(vehicleMessageContainer, errorMessage, 'danger');
             } else {
-                if (vehicleMessageContainer.querySelector('.alert-danger')) {
-                    vehicleMessageContainer.innerHTML = '';
-                }
+                // Effacer le message d'erreur si la date devient valide
+                if (vehicleMessageContainer) vehicleMessageContainer.innerHTML = ''; 
             }
         });
     }
 
-    if (plateInput) {
-        plateInput.addEventListener('input', formatPlateInput);
+    let userVehiclesData = [];
+    const userVehiclesDataElementVehicles = document.getElementById('user-vehicles-data');
+    if (userVehiclesDataElementVehicles) {
+        const rawData = userVehiclesDataElementVehicles.textContent.trim();
+        console.log("roles_vehicles.js: Véhicules bruts (user-vehicles-data):", rawData);
+        if (rawData !== '') {
+            try {
+                userVehiclesData = JSON.parse(rawData);
+                console.log("roles_vehicles.js: Véhicules parsés:", userVehiclesData);
+            } catch (e) {
+                console.error("roles_vehicles.js: Erreur parsing des véhicules:", e);
+                if (vehicleMessageContainer) displayMessage(vehicleMessageContainer, "Erreur au chargement des véhicules.", 'danger');
+            }
+        } else {
+            console.log("roles_vehicles.js: user-vehicles-data est vide.");
+            if (vehiclesContainer) vehiclesContainer.innerHTML = '<p class="text-muted">Aucun véhicule enregistré.</p>';
+        }
+    } else {
+        console.warn("roles_vehicles.js: Élément 'user-vehicles-data' non trouvé.");
+        if (vehiclesContainer) vehiclesContainer.innerHTML = '<p class="text-muted">Problème de chargement des données des véhicules.</p>';
     }
 
+    /**
+     * Affiche les véhicules dans le conteneur.
+     * @param {Array} vehicles Tableau d'objets véhicule.
+     */
+    function displayVehicles(vehicles) {
+        console.log("roles_vehicles.js: Affichage des véhicules. Nombre:", vehicles ? vehicles.length : 0);
+        if (!vehiclesContainer) return;
+        vehiclesContainer.innerHTML = ''; // Vide le conteneur avant d'ajouter les véhicules
+        if (!vehicles || vehicles.length === 0) {
+            vehiclesContainer.innerHTML = '<p class="text-muted">Aucun véhicule enregistré.</p>';
+            return;
+        }
+        const energieMap = { 'electric': 'Électrique', 'hybrid': 'Hybride', 'thermal': 'Thermique' };
+        vehicles.forEach(vehicle => {
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-12 mb-3'; // Chaque véhicule prend toute la largeur
+            const vehicleDiv = document.createElement('div');
+            vehicleDiv.className = 'd-flex align-items-center px-3 py-2 rounded border h-100';
+            
+            const carIcon = document.createElement('i');
+            carIcon.className = `bi bi-car-front-fill fs-5 me-2`;
+            carIcon.style.color = vehicle.couleur || 'currentColor'; // Utilise la couleur du véhicule
+
+            const mainInfoSpan = document.createElement('span');
+            mainInfoSpan.className = 'mb-0 flex-grow-1 text-sm';
+            
+            const energieText = energieMap[vehicle.energie] || vehicle.energie;
+            // CORRECTION ICI : Utilise vehicle.marque.libelle au lieu de vehicle.marque.nom
+            const marqueLibelle = vehicle.marque && vehicle.marque.libelle ? vehicle.marque.libelle : 'N/A';
+            const modeleText = vehicle.modele || 'N/A';
+            
+            const countryCodeForFlag = vehicle.paysImmatriculation ? vehicle.paysImmatriculation.toLowerCase() : '';
+            const countryFlag = countryCodeForFlag ? `<img src="https://flagcdn.com/w20/${countryCodeForFlag}.png" alt="${vehicle.paysImmatriculation}" class="flag-icon me-1">` : '';
+            const immatriculationText = vehicle.immatriculation || 'N/A';
+
+            // NOUVEAU LOG POUR DÉBOGUER LE "N/A"
+            console.log(`roles_vehicles.js: Véhicule ${vehicle.id} - Marque affichée: "${marqueLibelle}" (Modele: "${modeleText}")`);
+
+            mainInfoSpan.innerHTML = `${countryFlag} ${energieText} - ${immatriculationText} - ${marqueLibelle} ${modeleText}`;
+            
+            const seatsSpan = document.createElement('span');
+            seatsSpan.className = 'fw-bold ms-auto text-sm';
+            let leafIconHtml = '';
+            if (vehicle.energie === 'electric' || vehicle.energie === 'hybrid') {
+                leafIconHtml = `<i class="bi bi-leaf-fill text-primary me-1"></i>`;
+            }
+            seatsSpan.innerHTML = `${leafIconHtml}${vehicle.nombreDePlaces} places`;
+
+            vehicleDiv.append(carIcon, mainInfoSpan, seatsSpan);
+            colDiv.appendChild(vehicleDiv);
+            vehiclesContainer.appendChild(colDiv);
+        });
+    }
+    
+    /**
+     * Charge les marques depuis l'API et remplit le sélecteur.
+     */
+    async function loadAndPopulateBrands() {
+        console.log("roles_vehicles.js: Chargement et peuplement des marques...");
+        if (!brandSelect) {
+            console.warn("roles_vehicles.js: Élément 'brandSelect' non trouvé pour charger les marques.");
+            return;
+        }
+        try {
+            const response = await fetch('/api/marques');
+            if (!response.ok) {
+                throw new Error(`Erreur HTTP ${response.status}`);
+            }
+            const marques = await response.json();
+            console.log("roles_vehicles.js: Marques chargées:", marques);
+            brandSelect.innerHTML = '<option selected disabled value="">Choisir une marque</option>';
+            marques.forEach(marque => {
+                const option = document.createElement('option');
+                option.value = marque.id;
+                option.textContent = marque.nom; // 'nom' est la clé pour le libellé de la marque
+                brandSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error("roles_vehicles.js: Échec du chargement des marques:", error);
+            brandSelect.innerHTML = '<option selected disabled value="">Erreur de chargement</option>';
+            if (vehicleMessageContainer) displayMessage(vehicleMessageContainer, 'Impossible de charger la liste des marques.', 'danger');
+        }
+    }
+
+    // NOUVEAU: Logique pour le sélecteur de pays et le masque de plaque
+    const countryPlateMasks = {
+        'FR': 'AA-999-AA',
+        'DE': 'A-9999-AA', 
+        'BE': '9-AAA-999',
+        'LU': 'AA-9999',
+        'CH': 'AA-999999',
+        'IT': 'AA999AA',
+        'ES': '9999-AAA',
+        // Ajoutez d'autres pays et masques si nécessaire
+    };
+
+    /**
+     * Met à jour le drapeau et le masque de la plaque d'immatriculation.
+     * @param {string} countryCode Le code pays (ex: 'FR').
+     * @param {string} flagSrc L'URL de l'image du drapeau.
+     */
+    function updateCountrySelection(countryCode, flagSrc) {
+        console.log(`roles_vehicles.js: Mise à jour du pays sélectionné: ${countryCode}`);
+        if (selectedFlag) selectedFlag.src = flagSrc;
+        if (selectedCountryCodeSpan) selectedCountryCodeSpan.textContent = countryCode;
+        if (hiddenCountryCode) hiddenCountryCode.value = countryCode; // Met à jour l'input caché
+        
+        // Applique le masque de la plaque d'immatriculation
+        if (plateInput) {
+            plateInput.value = ''; // Réinitialise la plaque
+            const mask = countryPlateMasks[countryCode] || ''; // Récupère le masque
+            plateInput.placeholder = mask; // Affiche le masque comme placeholder
+            plateInput.dataset.mask = mask; // Stocke le masque dans un data attribute
+            
+            // Supprime l'ancien écouteur si existant
+            if (plateInput._maskListener) {
+                plateInput.removeEventListener('input', plateInput._maskListener);
+            }
+
+            // Ajoute un nouvel écouteur pour le masquage
+            const applyMask = (event) => {
+                let value = event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); // Nettoie l'entrée
+                let maskedValue = '';
+                let maskIndex = 0;
+                let valueIndex = 0;
+
+                while (maskIndex < mask.length && valueIndex < value.length) {
+                    if (mask[maskIndex] === 'A') { // Lettre
+                        if (/[A-Z]/.test(value[valueIndex])) {
+                            maskedValue += value[valueIndex];
+                            valueIndex++;
+                        }
+                        maskIndex++;
+                    } else if (mask[maskIndex] === '9') { // Chiffre
+                        if (/[0-9]/.test(value[valueIndex])) {
+                            maskedValue += value[valueIndex];
+                            valueIndex++;
+                        }
+                        maskIndex++;
+                    } else if (mask[maskIndex] === '-') { // Trait d'union
+                        maskedValue += '-';
+                        maskIndex++;
+                        if (value[valueIndex] === '-') { // Si l'utilisateur tape le trait d'union
+                            valueIndex++;
+                        }
+                    } else { // Caractère fixe dans le masque (ex: espace)
+                        maskedValue += mask[maskIndex];
+                        maskIndex++;
+                    }
+                }
+                event.target.value = maskedValue;
+            };
+            plateInput.addEventListener('input', applyMask);
+            plateInput._maskListener = applyMask; // Stocke la référence de l'écouteur
+        }
+    }
+
+    // Initialisation du sélecteur de pays au chargement
     if (countryDropdownMenu) {
-        countryDropdownMenu.addEventListener('click', (e) => {
-            e.preventDefault();
-            const target = e.target.closest('.dropdown-item');
-            if (target) {
-                const countryCode = target.dataset.countryCode;
-                const flagSrc = target.dataset.flagSrc;
-                const format = plateFormats[countryCode];
-                if (format) {
-                    updatePlateInputDisplay(countryCode, flagSrc, format.placeholder);
-                }
-            }
+        countryDropdownMenu.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const countryCode = item.dataset.countryCode;
+                const flagSrc = item.dataset.flagSrc;
+                updateCountrySelection(countryCode, flagSrc);
+            });
         });
+        // Initialiser avec la France par défaut si rien n'est sélectionné
+        updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png');
     }
 
-    if (addVehicleBtn && vehicleFormContainer) {
+    // Appel initial pour afficher les véhicules existants
+    displayVehicles(userVehiclesData);
+    // Appel pour charger et peupler les marques dans le formulaire d'ajout
+    loadAndPopulateBrands();
+
+    if (addVehicleBtn) {
         addVehicleBtn.addEventListener('click', () => {
-            vehicleFormContainer.classList.remove('d-none');
+            if (vehicleFormContainer) vehicleFormContainer.classList.remove('d-none');
             addVehicleBtn.classList.add('d-none');
             if (vehicleForm) vehicleForm.reset();
-            if (brandSelect) brandSelect.value = "";
-            if (modelInput) modelInput.value = "";
-            if (colorInput) colorInput.value = "";
-            updatePlateInputDisplay(defaultCountryCode, defaultFlagSrc, defaultPlaceholder);
-            if (firstRegDateInput) {
-                firstRegDateInput.setAttribute('max', todayString);
-                firstRegDateInput.value = '';
-            }
+            // Réinitialiser la sélection de pays et la date lors de l'ouverture du formulaire
+            updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png');
+            if (firstRegDateInput) firstRegDateInput.value = '';
+            // Effacer les messages d'erreur précédents
+            if (vehicleMessageContainer) vehicleMessageContainer.innerHTML = '';
         });
     }
 
-    if (cancelVehicleBtn && vehicleFormContainer && addVehicleBtn) {
+    if (cancelVehicleBtn) {
         cancelVehicleBtn.addEventListener('click', () => {
-            if (vehicleForm) vehicleForm.reset();
-            vehicleFormContainer.classList.add('d-none');
-            addVehicleBtn.classList.remove('d-none');
-            if (brandSelect) brandSelect.value = "";
-            if (modelInput) modelInput.value = "";
-            if (colorInput) colorInput.value = "";
-            updatePlateInputDisplay(defaultCountryCode, defaultFlagSrc, defaultPlaceholder);
-            if (firstRegDateInput) {
-                firstRegDateInput.setAttribute('max', todayString);
-                firstRegDateInput.value = '';
-            }
+            if (vehicleFormContainer) vehicleFormContainer.classList.add('d-none');
+            if (addVehicleBtn) addVehicleBtn.classList.remove('d-none');
+            // Effacer les messages d'erreur lors de l'annulation
+            if (vehicleMessageContainer) vehicleMessageContainer.innerHTML = '';
         });
     }
 
-    if (vehicleForm && brandSelect && hiddenCountryCode && plateInput && firstRegDateInput && modelInput && colorInput) {
+    if (vehicleForm) {
         vehicleForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const formData = new FormData(vehicleForm);
+            const data = Object.fromEntries(formData.entries());
+            
+            // Récupérer la valeur de l'input caché pour le pays
+            data.paysImmatriculation = hiddenCountryCode ? hiddenCountryCode.value : 'FR';
+            // Récupérer la date de première immatriculation
+            data.datePremiereImmatriculation = firstRegDateInput ? firstRegDateInput.value : '';
 
-            const paysImmatriculation = hiddenCountryCode.value;
-            const immatriculation = plateInput.value.trim();
-            const datePremiereImmatriculation = firstRegDateInput.value;
-            const marqueId = brandSelect.value;
-            const modele = modelInput.value.trim();
-            const couleur = colorInput.value;
-            const nombreDePlaces = document.getElementById('seats').value;
-            const energie = vehicleForm.engineType.value;
-
-            if (!paysImmatriculation) {
-                displayMessage(vehicleMessageContainer, 'Veuillez sélectionner le pays d\'immatriculation.', 'danger');
-                return;
-            }
-            if (!immatriculation) {
-                displayMessage(vehicleMessageContainer, 'Veuillez saisir la plaque d\'immatriculation.', 'danger');
-                return;
-            }
-            const format = plateFormats[paysImmatriculation];
-            if (format && !format.pattern.test(immatriculation)) {
-                displayMessage(vehicleMessageContainer, `Le format de la plaque pour ${paysImmatriculation} est incorrect. Attendu: ${format.placeholder}`, 'danger');
+            // Validation côté client pour la date
+            const dateError = validateFirstRegDate(data.datePremiereImmatriculation);
+            if (dateError) {
+                displayMessage(vehicleMessageContainer, dateError, 'danger');
                 return;
             }
 
-            const dateErrorMessage = validateFirstRegDate(datePremiereImmatriculation);
-            if (dateErrorMessage) {
-                displayMessage(vehicleMessageContainer, dateErrorMessage, 'danger');
-                return;
+            // Validations des champs obligatoires
+            if (!data.immatriculation) {
+                return displayMessage(vehicleMessageContainer, 'Veuillez saisir une plaque d\'immatriculation.', 'danger');
+            }
+            if (!data.marqueId) {
+                return displayMessage(vehicleMessageContainer, 'Veuillez sélectionner une marque.', 'danger');
+            }
+            if (!data.modele) {
+                return displayMessage(vehicleMessageContainer, 'Veuillez saisir un modèle.', 'danger');
+            }
+            if (!data.couleur) {
+                return displayMessage(vehicleMessageContainer, 'Veuillez sélectionner une couleur.', 'danger');
+            }
+            if (!data.nombreDePlaces || parseInt(data.nombreDePlaces) < 1) {
+                return displayMessage(vehicleMessageContainer, 'Veuillez saisir un nombre de places valide (minimum 1).', 'danger');
+            }
+            if (!data.energie) {
+                return displayMessage(vehicleMessageContainer, 'Veuillez sélectionner un type d\'énergie.', 'danger');
             }
 
-            if (!marqueId) {
-                displayMessage(vehicleMessageContainer, 'Veuillez sélectionner une marque de véhicule.', 'danger');
-                return;
-            }
-            if (!modele) {
-                displayMessage(vehicleMessageContainer, 'Veuillez saisir un modèle de véhicule.', 'danger');
-                return;
-            }
-
-            if (!couleur) {
-                displayMessage(vehicleMessageContainer, 'Veuillez sélectionner une couleur.', 'danger');
-                return;
-            }
-
-            if (!nombreDePlaces || !energie) {
-                displayMessage(vehicleMessageContainer, 'Veuillez remplir tous les champs obligatoires du véhicule.', 'danger');
-                return;
-            }
-
-            try {
-                const checkPlateResponse = await fetch('/api/check-plate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({ immatriculation: immatriculation })
-                });
-
-                const checkPlateResult = await checkPlateResponse.json();
-
-                if (!checkPlateResult.isUnique) {
-                    if (checkPlateResult.ownedByCurrentUser) {
-                        displayMessage(vehicleMessageContainer, 'Vous avez déjà enregistré un véhicule avec cette plaque d\'immatriculation.', 'warning');
-                    } else {
-                        displayMessage(vehicleMessageContainer, 'Cette plaque d\'immatriculation est déjà utilisée par un autre utilisateur.', 'danger');
-                    }
-                    return;
-                }
-            } catch (error) {
-                console.error('Erreur lors de la vérification de la plaque:', error);
-                displayMessage(vehicleMessageContainer, "Une erreur inattendue est survenue lors de la vérification de la plaque.", 'danger');
-                return;
-            }
-
-            const data = {
-                paysImmatriculation: paysImmatriculation,
-                immatriculation: immatriculation,
-                datePremiereImmatriculation: datePremiereImmatriculation,
-                marqueId: parseInt(marqueId),
-                modele: modele,
-                couleur: couleur,
-                nombreDePlaces: parseInt(nombreDePlaces),
-                energie: energie
-            };
 
             try {
                 const response = await fetch('/mon-compte/add-vehicle', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(data)
                 });
-
                 const result = await response.json();
-
                 if (result.success) {
                     displayMessage(vehicleMessageContainer, result.message, 'success');
                     if (vehicleForm) vehicleForm.reset();
                     if (vehicleFormContainer) vehicleFormContainer.classList.add('d-none');
                     if (addVehicleBtn) addVehicleBtn.classList.remove('d-none');
-                    if (brandSelect) brandSelect.value = "";
-                    if (modelInput) modelInput.value = "";
-                    if (colorInput) colorInput.value = "";
-                    updatePlateInputDisplay(defaultCountryCode, defaultFlagSrc, defaultPlaceholder);
-                    if (firstRegDateInput) {
-                        firstRegDateInput.setAttribute('max', todayString);
-                        firstRegDateInput.value = '';
+                    
+                    // Recharger la liste des véhicules après un ajout réussi
+                    const updatedVehiclesResponse = await fetch('/api/user-vehicles');
+                    if (updatedVehiclesResponse.ok) {
+                        const updatedVehicles = await updatedVehiclesResponse.json();
+                        displayVehicles(updatedVehicles);
+                    } else {
+                        console.error("roles_vehicles.js: Erreur lors du rechargement des véhicules après ajout.");
+                        displayMessage(vehicleMessageContainer, "Véhicule ajouté, mais erreur lors du rafraîchissement de la liste.", 'warning');
                     }
-
-                    // Recharger les véhicules après l'ajout pour mettre à jour la liste
-                    await fetch('/api/user-vehicles')
-                        .then(res => res.json())
-                        .then(updatedVehicles => {
-                            userVehiclesData = updatedVehicles;
-                            displayVehicles(userVehiclesData);
-                            // Si saisir_voyage.js dépend de cette liste, il faudra un mécanisme de mise à jour
-                            // ou s'assurer qu'il charge ses propres données au besoin.
-                            // Pour l'instant, on suppose qu'il rechargera au besoin ou que le rechargement de page suffira.
-                        })
-                        .catch(err => {
-                            console.error('Erreur lors du rechargement des véhicules après ajout:', err);
-                            displayMessage(vehicleMessageContainer, 'Véhicule ajouté, mais erreur lors de la mise à jour de la liste.', 'warning');
-                        });
-
                 } else {
                     displayMessage(vehicleMessageContainer, result.message, 'danger');
                 }
             } catch (error) {
-                console.error('Erreur lors de l\'envoi du véhicule:', error);
-                displayMessage(vehicleMessageContainer, "Une erreur inattendue est survenue lors de l'ajout du véhicule.", 'danger');
+                console.error("roles_vehicles.js: Erreur lors de l'ajout du véhicule:", error);
+                displayMessage(vehicleMessageContainer, "Une erreur client est survenue lors de l'ajout du véhicule.", 'danger');
             }
         });
     }
-
 
     // =====================================================================
     // GESTION DES PRÉFÉRENCES
@@ -624,19 +481,29 @@ document.addEventListener('DOMContentLoaded', () => {
         personnalisees: []
     };
     const userPreferencesDataElement = document.getElementById('user-preferences-data');
-    if (userPreferencesDataElement && userPreferencesDataElement.textContent.trim() !== '') {
-        try {
-            const parsedData = JSON.parse(userPreferencesDataElement.textContent);
-            userPreferences = { ...userPreferences, ...parsedData };
-        } catch (e) {
-            console.error("Erreur lors du parsing des préférences de l'utilisateur:", e);
-            displayMessage(preferencesMessageContainer, "Erreur au chargement des préférences. Veuillez recharger la page.", 'danger');
+    if (userPreferencesDataElement) {
+        const rawData = userPreferencesDataElement.textContent.trim();
+        console.log("roles_vehicles.js: Préférences brutes (user-preferences-data):", rawData);
+        if (rawData !== '') {
+            try {
+                const parsedData = JSON.parse(rawData);
+                userPreferences = Object.assign(userPreferences, parsedData); 
+                console.log("roles_vehicles.js: Préférences parsées:", userPreferences);
+            } catch (e) {
+                console.error("roles_vehicles.js: Erreur lors du parsing des préférences de l'utilisateur:", e);
+                if(preferencesMessageContainer) displayMessage(preferencesMessageContainer, "Erreur au chargement des préférences.", 'danger');
+            }
+        } else {
+            console.log("roles_vehicles.js: user-preferences-data est vide.");
         }
+    } else {
+        console.warn("roles_vehicles.js: Élément 'user-preferences-data' non trouvé.");
     }
 
     if (prefSmoker) prefSmoker.checked = userPreferences.fumeurs_acceptes;
     if (prefAnimal) prefAnimal.checked = userPreferences.animaux_acceptes;
 
+    // Affiche les préférences personnalisées initiales
     if (customPrefList && userPreferences.personnalisees && Array.isArray(userPreferences.personnalisees)) {
         userPreferences.personnalisees.forEach(prefText => {
             const newTag = createPrefTag(prefText);
@@ -645,38 +512,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Crée un tag de préférence visuel avec un bouton de suppression.
+     * Crée un tag de préférence personnalisée.
      * @param {string} text Le texte de la préférence.
-     * @returns {HTMLElement} L'élément div représentant le tag.
+     * @returns {HTMLElement} L'élément div du tag.
      */
     function createPrefTag(text) {
         const tag = document.createElement('div');
         tag.className = 'badge bg-dark d-flex align-items-center gap-2';
-
         const span = document.createElement('span');
         span.textContent = text;
-
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'btn-close btn-close-white btn-sm';
         btn.setAttribute('aria-label', 'Supprimer la préférence');
         btn.addEventListener('click', () => {
             if (customPrefList) customPrefList.removeChild(tag);
+            displayMessage(preferencesMessageContainer, 'Préférence supprimée, n\'oubliez pas d\'enregistrer !', 'info');
         });
-
         tag.appendChild(span);
         tag.appendChild(btn);
         return tag;
     }
 
-    if (addCustomPrefBtn && customPrefInput && customPrefList) {
+    if (addCustomPrefBtn) {
         addCustomPrefBtn.addEventListener('click', () => {
             const value = customPrefInput.value.trim();
             if (value === '') {
-                displayMessage(preferencesMessageContainer, 'Veuillez saisir une préférence personnalisée.', 'warning');
+                displayMessage(preferencesMessageContainer, 'Veuillez saisir une préférence.', 'warning');
                 return;
             }
-
+            // Vérifie si la préférence existe déjà (case-insensitive)
             const existing = Array.from(customPrefList.children).some(
                 (child) => child.firstChild && child.firstChild.textContent.toLowerCase() === value.toLowerCase()
             );
@@ -684,10 +549,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayMessage(preferencesMessageContainer, 'Cette préférence est déjà ajoutée.', 'warning');
                 return;
             }
-
             const newTag = createPrefTag(value);
             customPrefList.appendChild(newTag);
-            customPrefInput.value = '';
+            customPrefInput.value = ''; // Vide l'input après ajout
             displayMessage(preferencesMessageContainer, 'Préférence ajoutée, n\'oubliez pas d\'enregistrer !', 'info');
         });
     }
@@ -695,14 +559,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-
+            // S'assure que l'événement est déclenché par le bouton "Enregistrer les préférences"
             if (e.submitter && e.submitter.id === 'savePreferencesBtn') {
                 const preferencesToSave = {
                     fumeursAcceptes: prefSmoker ? prefSmoker.checked : false,
                     animauxAcceptes: prefAnimal ? prefAnimal.checked : false,
                     preferencesPersonnalisees: []
                 };
-
+                // Récupère toutes les préférences personnalisées affichées
                 if (customPrefList) {
                     Array.from(customPrefList.children).forEach(tag => {
                         const textSpan = tag.querySelector('span');
@@ -711,30 +575,35 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 }
-
                 try {
                     const response = await fetch('/mon-compte/update-preferences', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest' 
                         },
                         body: JSON.stringify(preferencesToSave)
                     });
-
                     const result = await response.json();
-
                     if (result.success) {
                         displayMessage(preferencesMessageContainer, result.message, 'success');
-                        userPreferences = preferencesToSave;
+                        userPreferences = preferencesToSave; 
                     } else {
                         displayMessage(preferencesMessageContainer, result.message, 'danger');
                     }
                 } catch (error) {
-                    console.error('Erreur lors de l\'envoi des préférences:', error);
+                    console.error('roles_vehicles.js: Erreur lors de la sauvegarde des préférences:', error);
                     displayMessage(preferencesMessageContainer, "Une erreur inattendue est survenue lors de la sauvegarde des préférences.", 'danger');
                 }
             }
         });
     }
-}); // Fin de DOMContentLoaded
+};
+
+// On écoute à la fois le chargement initial (pour la première visite) et les navigations Turbo (pour les navigations SPA)
+// Si Turbo n'est pas utilisé, seul DOMContentLoaded est nécessaire.
+document.addEventListener('DOMContentLoaded', initializeRolesAndVehicles);
+document.addEventListener('turbo:load', initializeRolesAndVehicles);
+
+// Message d'exécution immédiate pour le débogage initial
+console.log("roles_vehicles.js: Fichier JavaScript chargé et exécuté au niveau racine.");

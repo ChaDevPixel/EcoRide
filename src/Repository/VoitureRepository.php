@@ -16,6 +16,17 @@ class VoitureRepository extends ServiceEntityRepository
         parent::__construct($registry, Voiture::class);
     }
 
+        public function findByUtilisateurWithMarque(Utilisateur $utilisateur): array
+{
+    return $this->createQueryBuilder('v')
+        ->leftJoin('v.marque', 'm')
+        ->addSelect('m')
+        ->where('v.utilisateur = :utilisateur')
+        ->setParameter('utilisateur', $utilisateur)
+        ->getQuery()
+        ->getResult();
+}
+
     //    /**
     //     * @return Voiture[] Returns an array of Voiture objects
     //     */

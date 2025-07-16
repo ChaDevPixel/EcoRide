@@ -14,16 +14,13 @@ class Marque
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['voiture_read'])]
+    #[Groups(['voiture_read'])] // Cette ligne est cruciale
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['voiture_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    #[Groups(['voiture_read'])] // Cette ligne est cruciale
     private ?string $libelle = null;
 
-    /**
-     * @var Collection<int, Voiture>
-     */
     #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'marque')]
     private Collection $voitures;
 
@@ -45,13 +42,9 @@ class Marque
     public function setLibelle(string $libelle): static
     {
         $this->libelle = $libelle;
-
         return $this;
     }
 
-    /**
-     * @return Collection<int, Voiture>
-     */
     public function getVoitures(): Collection
     {
         return $this->voitures;
@@ -63,19 +56,16 @@ class Marque
             $this->voitures->add($voiture);
             $voiture->setMarque($this);
         }
-
         return $this;
     }
 
     public function removeVoiture(Voiture $voiture): static
     {
         if ($this->voitures->removeElement($voiture)) {
-            // set the owning side to null (unless already changed)
             if ($voiture->getMarque() === $this) {
                 $voiture->setMarque(null);
             }
         }
-
         return $this;
     }
 }

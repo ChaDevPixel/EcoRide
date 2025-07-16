@@ -1,66 +1,69 @@
-
 {% extends 'base.html.twig' %}
+
 {% block title %}Accueil - Ecoride{% endblock %}
+
 {% block bigtitle %}
-    {% include 'bigtitle.html.twig' %}
+    {# MODIFIÉ: On ajoute la balise form ici pour que la page d'accueil puisse lancer la recherche #}
+    {# L'action redirige vers la page de résultats #}
+    <form id="search-form" action="{{ path('carpool_show') }}" method="GET">
+        {% include 'bigtitle.html.twig' %}
+    </form>
 {% endblock %}
 
 {% block body %}
-      
-            <!-- présentation Ecoride -->
-            <section class="container my-5">
-                
-                <h2 class="text-center mb-5 display-5 text-primary">Ecoride, le covoiturage en toute confiance</h2>
+    <!-- présentation Ecoride -->
+    <section class="container my-5">
+        
+        <h2 class="text-center mb-5 display-5 text-primary">Ecoride, le covoiturage en toute confiance</h2>
 
-                <!-- Carousel -->
-                <div id="ecorideCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-inner">
+        <!-- Carousel -->
+        <div id="ecorideCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
 
-                        <!-- Slide 1 -->
-                        <div class="carousel-item active bg-light py-5">
-                            <div class="row align-items-center">
-                                <div class="col-md-6 mb-4 mb-md-0">
-                                    <img src="{{ asset('assets/img/equipe ecoride.png') }}" alt="Équipe Ecoride" class="img-fluid rounded shadow" />
-                                </div>
-                                <div class="col-md-6">
-                                    <h3 class="fw-bold mb-3">Qui sommes-nous</h3>
-                                    <p>
-                                        Ecoride est une plateforme de covoiturage écoresponsable qui vise à faciliter les déplacements partagés
-                                        tout en réduisant l'empreinte carbone. Notre équipe est composée de passionnés de mobilité durable,
-                                        convaincus que chaque trajet peut faire la différence.
-                                    </p>
-                                </div>
-                            </div>
+                <!-- Slide 1 -->
+                <div class="carousel-item active bg-light py-5">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 mb-4 mb-md-0">
+                            <img src="{{ asset('assets/img/equipe ecoride.png') }}" alt="Équipe Ecoride" class="img-fluid rounded shadow" />
                         </div>
-
-                        <!-- Slide 2 -->
-                        <div class="carousel-item bg-light py-5">
-                            <div class="row align-items-center flex-md-row-reverse">
-                                <div class="col-md-6 mb-4 mb-md-0">
-                                    <img src="{{ asset('assets/img/notre mission.jpg') }}" alt="Notre mission" class="img-fluid rounded shadow" />
-                                </div>
-                                <div class="col-md-6">
-                                    <h3 class="fw-bold mb-3">Notre mission</h3>
-                                    <p>
-                                        Notre mission est de promouvoir un mode de transport plus respectueux de l’environnement, accessible à tous.
-                                        Grâce à Ecoride, vous pouvez planifier vos trajets, trouver des compagnons de route de confiance, et contribuer
-                                        activement à une société plus verte et solidaire.
-                                    </p>
-                                </div>
-                            </div>
+                        <div class="col-md-6">
+                            <h3 class="fw-bold mb-3">Qui sommes-nous</h3>
+                            <p>
+                                Ecoride est une plateforme de covoiturage écoresponsable qui vise à faciliter les déplacements partagés
+                                tout en réduisant l'empreinte carbone. Notre équipe est composée de passionnés de mobilité durable,
+                                convaincus que chaque trajet peut faire la différence.
+                            </p>
                         </div>
                     </div>
-
-                    <!-- Contrôles -->
-                    <button class="carousel-control-prev" type="button" data-bs-target="#ecorideCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
-                        <span class="visually-hidden">Précédent</span>
-                    </button>
-                    <button class="carousel-control-next" type="button" data-bs-target="#ecorideCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
-                        <span class="visually-hidden">Suivant</span>
-                    </button>
                 </div>
-            </section> 
-                           
-{% endblock %}    
+
+                <!-- Slide 2 -->
+                <div class="carousel-item bg-light py-5">
+                    <div class="row align-items-center flex-md-row-reverse">
+                        <div class="col-md-6 mb-4 mb-md-0">
+                            <img src="{{ asset('assets/img/notre mission.jpg') }}" alt="Notre mission" class="img-fluid rounded shadow" />
+                        </div>
+                        <div class="col-md-6">
+                            <h3 class="fw-bold mb-3">Notre mission</h3>
+                            <p>
+                                Notre mission est de promouvoir un mode de transport plus respectueux de l’environnement, accessible à tous.
+                                Grâce à Ecoride, vous pouvez planifier vos trajets, trouver des compagnons de route de confiance, et contribuer
+                                activement à une société plus verte et solidaire.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contrôles -->
+            <button class="carousel-control-prev" type="button" data-bs-target="#ecorideCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Précédent</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#ecorideCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
+                <span class="visually-hidden">Suivant</span>
+            </button>
+        </div>
+    </section>                            
+{% endblock %}

@@ -1,7 +1,6 @@
-
-<!-- gros titre -->                    
+<!-- gros titre -->
 <div class="image-container position-relative">
-    <img src="{{ asset('assets/img/image principale accueil.jpg') }}" alt="Paysage route" class="img-fluid w-100" />    
+    <img src="{{ asset('assets/img/image principale accueil.jpg') }}" alt="Paysage route" class="img-fluid w-100" />
     <div class="overlay-big-title position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-50"></div>
     <div class="big-title position-absolute top-50 start-50 translate-middle text-light text-center px-3 w-100">
         <div class="container">
@@ -14,53 +13,45 @@
 
 <!-- Barre de recherche -->
 <div class="search-bar bg-secondary py-3">
-  <div class="container text-center mb-3">
-    <p class="search-title text-dark m-0">Trouvez votre covoiturage</p>
-  </div>
-  <div class="container">
-    <form class="d-flex flex-column align-items-center">
-      <div class="d-flex flex-wrap justify-content-center gap-1">
+    <div class="container text-center mb-3">
+        <p class="search-title text-dark m-0">Trouvez votre covoiturage</p>
+    </div>
+    <div class="container">
+        <div class="d-flex flex-column align-items-center">
+            <div class="d-flex flex-wrap justify-content-center gap-2">
 
-        <!-- Champ Départ -->
-        <div class="d-flex">
+                <!-- Champ Départ -->
+                <div class="d-flex">
+                    <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
+                        <i class="bi bi-geo-alt-fill text-dark"></i>
+                    </div>
+                    <select id="search-depart" name="depart" class="form-select border rounded-end border-primary search-input mb-0" required>
+                        <option value="">Départ</option>
+                    </select>
+                </div>
 
-            <!-- Bloc icône -->
-            <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
-                <i class="bi bi-geo-alt-fill text-dark"></i>
+                <!-- Champ Destination -->
+                <div class="d-flex">
+                    <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
+                        <i class="bi bi-flag-fill text-dark"></i>
+                    </div>
+                    <select id="search-arrivee" name="arrivee" class="form-select border rounded-end border-primary search-input mb-0" required>
+                        <option value="">Destination</option>
+                    </select>
+                </div>
+
+                <!-- Champ Date -->
+                <div class="d-flex">
+                    <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
+                        <i class="bi bi-calendar-event-fill text-dark"></i>
+                    </div>
+                    <input id="search-date" name="date" type="date" class="form-control border rounded-end border-primary search-input mb-0" required>
+                </div>
+
             </div>
 
-            <!-- Champ -->
-            <input type="text" class="form-control border rounded-end border-primary search-input" placeholder="Départ">
+            <!-- Bouton -->
+            <button type="submit" class="btn btn-success search-button shadow-sm rounded-4 mt-3">Rechercher</button>
         </div>
-
-
-        <!-- Champ Destination -->
-        <div class="d-flex">
-
-            <!-- Bloc icône -->
-            <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
-                <i class="bi bi-flag-fill text-dark"></i>
-            </div>
-
-            <!-- Champ -->
-            <input type="text" class="form-control border rounded-end search-input border-primary" placeholder="Destination">
-        </div>
-
-        <!-- Champ Date -->
-        <div class="d-flex">
-            <!-- Bloc icone -->
-            <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
-                <i class="bi bi-calendar-event-fill text-dark"></i>
-            </div>
-
-            <!-- Champ -->
-            <input type="date" class="form-control border rounded-end border-primary search-input">
-        </div>
-
-      </div>
-
-      <!-- Bouton -->
-      <button type="submit" class="btn btn-success search-button shadow-sm rounded-4">Rechercher</button>
-    </form>
-  </div>
+    </div>
 </div>
