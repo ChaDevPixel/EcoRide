@@ -86,19 +86,23 @@
                     <hr>
                     <div class="text-center">
                         <h4 class="text-primary fw-bold"><i class="bi bi-cash-coin me-2"></i>{{ trip.prix }} crédits</h4>
-                        {# CORRECTION : Ajout d'un ID pour pouvoir mettre à jour le texte #}
-                        <p id="places-restantes" class="text-muted">{{ trip.placesDisponibles }} places restantes</p>
+                        <p id="places-restantes" class="text-muted">{{ trip.placesDisponibles }} place(s) restante(s)</p>
+                        
+                        <div id="detailsMessageContainer"></div>
+
                         <div class="d-grid">
                             {% if app.user %}
-                                {% if app.user == trip.chauffeur %}
+                                {# NOUVELLE CONDITION : Vérifie si l'utilisateur participe déjà #}
+                                {% if is_participant %}
+                                    <button class="btn btn-info btn-lg" disabled>Vous participez déjà</button>
+                                {% elseif app.user == trip.chauffeur %}
                                     <button class="btn btn-secondary btn-lg" disabled>Vous êtes le conducteur</button>
                                 {% elseif trip.placesDisponibles <= 0 %}
                                     <button class="btn btn-danger btn-lg" disabled>Complet</button>
                                 {% elseif app.user.credits < trip.prix %}
                                     <button class="btn btn-warning btn-lg" disabled title="Crédits insuffisants">Participer</button>
                                 {% else %}
-                                    {# CORRECTION : Ajout d'un ID pour pouvoir le désactiver après participation #}
-                                    <button id="main-participate-btn" class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#participationModal">Participer</button>
+                                    <button id="participateButton" class="btn btn-success btn-lg" data-covoiturage-id="{{ trip.id }}">Participer</button>
                                 {% endif %}
                             {% else %}
                                 <a href="{{ path('app_login') }}" class="btn btn-success btn-lg">Se connecter pour participer</a>
@@ -126,7 +130,6 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        {# CORRECTION : On passe l'ID du trajet au bouton pour que le JS le récupère #}
         <button type="button" class="btn btn-primary" id="confirm-participation-btn" data-covoiturage-id="{{ trip.id }}">Confirmer ma participation</button>
       </div>
     </div>
@@ -136,6 +139,5 @@
 
 {% block javascripts %}
     {{ parent() }}
-    {# CORRECTION : On inclut le nouveau script pour cette page #}
     <script src="{{ asset('js/participation.js') }}" defer></script>
 {% endblock %}

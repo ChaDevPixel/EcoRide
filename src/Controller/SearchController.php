@@ -2,8 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\Covoiturage; // <-- J'ai ajouté cette ligne
+use App\Entity\Covoiturage;
 use App\Repository\CovoiturageRepository;
+use App\Repository\ParticipationRepository; // <-- AJOUTEZ CE USE
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,11 +26,9 @@ class SearchController extends AbstractController
             try {
                 $dateDepart = new \DateTime($dateDepartStr);
 
-                // Calcul du début et de la fin de la journée
                 $startOfDay = (clone $dateDepart)->setTime(0, 0, 0);
                 $endOfDay = (clone $dateDepart)->setTime(23, 59, 59);
 
-                // Appel de la méthode du repository
                 $covoiturages = $covoiturageRepository->findBySearchCriteria($villeDepart, $villeArrivee, $startOfDay, $endOfDay);
 
                 if (empty($covoiturages)) {
@@ -51,16 +50,29 @@ class SearchController extends AbstractController
     }
 
     /**
-     * Affiche les détails d'un covoiturage spécifique.
+     * MODIFIÉ : Affiche les détails d'un covoiturage et vérifie la participation.
      */
     #[Route('/covoiturage/{id}', name: 'carpool_detail', methods: ['GET'])]
-    public function detail(Covoiturage $covoiturage): Response
+    public function detail(Covoiturage $covoiturage, ParticipationRepository $participationRepository): Response
     {
-        // Grâce au ParamConverter de Symfony, l'objet Covoiturage
-        // est automatiquement récupéré de la base de données via l'ID dans l'URL.
+        /** @var \App\Entity\Utilisateur $user */
+        $user = $this->getUser();
+        $isParticipant = false; // Par défaut, l'utilisateur n'est pas participant
+
+        if ($user) {
+            // On vérifie s'il existe une participation pour cet utilisateur et ce voyage
+            $participation = $participationRepository->findOneBy([
+                'covoiturage' => $covoiturage,
+                'passager' => $user
+            ]);
+            if ($participation) {
+                $isParticipant = true;
+            }
+        }
 
         return $this->render('details.html.twig', [
             'trip' => $covoiturage,
+            'is_participant' => $isParticipant, // On passe la variable au template
         ]);
     }
 }

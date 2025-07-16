@@ -312,7 +312,7 @@
                                     </div>
 
                                     <div class="mb-3">
-                                        <label for="availableSeats" class="form-label">Places disponibles</label> {# CHANGEMENT DE LIBELLÉ #}
+                                        <label for="availableSeats" class="form-label">Place(s) disponible(s)</label> {# CHANGEMENT DE LIBELLÉ #}
                                         <input type="number" id="availableSeats" class="form-control" readonly> {# AJOUT DE READONLY #}
                                     </div>
                                     <p class="form-text"><span class="required-asterisk">*</span> Champs obligatoires</p>
@@ -371,6 +371,27 @@
     <span id="user-preferences-data">{{ utilisateur_preferences_json|raw }}</span>
 </div>
 
+<div class="modal fade" id="cancelConfirmationModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="cancelModalLabel">Confirmer l'annulation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Êtes-vous sûr de vouloir annuler votre participation à ce voyage ?</p>
+        <!-- NOUVEAU: Le montant des crédits sera inséré ici par le JavaScript -->
+        <p><strong><span id="creditsToRefund"></span> crédits</strong> vous seront restitués.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non, rester</button>
+        <button type="button" class="btn btn-danger" id="confirmCancelButton">Oui, annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 {% endblock %}
 
 {# ================== BLOC JAVASCRIPTS CORRIGÉ ================== #}
@@ -384,29 +405,4 @@
     <script src="{{ asset('js/roles_vehicles.js') }}" defer></script>
     {# Incluez le script pour la création de covoiturage (si séparé) #}
     <script src="{{ asset('js/add_carpool.js') }}" defer></script>
-
-    {# Debugging: Afficher les données brutes passées à JS pour vérifier la source du problème #}
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const rolesDataElement = document.getElementById('user-roles-data');
-            const vehiclesDataElement = document.getElementById('user-vehicles-data');
-            const preferencesDataElement = document.getElementById('user-preferences-data');
-
-            if (rolesDataElement) {
-                console.log("Twig - user-roles-data (raw):", rolesDataElement.textContent);
-            } else {
-                console.error("Twig - Élément #user-roles-data non trouvé.");
-            }
-            if (vehiclesDataElement) {
-                console.log("Twig - user-vehicles-data (raw):", vehiclesDataElement.textContent);
-            } else {
-                console.error("Twig - Élément #user-vehicles-data non trouvé.");
-            }
-            if (preferencesDataElement) {
-                console.log("Twig - user-preferences-data (raw):", preferencesDataElement.textContent);
-            } else {
-                console.error("Twig - Élément #user-preferences-data non trouvé.");
-            }
-        });
-    </script>
 {% endblock %}

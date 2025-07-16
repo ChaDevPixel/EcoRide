@@ -1,4 +1,8 @@
-const initializeSearchPage = () => {
+// public/js/search_carpool.js
+
+// On utilise une déclaration de fonction classique, qui est plus flexible
+// avec les rechargements de script que `const`.
+function initializeSearchPage() {
     // --- INITIALISATION DE LA BARRE DE RECHERCHE ---
     const departSelect = document.getElementById('search-depart');
     const arriveeSelect = document.getElementById('search-arrivee');
@@ -70,11 +74,6 @@ const initializeSearchPage = () => {
             maxDuration: parseInt(durationRange.value, 10)
         };
         
-        // ESPION : On affiche les valeurs des filtres
-        console.log("--- FILTRES APPLIQUÉS ---");
-        console.log("Durée max (minutes):", filters.maxDuration);
-        console.log("------------------------");
-
         const allCards = tripList.querySelectorAll('.trip-card');
         let visibleCount = 0;
 
@@ -85,9 +84,6 @@ const initializeSearchPage = () => {
                 isEco: card.dataset.eco === 'true',
                 duration: parseInt(card.dataset.duration, 10)
             };
-
-            // ESPION : On affiche les valeurs pour chaque carte
-            console.log(`Carte: durée = ${trip.duration}, Comparaison: ${trip.duration} <= ${filters.maxDuration} ?`);
 
             const isDurationOk = filters.maxDuration >= 1440 ? true : trip.duration <= filters.maxDuration;
 
@@ -159,5 +155,6 @@ const initializeSearchPage = () => {
     }
 };
 
+// On exécute l'initialisation à chaque chargement de page (initial ou via Turbo)
 document.addEventListener('DOMContentLoaded', initializeSearchPage);
 document.addEventListener('turbo:load', initializeSearchPage);

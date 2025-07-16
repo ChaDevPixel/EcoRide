@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\Covoiturage;
+use App\Entity\Participation;
 use App\Entity\Utilisateur;
 use App\Repository\ParticipationRepository;
 use App\Repository\VoitureRepository;
@@ -31,6 +32,9 @@ class CarpoolApiController extends AbstractController
         $this->validator = $validator;
     }
 
+    /**
+     * Ajoute un nouveau covoiturage.
+     */
     #[Route('/mon-compte/add-covoiturage', name: 'add_covoiturage', methods: ['POST'])]
     public function addCovoiturage(Request $request, VoitureRepository $voitureRepository): JsonResponse
     {
@@ -70,7 +74,6 @@ class CarpoolApiController extends AbstractController
         $this->entityManager->persist($covoiturage);
         $this->entityManager->flush();
 
-        // SÉRIALISATION SIMPLIFIÉE ET CORRIGÉE
         $jsonCovoiturage = $this->serializer->serialize($covoiturage, 'json', [
             'groups' => ['covoiturage:read', 'voiture:read', 'marque:read', 'chauffeur:read']
         ]);
@@ -81,6 +84,9 @@ class CarpoolApiController extends AbstractController
         ], JsonResponse::HTTP_CREATED);
     }
 
+    /**
+     * Récupère les covoiturages où l'utilisateur est chauffeur.
+     */
     #[Route('/user-covoiturages', name: 'get_user_covoiturages', methods: ['GET'])]
     public function getUserCovoiturages(): JsonResponse
     {
@@ -92,7 +98,6 @@ class CarpoolApiController extends AbstractController
 
         $covoiturages = $chauffeur->getCovoituragesConduits()->toArray();
         
-        // SÉRIALISATION SIMPLIFIÉE ET CORRIGÉE
         $jsonCovoiturages = $this->serializer->serialize($covoiturages, 'json', [
             'groups' => ['covoiturage:read', 'voiture:read', 'marque:read', 'chauffeur:read']
         ]);
@@ -100,25 +105,106 @@ class CarpoolApiController extends AbstractController
         return new JsonResponse($jsonCovoiturages, JsonResponse::HTTP_OK, [], true);
     }
 
+    /**
+     * Récupère les voyages auxquels l'utilisateur participe.
+     */
     #[Route('/user-participations', name: 'get_user_participations', methods: ['GET'])]
     public function getUserParticipations(ParticipationRepository $participationRepository): JsonResponse
     {
         /** @var Utilisateur $user */
-        $user = $this->security->getUser();
+        $user = $this->getUser();
         if (!$user) {
             return $this->json(['message' => 'Utilisateur non authentifié.'], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
         $participations = $participationRepository->findBy(['passager' => $user]);
 
-        // La sérialisation ici était déjà correcte, on la garde.
         $jsonParticipations = $this->serializer->serialize($participations, 'json', [
-            'groups' => ['participation:read', 'covoiturage:read', 'chauffeur:read']
+            'groups' => [
+                'participation:read', 
+                'covoiturage:read', 
+                'chauffeur:read',
+                'voiture:read',
+                'marque:read'
+            ]
         ]);
 
         return new JsonResponse($jsonParticipations, JsonResponse::HTTP_OK, [], true);
     }
 
+    /**
+     * Permet à un utilisateur de participer à un covoiturage.
+     */
+    #[Route('/covoiturage/{id}/participer', name: 'covoiturage_participate', methods: ['POST'])]
+    public function participate(Covoiturage $covoiturage): JsonResponse
+    {
+        /** @var Utilisateur $passager */
+        $passager = $this->getUser();
+        if (!$passager) {
+            return $this->json(['message' => 'Vous devez être connecté pour participer.'], JsonResponse::HTTP_UNAUTHORIZED);
+        }
+
+        // Vérification 1: L'utilisateur ne peut pas être le chauffeur
+        if ($covoiturage->getChauffeur() === $passager) {
+            return $this->json(['message' => 'Vous ne pouvez pas participer à votre propre covoiturage.'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        // Vérification 2: Le covoiturage doit être "Non démarré"
+        if ($covoiturage->getStatut() !== 'initialise') {
+            return $this->json(['message' => 'Ce covoiturage n\'est plus ouvert aux inscriptions.'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        // Vérification 3: Il doit y avoir des places disponibles
+        if ($covoiturage->getPlacesDisponibles() <= 0) {
+            return $this->json(['message' => 'Ce covoiturage est complet.'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        // Vérification 4: L'utilisateur ne doit pas déjà participer
+        foreach ($covoiturage->getParticipations() as $existingParticipation) {
+            if ($existingParticipation->getPassager() === $passager) {
+                return $this->json(['message' => 'Vous participez déjà à ce covoiturage.'], JsonResponse::HTTP_BAD_REQUEST);
+            }
+        }
+
+        // Vérification 5: L'utilisateur doit avoir assez de crédits
+        $prix = $covoiturage->getPrix();
+        if ($passager->getCredits() < $prix) {
+            return $this->json(['message' => 'Crédits insuffisants pour participer à ce voyage.'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        // Tout est OK, on procède avec une transaction pour la sécurité
+        $this->entityManager->beginTransaction();
+        try {
+            // Débiter le passager
+            $passager->setCredits($passager->getCredits() - $prix);
+            
+            // Décrémenter les places disponibles
+            $covoiturage->setPlacesDisponibles($covoiturage->getPlacesDisponibles() - 1);
+
+            // Créer la participation
+            $participation = new Participation();
+            $participation->setPassager($passager);
+            $participation->setCovoiturage($covoiturage);
+
+            $this->entityManager->persist($participation);
+            $this->entityManager->persist($passager);
+            $this->entityManager->persist($covoiturage);
+
+            $this->entityManager->flush();
+            $this->entityManager->commit();
+
+            return $this->json(['message' => 'Participation enregistrée avec succès ! Vous allez être redirigé.'], JsonResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            $this->entityManager->rollback();
+            // Idéalement, loguez l'erreur : error_log($e->getMessage());
+            return $this->json(['message' => 'Une erreur interne est survenue. Veuillez réessayer.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
+     * Démarre un covoiturage.
+     */
     #[Route('/covoiturage/{id}/start', name: 'covoiturage_start', methods: ['POST'])]
     public function startCovoiturage(Covoiturage $covoiturage): JsonResponse
     {
@@ -138,6 +224,9 @@ class CarpoolApiController extends AbstractController
         return $this->json(['message' => 'Covoiturage démarré !', 'newStatus' => 'en_cours']);
     }
 
+    /**
+     * Termine un covoiturage et le met en attente de validation.
+     */
     #[Route('/covoiturage/{id}/end', name: 'covoiturage_end', methods: ['POST'])]
     public function endCovoiturage(Covoiturage $covoiturage): JsonResponse
     {
@@ -151,9 +240,93 @@ class CarpoolApiController extends AbstractController
             return $this->json(['message' => 'Le covoiturage ne peut être terminé que s\'il est "En cours".'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
+        $covoiturage->setStatut('en_attente_validation');
+        
+        $this->entityManager->flush();
+
+        return $this->json([
+            'message' => 'Covoiturage terminé, en attente de validation pour le paiement.', 
+            'newStatus' => 'en_attente_validation'
+        ]);
+    }
+
+    /**
+     * Route pour l'employé pour valider le paiement et transférer les crédits.
+     */
+    #[Route('/covoiturage/{id}/validate-payment', name: 'covoiturage_validate_payment', methods: ['POST'])]
+    public function validatePayment(Covoiturage $covoiturage): JsonResponse
+    {
+        // SÉCURITÉ : À décommenter quand vous aurez un rôle 'ROLE_EMPLOYE'
+        // $this->denyAccessUnlessGranted('ROLE_EMPLOYE');
+
+        if ($covoiturage->getStatut() !== 'en_attente_validation') {
+            return $this->json(['message' => 'Ce paiement ne peut pas être validé (statut incorrect).'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        $chauffeur = $covoiturage->getChauffeur();
+        $prixParPassager = $covoiturage->getPrix();
+        $commissionPlateforme = 2;
+        $gainChauffeurParPassager = $prixParPassager - $commissionPlateforme;
+
+        foreach ($covoiturage->getParticipations() as $participation) {
+            $chauffeur->setCredits($chauffeur->getCredits() + $gainChauffeurParPassager);
+        }
+
         $covoiturage->setStatut('termine');
         $this->entityManager->flush();
 
-        return $this->json(['message' => 'Covoiturage terminé !', 'newStatus' => 'termine']);
+        return $this->json(['message' => 'Paiement validé et crédits transférés au chauffeur.']);
+    }
+
+
+    /**
+     * Annule la participation d'un passager, le rembourse et met à jour les places.
+     */
+    #[Route('/participation/{id}', name: 'delete_participation', methods: ['DELETE'])]
+    public function deleteParticipation(Participation $participation): JsonResponse
+    {
+        /** @var Utilisateur $user */
+        $user = $this->getUser();
+
+        if (!$user || $participation->getPassager() !== $user) {
+            return $this->json(['message' => 'Action non autorisée.'], JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        if ($participation->getCovoiturage()->getStatut() !== 'initialise') {
+            return $this->json(['message' => 'Vous ne pouvez pas annuler un voyage déjà commencé ou terminé.'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+        
+        $covoiturage = $participation->getCovoiturage();
+        $passager = $participation->getPassager();
+        $prixVoyage = $covoiturage->getPrix();
+
+        // On utilise une transaction pour garantir la cohérence des données
+        $this->entityManager->beginTransaction();
+        try {
+            // 1. Rembourser les crédits au passager
+            $passager->setCredits($passager->getCredits() + $prixVoyage);
+
+            // 2. Mettre à jour le nombre de places disponibles
+            $covoiturage->setPlacesDisponibles($covoiturage->getPlacesDisponibles() + 1);
+
+            // 3. Persister les changements et supprimer la participation
+            $this->entityManager->persist($passager);
+            $this->entityManager->persist($covoiturage);
+            $this->entityManager->remove($participation);
+
+            $this->entityManager->flush();
+            $this->entityManager->commit();
+
+            // MODIFIÉ: On retourne le nouveau solde de crédits
+            return $this->json([
+                'message' => 'Participation annulée avec succès. Vos crédits ont été restitués.',
+                'newCredits' => $passager->getCredits()
+            ], JsonResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            $this->entityManager->rollback();
+            // Idéalement, loguez l'erreur ici
+            return $this->json(['message' => 'Une erreur est survenue lors de l\'annulation.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

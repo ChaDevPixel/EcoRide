@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Données globales ---
     let userVehiclesData = [];
-    let userDriverCovoituragesData = []; // Voyages où l'utilisateur est chauffeur
-    let userPassengerCovoituragesData = []; // Voyages où l'utilisateur est passager
+    let userDriverCovoituragesData = [];
+    let userPassengerCovoituragesData = [];
 
     // --- Conteneurs principaux de l'onglet ---
     const tripMessageContainer = document.getElementById('tripMessageContainer');
@@ -25,6 +25,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Section Passager ---
     const passengerTripsContainer = document.getElementById('passenger-trips-container');
     const noPassengerTripsMessage = document.getElementById('no-passenger-trips-message');
+
+    // NOUVEAU: On récupère les éléments de la modale d'annulation
+    const cancelModalElement = document.getElementById('cancelConfirmationModal');
+    const cancelModal = cancelModalElement ? new bootstrap.Modal(cancelModalElement) : null;
+    const confirmCancelButton = document.getElementById('confirmCancelButton');
 
     // --- Éléments du formulaire de voyage ---
     const departureCitySelect = document.getElementById('departureCity');
@@ -69,6 +74,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function formatDate(date) { return new Date(date).toISOString().split('T')[0]; }
     function formatDisplayDate(dateString) { return new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+    
+    function translateStatus(status) {
+        switch (status) {
+            case 'initialise':
+                return 'Non démarré';
+            case 'en_cours':
+                return 'En cours';
+            case 'en_attente_validation':
+                return 'En attente de validation';
+            case 'termine':
+                return 'Terminé';
+            default:
+                return status || 'N/A';
+        }
+    }
 
     // =====================================================================
     // RÉCUPÉRATION DES DONNÉES INITIALES (Véhicules)
@@ -78,7 +98,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const userVehiclesDataElement = document.getElementById('user-vehicles-data');
         if (userVehiclesDataElement && userVehiclesDataElement.textContent.trim()) {
             userVehiclesData = JSON.parse(userVehiclesDataElement.textContent);
-            console.log('add_carpool.js: Véhicules utilisateur chargés:', userVehiclesData);
         }
     } catch (e) {
         console.error("add_carpool.js: Erreur parsing des données véhicules:", e);
@@ -88,9 +107,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // LOGIQUE DE LA SECTION "CHAUFFEUR"
     // =====================================================================
 
-    /**
-     * Affiche un covoiturage créé par l'utilisateur dans la liste CHAUFFEUR.
-     */
     function addDriverCovoiturageToList(covoiturageData, prepend = false) {
         if (!driverTripsContainer) return;
         if (noDriverTripsMessage) noDriverTripsMessage.classList.add('d-none');
@@ -104,22 +120,25 @@ document.addEventListener('DOMContentLoaded', () => {
         
         let vehiculeInfo = 'Véhicule inconnu';
         let iconHtml = '';
+        
         if (covoiturageData.voiture && typeof covoiturageData.voiture === 'object') {
-            const vehiculeFromLocalData = userVehiclesData.find(v => v.id == covoiturageData.voiture.id);
-            if (vehiculeFromLocalData) {
-                const energie = vehiculeFromLocalData.energie?.trim().toLowerCase() || '';
-                if (energie === 'electric' || energie === 'hybrid') {
-                    iconHtml = '<i class="bi bi-leaf-fill text-primary"></i> ';
-                    covoiturageDiv.classList.replace('bg-light', 'bg-opacity-10');
-                    covoiturageDiv.classList.add('bg-secondary');
-                }
-                vehiculeInfo = `${vehiculeFromLocalData.marque?.libelle || ''} ${vehiculeFromLocalData.modele || ''} (${vehiculeFromLocalData.immatriculation || 'N/A'})`;
+            const marque = covoiturageData.voiture.marque?.libelle || '';
+            const modele = covoiturageData.voiture.modele || '';
+            const immatriculation = covoiturageData.voiture.immatriculation || 'N/A';
+            vehiculeInfo = `${marque} ${modele} (${immatriculation})`;
+            
+            const energie = covoiturageData.voiture.energie?.toLowerCase() || '';
+            if (energie === 'electric' || energie === 'hybrid') {
+                iconHtml = '<i class="bi bi-leaf-fill text-primary"></i> ';
+                covoiturageDiv.classList.remove('bg-light');
+                covoiturageDiv.classList.add('bg-secondary', 'bg-opacity-25');
             }
         }
+
         mainInfoSpan.innerHTML = `
             <strong>${covoiturageData.villeDepart}</strong> <i class="bi bi-arrow-right"></i> <strong>${covoiturageData.villeArrivee}</strong><br>
             Le ${formatDisplayDate(covoiturageData.dateDepart)} à ${covoiturageData.heureDepart} <br>
-            Prix: ${covoiturageData.prix} crédits - Places: ${covoiturageData.placesDisponibles} <br>
+            Prix: ${covoiturageData.prix} crédits - Place(s): ${covoiturageData.placesDisponibles} <br>
             Véhicule: ${iconHtml}${vehiculeInfo}
         `;
 
@@ -130,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         actionButtonsDiv.className = 'd-flex gap-2';
         actionButtonsDiv.innerHTML = `
             <button type="button" class="btn btn-success btn-sm rounded-4 px-3 start-trip-btn" data-covoiturage-id="${covoiturageData.id}">Commencer</button>
-            <button type="button" class="btn btn-warning btn-sm rounded-4 px-3 end-trip-btn d-none" data-covoiturage-id="${covoiturageData.id}">Terminer</button>
+            <button type="button" class="btn btn-warning btn-sm rounded-4 px-3 end-trip-btn" data-covoiturage-id="${covoiturageData.id}">Terminer</button>
         `;
 
         covoiturageDiv.append(mainInfoSpan, statusSpan, actionButtonsDiv);
@@ -138,9 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateTripActionButtonsForElement(covoiturageDiv, covoiturageData.statut, new Date(covoiturageData.dateDepart));
     }
 
-    /**
-     * Charge et affiche les covoiturages où l'utilisateur est CHAUFFEUR.
-     */
     async function loadAndDisplayDriverCovoiturages() {
         if (!driverTripsContainer) return;
         try {
@@ -148,12 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error((await response.json()).message);
             
             userDriverCovoituragesData = await response.json();
-            console.log('add_carpool.js: Voyages CHAUFFEUR chargés.', userDriverCovoituragesData);
+            
+            driverTripsContainer.querySelectorAll('div.d-flex').forEach(el => el.remove());
 
-            driverTripsContainer.innerHTML = '';
             if (userDriverCovoituragesData.length === 0) {
-                if (noDriverTripsMessage) noDriverTripsMessage.classList.remove('d-none');
+                if (noDriverTripsMessage) {
+                    noDriverTripsMessage.innerHTML = "Vous n'avez pas de voyage de prévu.";
+                    noDriverTripsMessage.classList.remove('d-none');
+                }
             } else {
+                if (noDriverTripsMessage) noDriverTripsMessage.classList.add('d-none');
                 userDriverCovoituragesData.forEach(covoiturage => addDriverCovoiturageToList(covoiturage));
             }
         } catch (error) {
@@ -161,9 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    /**
-     * Gère les clics sur les boutons "Commencer" et "Terminer".
-     */
     driverTripsContainer?.addEventListener('click', async (e) => {
         const button = e.target.closest('.start-trip-btn, .end-trip-btn');
         if (!button) return;
@@ -181,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(result.message);
 
             const covoiturageData = userDriverCovoituragesData.find(c => c.id == covoiturageId);
-            covoiturageData.statut = result.newStatus;
+            if(covoiturageData) covoiturageData.statut = result.newStatus;
             updateTripActionButtonsForElement(covoiturageElement, result.newStatus, new Date(covoiturageData.dateDepart));
             displayMessage(tripMessageContainer, result.message, 'success');
         } catch (error) {
@@ -189,9 +206,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    /**
-     * Met à jour les boutons d'action d'un voyage (visibilité, statut).
-     */
     function updateTripActionButtonsForElement(covoiturageElement, status, tripDate) {
         const startBtn = covoiturageElement.querySelector('.start-trip-btn');
         const endBtn = covoiturageElement.querySelector('.end-trip-btn');
@@ -204,21 +218,24 @@ document.addEventListener('DOMContentLoaded', () => {
         today.setHours(0, 0, 0, 0);
         tripDate.setHours(0, 0, 0, 0);
 
+        statusSpan.textContent = translateStatus(status);
+        statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0';
+
         switch(status) {
             case 'initialise':
                 startBtn.classList.remove('d-none');
                 startBtn.disabled = tripDate.getTime() !== today.getTime();
-                statusSpan.textContent = 'Non démarré';
-                statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0 text-info';
+                statusSpan.classList.add('text-info');
                 break;
             case 'en_cours':
                 endBtn.classList.remove('d-none');
-                statusSpan.textContent = 'En cours';
-                statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0 text-success';
+                statusSpan.classList.add('text-success');
+                break;
+            case 'en_attente_validation':
+                statusSpan.classList.add('text-warning');
                 break;
             case 'termine':
-                statusSpan.textContent = 'Terminé';
-                statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0 text-danger';
+                statusSpan.classList.add('text-danger');
                 break;
         }
     }
@@ -228,9 +245,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // LOGIQUE DE LA SECTION "PASSAGER"
     // =====================================================================
 
-    /**
-     * Affiche un voyage où l'utilisateur est passager.
-     */
     function addPassengerTripToList(participationData) {
         if (!passengerTripsContainer || !noPassengerTripsMessage) return;
 
@@ -248,10 +262,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const driverPseudo = covoiturage.chauffeur?.pseudo || 'Inconnu';
         
+        const translatedStatus = translateStatus(covoiturage.statut);
+        
         mainInfoSpan.innerHTML = `
             <strong>${covoiturage.villeDepart}</strong> <i class="bi bi-arrow-right"></i> <strong>${covoiturage.villeArrivee}</strong><br>
             Le ${formatDisplayDate(covoiturage.dateDepart)} à ${covoiturage.heureDepart}<br>
-            Conducteur: <strong>${driverPseudo}</strong> - Statut: <span class="fw-bold">${covoiturage.statut || 'N/A'}</span>
+            Conducteur: <strong>${driverPseudo}</strong> - Statut: <span class="fw-bold">${translatedStatus}</span>
         `;
         
         const actionBtn = document.createElement('button');
@@ -263,29 +279,95 @@ document.addEventListener('DOMContentLoaded', () => {
         passengerTripsContainer.appendChild(tripDiv);
     }
     
-    /**
-     * Charge et affiche les voyages où l'utilisateur est PASSAGER.
-     */
     async function loadAndDisplayPassengerTrips() {
         if (!passengerTripsContainer) return;
         try {
-            // NOTE : Vous devez créer cette route API dans Symfony.
             const response = await fetch('/api/user-participations'); 
-            if (!response.ok) throw new Error((await response.json()).message);
+            if (!response.ok) {
+                const errorText = await response.text();
+                try {
+                    throw new Error(JSON.parse(errorText).message || 'Erreur inconnue');
+                } catch (e) {
+                    throw new Error("Le serveur a renvoyé une erreur inattendue.");
+                }
+            }
 
             userPassengerCovoituragesData = await response.json();
-            console.log('add_carpool.js: Voyages PASSAGER chargés.', userPassengerCovoituragesData);
+            
+            passengerTripsContainer.querySelectorAll('div.d-flex').forEach(el => el.remove());
 
-            passengerTripsContainer.innerHTML = '';
             if (userPassengerCovoituragesData.length === 0) {
-                if (noPassengerTripsMessage) noPassengerTripsMessage.classList.remove('d-none');
+                if (noPassengerTripsMessage) {
+                    noPassengerTripsMessage.innerHTML = 'Vous ne participez à aucun voyage pour le moment. <a href="/covoiturage" class="link-primary">Trouver un voyage</a>';
+                    noPassengerTripsMessage.classList.remove('d-none');
+                }
             } else {
+                if (noPassengerTripsMessage) noPassengerTripsMessage.classList.add('d-none');
                 userPassengerCovoituragesData.forEach(participation => addPassengerTripToList(participation));
             }
         } catch (error) {
             displayMessage(passengerTripsContainer, `Impossible de charger vos participations: ${error.message}`, 'danger');
         }
     }
+
+    // MODIFIÉ: Le clic sur "Annuler" ouvre la modale et affiche les crédits
+    passengerTripsContainer?.addEventListener('click', (e) => {
+        const cancelButton = e.target.closest('.cancel-participation-btn');
+        if (!cancelButton || !cancelModal) return;
+
+        const participationId = cancelButton.dataset.participationId;
+        
+        // Trouver la participation pour récupérer le prix
+        const participation = userPassengerCovoituragesData.find(p => p.id == participationId);
+        const creditsToRefund = participation?.covoiturage?.prix || 0;
+
+        // Mettre à jour le texte de la modale avec le montant des crédits
+        const creditsSpan = document.getElementById('creditsToRefund');
+        if (creditsSpan) {
+            creditsSpan.textContent = creditsToRefund;
+        }
+        
+        // On stocke l'ID sur le bouton de confirmation de la modale pour l'utiliser plus tard
+        if(confirmCancelButton) {
+            confirmCancelButton.dataset.participationId = participationId;
+        }
+        cancelModal.show();
+    });
+
+    // MODIFIÉ: Le clic sur le bouton de confirmation gère le chargement et le rafraîchissement
+    confirmCancelButton?.addEventListener('click', async () => {
+        const participationId = confirmCancelButton.dataset.participationId;
+        if (!participationId) return;
+
+        // Ajout d'un état de chargement pour un meilleur retour visuel
+        confirmCancelButton.disabled = true;
+        confirmCancelButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Annulation...';
+
+        try {
+            const response = await fetch(`/api/participation/${participationId}`, {
+                method: 'DELETE',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.message || 'Impossible d\'annuler la participation.');
+            }
+
+            // SUCCÈS: On rafraîchit la page pour voir tous les changements (crédits, liste)
+            location.reload();
+
+        } catch (error) {
+            console.error('Erreur lors de l\'annulation de la participation:', error);
+            cancelModal.hide(); // Cacher la modale en cas d'erreur
+            displayMessage(tripMessageContainer, error.message, 'danger');
+            
+            // Réactiver le bouton en cas d'erreur
+            confirmCancelButton.disabled = false;
+            confirmCancelButton.innerHTML = 'Oui, annuler';
+        }
+    });
 
 
     // =====================================================================
@@ -313,7 +395,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const modele = vehicle.modele || 'Inconnu';
             const energie = vehicle.energie?.toLowerCase() || '';
             const icon = (energie === 'electric' || energie === 'hybrid') ? '🍃 ' : '';
-            const text = `${icon}${marque} ${modele} - ${vehicle.nombreDePlaces} places`;
+            const text = `${icon}${marque} ${modele} - ${vehicle.nombreDePlaces} place(s)`;
             const option = new Option(text, vehicle.id);
             option.dataset.nombreDePlaces = vehicle.nombreDePlaces;
             tripVehicleSelect.add(option);
@@ -331,7 +413,6 @@ document.addEventListener('DOMContentLoaded', () => {
         numberOfCompanionsInput.max = totalSeats;
     }
 
-    // --- Événements du formulaire ---
     addTripButton?.addEventListener('click', () => {
         tripFormContainer.classList.remove('d-none');
         addTripButton.classList.add('d-none');
@@ -389,7 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Initialisation des champs du formulaire ---
     function initializeTripForm() {
         populateCitySelect(departureCitySelect, FRENCH_CITIES);
         populateCitySelect(arrivalCitySelect, FRENCH_CITIES);
@@ -428,4 +508,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAndDisplayDriverCovoiturages();
     loadAndDisplayPassengerTrips();
 
-}); // Fin de DOMContentLoaded
+    function activateTabFromHash() {
+        const hash = window.location.hash;
+        if (hash === '#trip' || hash === '#roles' || hash === '#history' || hash === '#account') {
+            const tabTrigger = document.querySelector(`.nav-tabs button[data-bs-target="${hash}"]`);
+            if (tabTrigger) {
+                const tab = new bootstrap.Tab(tabTrigger);
+                tab.show();
+            }
+        }
+    }
+
+    activateTabFromHash();
+});
