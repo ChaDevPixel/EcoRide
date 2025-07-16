@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Covoiturage;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
+use DateTime; // J'ai ajouté cette ligne pour être sûr que la classe DateTime est disponible
 
 /**
  * @extends ServiceEntityRepository<Covoiturage>
@@ -34,7 +35,6 @@ class CovoiturageRepository extends ServiceEntityRepository
             ->leftJoin('v.marque', 'm')
             ->where('c.villeDepart = :depart')
             ->andWhere('c.villeArrivee = :arrivee')
-            // MODIFIÉ: Utilisation d'un intervalle pour la date, plus fiable
             ->andWhere('c.dateDepart BETWEEN :startOfDay AND :endOfDay')
             ->andWhere('c.placesDisponibles > 0')
             ->andWhere('c.statut = :statut')
@@ -44,6 +44,14 @@ class CovoiturageRepository extends ServiceEntityRepository
             ->setParameter('endOfDay', $endOfDay)
             ->setParameter('statut', 'initialise')
             ->orderBy('c.heureDepart', 'ASC');
+
+        // CORRECTION : Si la date de recherche est aujourd'hui,
+        // on s'assure que l'heure de départ n'est pas déjà passée.
+        $today = new DateTime('today');
+        if ($startOfDay->format('Y-m-d') === $today->format('Y-m-d')) {
+            $qb->andWhere('c.dateDepart >= :now')
+               ->setParameter('now', new DateTime());
+        }
 
         return $qb->getQuery()->getResult();
     }

@@ -59,7 +59,7 @@ class SearchController extends AbstractController
         // Grâce au ParamConverter de Symfony, l'objet Covoiturage
         // est automatiquement récupéré de la base de données via l'ID dans l'URL.
 
-        return $this->render('detailS.html.twig', [
+        return $this->render('details.html.twig', [
             'trip' => $covoiturage,
         ]);
     }

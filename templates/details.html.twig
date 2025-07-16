@@ -69,7 +69,7 @@
                 <div class="card-body">
                     <h6>Préférences du conducteur</h6>
                     <ul class="list-unstyled">
-                        {# CORRECTION : Affichage dynamique des préférences #}
+                        {# Affichage dynamique des préférences #}
                         {% if trip.chauffeur.preferences.fumeurs_acceptes %}
                             <li><i class="bi bi-check-circle-fill text-secondary me-2"></i> Fumeurs acceptés</li>
                         {% else %}
@@ -82,7 +82,7 @@
                             <li><i class="bi bi-x-circle-fill text-danger me-2"></i> Pas d'animaux</li>
                         {% endif %}
 
-                        {# CORRECTION : Affichage des préférences personnalisées #}
+                        {# Affichage des préférences personnalisées #}
                         {% if trip.chauffeur.preferences.personnalisees is not empty %}
                             {% for pref in trip.chauffeur.preferences.personnalisees %}
                                 <li><i class="bi bi-heart-fill text-dark me-2"></i> {{ pref }}</li>
@@ -91,16 +91,55 @@
                     </ul>
                     <hr>
                     <div class="text-center">
-                        {# CORRECTION : Ajout de l'icône devant le prix #}
                         <h4 class="text-primary fw-bold"><i class="bi bi-cash-coin me-2"></i>{{ trip.prix }} crédits</h4>
-                        <p class="text-muted fw-semibold">{{ trip.placesDisponibles }} places restantes</p>
+                        <p class="text-muted">{{ trip.placesDisponibles }} places restantes</p>
                         <div class="d-grid">
-                            <button class="btn btn-success btn-lg">Participer</button>
+                            {# CORRECTION : Logique du bouton Participer #}
+                            {% if app.user %}
+                                {# Cas où l'utilisateur est le chauffeur #}
+                                {% if app.user == trip.chauffeur %}
+                                    <button class="btn btn-info btn-lg" disabled>Vous êtes le conducteur</button>
+                                {# Cas où le covoiturage est complet #}
+                                {% elseif trip.placesDisponibles <= 0 %}
+                                    <button class="btn btn-danger btn-lg" disabled>Complet</button>
+                                {# Cas où l'utilisateur n'a pas assez de crédits #}
+                                {% elseif app.user.credits < trip.prix %}
+                                    <button class="btn btn-warning btn-lg" disabled title="Crédits insuffisants">Participer</button>
+                                {# Cas où l'utilisateur peut participer #}
+                                {% else %}
+                                    <button class="btn btn-success btn-lg" data-bs-toggle="modal" data-bs-target="#participationModal">Participer</button>
+                                {% endif %}
+                            {% else %}
+                                {# Cas où l'utilisateur n'est pas connecté #}
+                                <a href="{{ path('app_login') }}" class="btn btn-success btn-lg">Se connecter pour participer</a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+</div>
+
+<!-- Modal de Confirmation de Participation -->
+<div class="modal fade" id="participationModal" tabindex="-1" aria-labelledby="participationModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="participationModalLabel">Confirmer votre participation</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Vous êtes sur le point de participer à ce covoiturage.</p>
+        <p>Coût : <strong>{{ trip.prix }} crédits</strong>.</p>
+        <p>Êtes-vous sûr de vouloir continuer ?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        {# Ce bouton devra être lié à une action JavaScript pour appeler l'API #}
+        <button type="button" class="btn btn-primary" id="confirm-participation-btn">Confirmer ma participation</button>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
