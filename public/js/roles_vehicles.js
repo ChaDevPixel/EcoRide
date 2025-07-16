@@ -396,22 +396,23 @@ const initializeRolesAndVehicles = () => {
     if (vehicleForm) {
         vehicleForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const formData = new FormData(vehicleForm);
-            const data = Object.fromEntries(formData.entries());
             
-            // Récupérer la valeur de l'input caché pour le pays
-            data.paysImmatriculation = hiddenCountryCode ? hiddenCountryCode.value : 'FR';
-            // Récupérer la date de première immatriculation
-            data.datePremiereImmatriculation = firstRegDateInput ? firstRegDateInput.value : '';
-
-            // Validation côté client pour la date
+            const data = {
+                immatriculation: plateInput.value,
+                paysImmatriculation: hiddenCountryCode.value,
+                datePremiereImmatriculation: firstRegDateInput.value,
+                marqueId: brandSelect.value,
+                modele: document.getElementById('model').value,
+                couleur: document.getElementById('color').value,
+                nombreDePlaces: document.getElementById('seats').value,
+                energie: vehicleForm.querySelector('input[name="engineType"]:checked')?.value || ''
+            };
+            
             const dateError = validateFirstRegDate(data.datePremiereImmatriculation);
             if (dateError) {
-                displayMessage(vehicleMessageContainer, dateError, 'danger');
-                return;
+                return displayMessage(vehicleMessageContainer, dateError, 'danger');
             }
 
-            // Validations des champs obligatoires
             if (!data.immatriculation) {
                 return displayMessage(vehicleMessageContainer, 'Veuillez saisir une plaque d\'immatriculation.', 'danger');
             }
@@ -431,7 +432,6 @@ const initializeRolesAndVehicles = () => {
                 return displayMessage(vehicleMessageContainer, 'Veuillez sélectionner un type d\'énergie.', 'danger');
             }
 
-
             try {
                 const response = await fetch('/mon-compte/add-vehicle', {
                     method: 'POST',
@@ -445,13 +445,11 @@ const initializeRolesAndVehicles = () => {
                     if (vehicleFormContainer) vehicleFormContainer.classList.add('d-none');
                     if (addVehicleBtn) addVehicleBtn.classList.remove('d-none');
                     
-                    // Recharger la liste des véhicules après un ajout réussi
                     const updatedVehiclesResponse = await fetch('/api/user-vehicles');
                     if (updatedVehiclesResponse.ok) {
                         const updatedVehicles = await updatedVehiclesResponse.json();
                         displayVehicles(updatedVehicles);
                     } else {
-                        console.error("roles_vehicles.js: Erreur lors du rechargement des véhicules après ajout.");
                         displayMessage(vehicleMessageContainer, "Véhicule ajouté, mais erreur lors du rafraîchissement de la liste.", 'warning');
                     }
                 } else {

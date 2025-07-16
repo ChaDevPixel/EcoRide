@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class CarController extends AbstractController
@@ -22,12 +23,15 @@ class CarController extends AbstractController
     private EntityManagerInterface $entityManager;
     private VoitureRepository $voitureRepository;
     private Security $security;
+    private SerializerInterface $serializer; // Ajout du serializer dans les propriétés
 
-    public function __construct(EntityManagerInterface $entityManager, VoitureRepository $voitureRepository, Security $security)
+    // Modifié pour injecter le SerializerInterface
+    public function __construct(EntityManagerInterface $entityManager, VoitureRepository $voitureRepository, Security $security, SerializerInterface $serializer)
     {
         $this->entityManager = $entityManager;
         $this->voitureRepository = $voitureRepository;
         $this->security = $security;
+        $this->serializer = $serializer; // Initialisation du serializer
     }
 
     /**
@@ -49,9 +53,20 @@ class CarController extends AbstractController
 
         $requiredFields = ['immatriculation', 'datePremiereImmatriculation', 'marqueId', 'modele', 'couleur', 'nombreDePlaces', 'energie', 'paysImmatriculation'];
         foreach ($requiredFields as $field) {
-            if (!isset($data[$field]) || $data[$field] === '') {
+            if (empty($data[$field])) {
                 return $this->json(['success' => false, 'message' => 'Le champ "' . $field . '" est manquant ou vide.'], JsonResponse::HTTP_BAD_REQUEST);
             }
+        }
+        
+        $existingVehicle = $this->voitureRepository->findOneBy(['immatriculation' => $data['immatriculation']]);
+        if ($existingVehicle) {
+            $message = 'Cette plaque d\'immatriculation est déjà utilisée';
+            if ($existingVehicle->getUtilisateur() === $utilisateur) {
+                $message .= ' par vous-même.';
+            } else {
+                $message .= ' par un autre membre.';
+            }
+            return $this->json(['success' => false, 'message' => $message], JsonResponse::HTTP_CONFLICT);
         }
 
         $marque = $marqueRepository->find($data['marqueId']);
@@ -125,32 +140,26 @@ class CarController extends AbstractController
     #[Route('/api/marques', name: 'api_get_marques', methods: ['GET'])]
     public function getBrands(MarqueRepository $marqueRepository): JsonResponse
     {
-        // --- DÉBUT DU BLOC DE CODE DE DIAGNOSTIC TEMPORAIRE (maintenant avec capture d'erreur) ---
-        // Le code de diagnostic temporaire est supprimé, et le code original est réactivé avec un try-catch plus précis.
         try {
-            // On trie par 'libelle' car c'est le nom de la propriété dans votre entité Marque
             $marques = $marqueRepository->findBy([], ['libelle' => 'ASC']);
             
             $marquesArray = [];
             foreach ($marques as $marque) {
                 $marquesArray[] = [
                     'id' => $marque->getId(),
-                    'nom' => $marque->getLibelle(), // Assurez-vous que votre entité Marque a bien un getLibelle()
+                    'nom' => $marque->getLibelle(),
                 ];
             }
             
             return $this->json($marquesArray);
 
         } catch (\Exception $e) {
-            // Capture l'exception et renvoie le message d'erreur exact au client.
-            // Cela remplacera le 500 générique par un message plus utile.
             return $this->json(['error' => 'Erreur lors du chargement des marques: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-        // --- FIN DU BLOC DE CODE DE DIAGNOSTIC TEMPORAIRE ---
     }
 
     /**
-     * Récupère la liste des véhicules de l'utilisateur connecté.
+     * CORRIGÉ : Récupère la liste des véhicules de l'utilisateur connecté en utilisant le Serializer.
      */
     #[Route('/api/user-vehicles', name: 'api_get_user_vehicles', methods: ['GET'])]
     public function getUserVehicles(): JsonResponse
@@ -161,25 +170,15 @@ class CarController extends AbstractController
             return $this->json([], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
-        $voitures = $this->voitureRepository->findByUtilisateurWithMarque($utilisateur);
+        // Utilisation de la méthode standard findBy pour plus de simplicité et de fiabilité.
+        $voitures = $this->voitureRepository->findBy(['utilisateur' => $utilisateur]);
 
-        
-        $voituresArray = [];
-        foreach ($voitures as $voiture) {
-            $voituresArray[] = [
-                'id' => $voiture->getId(),
-                'immatriculation' => $voiture->getImmatriculation(),
-                'modele' => $voiture->getModele(),
-                'couleur' => $voiture->getCouleur(),
-                'nombreDePlaces' => $voiture->getNombreDePlaces(),
-                'energie' => $voiture->getEnergie(),
-                'paysImmatriculation' => $voiture->getPaysImmatriculation(),
-                'marque' => [
-                    'nom' => $voiture->getMarque() ? $voiture->getMarque()->getLibelle() : 'N/A',
-                ]
-            ];
-        }
+        // Utilisation du Serializer pour une réponse cohérente et robuste,
+        // en se basant sur les groupes que nous avons déjà définis dans les entités.
+        $jsonVoitures = $this->serializer->serialize($voitures, 'json', [
+            'groups' => ['voiture:read', 'marque:read']
+        ]);
 
-        return $this->json($voituresArray);
+        return new JsonResponse($jsonVoitures, JsonResponse::HTTP_OK, [], true);
     }
 }
