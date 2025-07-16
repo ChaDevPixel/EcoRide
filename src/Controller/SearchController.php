@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Covoiturage; // <-- J'ai ajouté cette ligne
 use App\Repository\CovoiturageRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -46,6 +47,20 @@ class SearchController extends AbstractController
             'search_depart' => $villeDepart,
             'search_arrivee' => $villeArrivee,
             'search_date' => $dateDepartStr,
+        ]);
+    }
+
+    /**
+     * Affiche les détails d'un covoiturage spécifique.
+     */
+    #[Route('/covoiturage/{id}', name: 'carpool_detail', methods: ['GET'])]
+    public function detail(Covoiturage $covoiturage): Response
+    {
+        // Grâce au ParamConverter de Symfony, l'objet Covoiturage
+        // est automatiquement récupéré de la base de données via l'ID dans l'URL.
+
+        return $this->render('detailS.html.twig', [
+            'trip' => $covoiturage,
         ]);
     }
 }
