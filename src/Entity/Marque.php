@@ -6,7 +6,7 @@ use App\Repository\MarqueRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\Groups; // AJOUTEZ CE USE
 
 #[ORM\Entity(repositoryClass: MarqueRepository::class)]
 class Marque
@@ -14,13 +14,16 @@ class Marque
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['voiture_read'])] // Cette ligne est cruciale
+    #[Groups(['marque:read'])] // AJOUTÉ
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['voiture_read'])] // Cette ligne est cruciale
+    #[Groups(['marque:read', 'voiture:read'])] // AJOUTÉ
     private ?string $libelle = null;
 
+    /**
+     * @var Collection<int, Voiture>
+     */
     #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'marque')]
     private Collection $voitures;
 
@@ -42,9 +45,13 @@ class Marque
     public function setLibelle(string $libelle): static
     {
         $this->libelle = $libelle;
+
         return $this;
     }
 
+    /**
+     * @return Collection<int, Voiture>
+     */
     public function getVoitures(): Collection
     {
         return $this->voitures;
@@ -56,16 +63,19 @@ class Marque
             $this->voitures->add($voiture);
             $voiture->setMarque($this);
         }
+
         return $this;
     }
 
     public function removeVoiture(Voiture $voiture): static
     {
         if ($this->voitures->removeElement($voiture)) {
+            // set the owning side to null (unless already changed)
             if ($voiture->getMarque() === $this) {
                 $voiture->setMarque(null);
             }
         }
+
         return $this;
     }
 }

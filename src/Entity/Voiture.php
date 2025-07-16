@@ -16,62 +16,58 @@ class Voiture
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['covoiturage_read', 'voiture_read'])]
+    #[Groups(['voiture:read'])] // CORRIGÉ
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'voitures')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotBlank(message: 'La marque est obligatoire.')]
-    #[Groups(['covoiturage_read', 'voiture_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    #[Groups(['voiture:read', 'covoiturage:search_read'])] // CORRIGÉ
     private ?Marque $marque = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'Le modèle est obligatoire.')]
     #[Assert\Length(min: 1, max: 255)]
-    #[Groups(['covoiturage_read', 'voiture_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    #[Groups(['voiture:read', 'covoiturage:search_read'])] // CORRIGÉ
     private ?string $modele = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank(message: 'L\'immatriculation est obligatoire.')]
-    #[Groups(['covoiturage_read', 'voiture_read'])]
+    #[Groups(['voiture:read'])] // CORRIGÉ
     private ?string $immatriculation = null;
     
     #[ORM\Column(length: 2)]
     #[Assert\NotBlank(message: 'Le pays d\'immatriculation est obligatoire.')]
     #[Assert\Length(exactly: 2, exactMessage: 'Le code pays doit contenir exactement 2 caractères.')]
-    #[Groups(['voiture_read'])]
+    #[Groups(['voiture:read'])] // CORRIGÉ
     private ?string $paysImmatriculation = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Assert\NotNull(message: 'La date est obligatoire.')]
     #[Assert\LessThanOrEqual('today', message: 'La date ne peut pas être dans le futur.')]
-    #[Groups(['voiture_read'])]
+    #[Groups(['voiture:read'])] // CORRIGÉ
     private ?\DateTimeInterface $datePremiereImmatriculation = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
-    #[Groups(['covoiturage_read', 'voiture_read', 'covoiturage_search_read'])] // AJOUT: Groupe pour la recherche
+    #[Groups(['voiture:read', 'covoiturage:search_read'])] // CORRIGÉ
     private ?string $energie = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
-    #[Groups(['voiture_read'])]
+    #[Groups(['voiture:read'])] // CORRIGÉ
     private ?string $couleur = null;
 
     #[ORM\Column(type: Types::INTEGER)]
     #[Assert\NotNull]
     #[Assert\Positive(message: 'Le nombre de places doit être supérieur à 0.')]
-    #[Groups(['covoiturage_read', 'voiture_read'])]
+    #[Groups(['voiture:read'])] // CORRIGÉ
     private ?int $nombreDePlaces = null;
 
     #[ORM\ManyToOne(inversedBy: 'voitures')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['voiture_read'])]
     private ?Utilisateur $utilisateur = null;
 
-    /**
-     * @var Collection<int, Covoiturage>
-     */
     #[ORM\OneToMany(targetEntity: Covoiturage::class, mappedBy: 'voiture')]
     private Collection $covoiturages;
 
@@ -206,6 +202,7 @@ class Voiture
     public function removeCovoiturage(Covoiturage $covoiturage): static
     {
         if ($this->covoiturages->removeElement($covoiturage)) {
+            // set the owning side to null (unless already changed)
             if ($covoiturage->getVoiture() === $this) {
                 $covoiturage->setVoiture(null);
             }

@@ -20,7 +20,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['covoiturage_read'])]
+    #[Groups(['covoiturage:read'])] // covoiturage_read -> covoiturage:read
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
@@ -48,84 +48,63 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?\DateTimeInterface $date_naissance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['covoiturage_search_read'])] // AJOUT: Pour afficher la photo dans les résultats
+    #[Groups(['covoiturage:search_read'])] // covoiturage_search_read -> covoiturage:search_read
     private ?string $photo = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    #[Groups(['covoiturage_read', 'covoiturage_search_read'])] // AJOUT: Pour afficher le pseudo
+    // L'AJOUT IMPORTANT EST ICI
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'chauffeur:read'])]
     private ?string $pseudo = null;
 
-    /**
-     * @var Collection<int, Avis>
-     */
     #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur', orphanRemoval: true)]
     private Collection $avis;
 
-    /**
-     * @var Collection<int, Role>
-     */
     #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'utilisateurs')]
     private Collection $roles;
 
     #[ORM\Column(type: 'integer', options: ['default' => 0])]
     private int $credits = 0;
 
-    /**
-     * @var Collection<int, Covoiturage>
-     * Covoiturages où l'utilisateur est PASSAGER.
-     */
-    #[ORM\ManyToMany(targetEntity: Covoiturage::class, inversedBy: 'passagers')] // MODIFIÉ: inversedBy pointe vers 'passagers' dans Covoiturage
-    private Collection $covoituragesPassager;
-
-    /**
-     * @var Collection<int, Voiture>
-     */
     #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'utilisateur', orphanRemoval: true)]
     private Collection $voitures;
 
     #[ORM\Column(type: Types::JSON, nullable: true)]
-    #[Groups(['covoiturage_search_read'])] // AJOUT: Pour les détails du voyage (US 5)
+    #[Groups(['covoiturage:search_read'])] // covoiturage_search_read -> covoiturage:search_read
     private ?array $preferences = [];
 
-    /**
-     * @var Collection<int, Covoiturage>
-     * Covoiturages où l'utilisateur est le CHAUFFEUR.
-     */
     #[ORM\OneToMany(mappedBy: 'chauffeur', targetEntity: Covoiturage::class)]
     private Collection $covoituragesConduits;
+
+    #[ORM\OneToMany(mappedBy: 'passager', targetEntity: Participation::class, orphanRemoval: true)]
+    private Collection $participations;
 
     public function __construct()
     {
         $this->avis = new ArrayCollection();
         $this->roles = new ArrayCollection();
-        $this->covoituragesPassager = new ArrayCollection();
         $this->voitures = new ArrayCollection();
         $this->preferences = [];
         $this->covoituragesConduits = new ArrayCollection();
+        $this->participations = new ArrayCollection();
     }
     
-    /**
-     * NOUVEAU: Calcule et retourne la note moyenne de l'utilisateur.
-     * Respecte l'US 3 pour l'affichage de la note.
-     */
-    #[Groups(['covoiturage_search_read'])]
+    #[Groups(['covoiturage:search_read'])] // covoiturage_search_read -> covoiturage:search_read
     public function getNoteMoyenne(): ?float
     {
         if ($this->avis->isEmpty()) {
-            return null; // ou 0 si vous préférez
+            return null;
         }
 
         $total = 0;
         foreach ($this->avis as $avi) {
-            $total += $avi->getNote(); // Assurez-vous d'avoir une méthode getNote() dans l'entité Avis
+            $total += $avi->getNote();
         }
 
         return round($total / $this->avis->count(), 1);
     }
 
-
+    // ... TOUS VOS GETTERS ET SETTERS RESTENT INCHANGÉS ...
     // --- GETTERS AND SETTERS ---
-    // Le reste des getters et setters est inchangé...
 
     public function getId(): ?int
     {
@@ -242,7 +221,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         foreach ($this->roles as $role) {
             $roles[] = $role->getLibelle();
         }
-        $roles[] = 'ROLE_USER'; // Chaque utilisateur a au moins ce rôle
+        $roles[] = 'ROLE_USER';
         return array_unique($roles);
     }
     
@@ -309,31 +288,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection<int, Covoiturage>
-     */
-    public function getCovoituragesPassager(): Collection
-    {
-        return $this->covoituragesPassager;
-    }
-
-    public function addCovoituragesPassager(Covoiturage $covoiturage): static
-    {
-        if (!$this->covoituragesPassager->contains($covoiturage)) {
-            $this->covoituragesPassager->add($covoiturage);
-            $covoiturage->addPassager($this); // Assure la liaison bidirectionnelle
-        }
-        return $this;
-    }
-
-    public function removeCovoituragesPassager(Covoiturage $covoiturage): static
-    {
-        if ($this->covoituragesPassager->removeElement($covoiturage)) {
-            $covoiturage->removePassager($this); // Assure la liaison bidirectionnelle
-        }
-        return $this;
-    }
-
-    /**
      * @return Collection<int, Voiture>
      */
     public function getVoitures(): Collection
@@ -394,6 +348,36 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->covoituragesConduits->removeElement($covoituragesConduit)) {
             if ($covoituragesConduit->getChauffeur() === $this) {
                 $covoituragesConduit->setChauffeur(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Participation>
+     */
+    public function getParticipations(): Collection
+    {
+        return $this->participations;
+    }
+
+    public function addParticipation(Participation $participation): static
+    {
+        if (!$this->participations->contains($participation)) {
+            $this->participations->add($participation);
+            $participation->setPassager($this);
+        }
+
+        return $this;
+    }
+
+    public function removeParticipation(Participation $participation): static
+    {
+        if ($this->participations->removeElement($participation)) {
+            // set the owning side to null (unless already changed)
+            if ($participation->getPassager() === $this) {
+                $participation->setPassager(null);
             }
         }
 
