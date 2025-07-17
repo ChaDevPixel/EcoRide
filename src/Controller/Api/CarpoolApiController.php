@@ -97,16 +97,10 @@ class CarpoolApiController extends AbstractController
             return $this->json(['message' => 'Utilisateur non authentifié.'], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
-        // Récupère les covoiturages conduits par l'utilisateur
-        // La méthode getCovoituragesConduits() retourne une Doctrine Collection.
-        // Il est important que les entités associées (Voiture, Marque, Participations, Passagers)
-        // aient les groupes de sérialisation corrects pour éviter les références circulaires.
         $covoiturages = $chauffeur->getCovoituragesConduits()->toArray();
 
-        // Utilisation d'un groupe de sérialisation plus spécifique pour cette route.
-        // Assurez-vous que ce groupe est défini dans vos entités (voir explications ci-dessous).
         $jsonCovoiturages = $this->serializer->serialize($covoiturages, 'json', [
-            'groups' => ['covoiturage:user_driven_read'] // Nouveau groupe plus spécifique
+            'groups' => ['covoiturage:user_driven_read']
         ]);
 
         return new JsonResponse($jsonCovoiturages, JsonResponse::HTTP_OK, [], true);
@@ -265,6 +259,73 @@ class CarpoolApiController extends AbstractController
     }
 
     /**
+     * NOUVEAU : Annule un covoiturage initié par le chauffeur.
+     * Rembourse les participants et envoie des notifications.
+     */
+    #[Route('/covoiturage/{id}/cancel', name: 'covoiturage_cancel', methods: ['POST'])]
+    public function cancelCovoiturage(Covoiturage $covoiturage): JsonResponse
+    {
+        /** @var Utilisateur $chauffeur */
+        $chauffeur = $this->security->getUser();
+
+        // 1. Vérifier que l'utilisateur est bien le chauffeur du covoiturage
+        if (!$chauffeur || $covoiturage->getChauffeur() !== $chauffeur) {
+            return $this->json(['message' => 'Accès non autorisé. Vous n\'êtes pas le chauffeur de ce covoiturage.'], JsonResponse::HTTP_FORBIDDEN);
+        }
+
+        // 2. Vérifier le statut du covoiturage (ne peut annuler que s'il n'est pas déjà terminé ou annulé)
+        if ($covoiturage->getStatut() === 'termine' || $covoiturage->getStatut() === 'annule') {
+            return $this->json(['message' => 'Ce covoiturage ne peut pas être annulé car il est déjà terminé ou annulé.'], JsonResponse::HTTP_BAD_REQUEST);
+        }
+
+        $this->entityManager->beginTransaction();
+        try {
+            // 3. Mettre à jour le statut du covoiturage
+            $covoiturage->setStatut('annule');
+            $this->entityManager->persist($covoiturage);
+
+            // 4. Rembourser les participants et les notifier
+            foreach ($covoiturage->getParticipations() as $participation) {
+                $passager = $participation->getPassager();
+                $prixVoyage = $covoiturage->getPrix();
+
+                // Rembourser les crédits au passager
+                $passager->setCredits($passager->getCredits() + $prixVoyage);
+                $this->entityManager->persist($passager);
+
+                // Créer une notification pour le passager
+                $notification = new Notification();
+                $notification->setDestinataire($passager);
+                $notification->setMessage(
+                    sprintf(
+                        'Votre participation au covoiturage %s -> %s du %s à %s a été annulée par le chauffeur. Vos crédits (%s) ont été restitués.',
+                        $covoiturage->getVilleDepart(),
+                        $covoiturage->getVilleArrivee(),
+                        $covoiturage->getDateDepart()->format('d/m/Y'),
+                        $covoiturage->getHeureDepart(),
+                        $prixVoyage
+                    )
+                );
+                $notification->setCovoiturageAssocie($covoiturage);
+                $this->entityManager->persist($notification);
+
+                // Supprimer la participation
+                $this->entityManager->remove($participation);
+            }
+
+            $this->entityManager->flush();
+            $this->entityManager->commit();
+
+            return $this->json(['message' => 'Covoiturage annulé avec succès. Les participants ont été remboursés et notifiés.'], JsonResponse::HTTP_OK);
+
+        } catch (\Exception $e) {
+            $this->entityManager->rollback();
+            error_log("Erreur lors de l'annulation du covoiturage: " . $e->getMessage());
+            return $this->json(['message' => 'Une erreur est survenue lors de l\'annulation du covoiturage. Veuillez réessayer.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    /**
      * Route pour l'employé pour valider le paiement et transférer les crédits.
      */
     #[Route('/covoiturage/{id}/validate-payment', name: 'covoiturage_validate_payment', methods: ['POST'])]
@@ -353,7 +414,6 @@ class CarpoolApiController extends AbstractController
 
         } catch (\Exception $e) {
             $this->entityManager->rollback();
-            // Log the exception for debugging
             error_log($e->getMessage());
             return $this->json(['message' => 'Une erreur est survenue lors de l\'annulation.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }

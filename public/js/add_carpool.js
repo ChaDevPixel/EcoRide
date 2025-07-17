@@ -26,10 +26,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const passengerTripsContainer = document.getElementById('passenger-trips-container');
     const noPassengerTripsMessage = document.getElementById('no-passenger-trips-message');
 
-    // NOUVEAU: On récupère les éléments de la modale d'annulation
-    const cancelModalElement = document.getElementById('cancelConfirmationModal');
-    const cancelModal = cancelModalElement ? new bootstrap.Modal(cancelModalElement) : null;
-    const confirmCancelButton = document.getElementById('confirmCancelButton');
+    // NOUVEAU: On récupère les éléments de la modale d'annulation (pour participation, pas covoiturage chauffeur)
+    const cancelConfirmationModalElement = document.getElementById('cancelConfirmationModal'); // Modal pour annuler une participation
+    const cancelParticipationModal = cancelConfirmationModalElement ? new bootstrap.Modal(cancelConfirmationModalElement) : null;
+    const confirmCancelParticipationButton = document.getElementById('confirmCancelButton');
 
     // --- Éléments du formulaire de voyage ---
     const departureCitySelect = document.getElementById('departureCity');
@@ -85,6 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return 'En attente de validation';
             case 'termine':
                 return 'Terminé';
+            case 'annule': // Ajout du statut annulé
+                return 'Annulé';
             default:
                 return status || 'N/A';
         }
@@ -113,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const covoiturageDiv = document.createElement('div');
         covoiturageDiv.id = `covoiturage-${covoiturageData.id}`;
-        covoiturageDiv.className = 'd-flex flex-column flex-md-row align-items-start align-items-md-center px-3 py-2 rounded border mb-2 bg-light';
+        covoiturageDiv.className = 'd-flex flex-column flex-md-row align-items-start align-items-md-center px-3 py-2 rounded border mb-2 bg-light carpool-item'; // Ajout de carpool-item
 
         const mainInfoSpan = document.createElement('span');
         mainInfoSpan.className = 'mb-2 mb-md-0 flex-grow-1 text-sm';
@@ -146,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mainInfoSpan.innerHTML = `
             <strong>${covoiturageData.villeDepart}</strong> <i class="bi bi-arrow-right"></i> <strong>${covoiturageData.villeArrivee}</strong><br>
-            Le ${formatDisplayDate(covoiturageData.dateDepart)} à ${covoiturageData.heureDepart} <br>
+            Le ${formatDisplayDate(covoiturageData.dateDepart.date)} à ${covoiturageData.heureDepart} <br>
             Prix: ${covoiturageData.prix} crédits - Place(s): ${covoiturageData.placesDisponibles} <br>
             Véhicule: ${iconHtml}${vehiculeInfo}
             ${participantsHtml} 
@@ -157,14 +159,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const actionButtonsDiv = document.createElement('div');
         actionButtonsDiv.className = 'd-flex gap-2';
+        
+        // Boutons Commencer et Terminer
         actionButtonsDiv.innerHTML = `
             <button type="button" class="btn btn-success btn-sm rounded-4 px-3 start-trip-btn" data-covoiturage-id="${covoiturageData.id}">Commencer</button>
             <button type="button" class="btn btn-warning btn-sm rounded-4 px-3 end-trip-btn" data-covoiturage-id="${covoiturageData.id}">Terminer</button>
         `;
 
+        // NOUVEAU : Bouton Annuler
+        if (covoiturageData.statut === 'initialise' || covoiturageData.statut === 'en_cours') {
+            actionButtonsDiv.innerHTML += `
+                <button type="button" class="btn btn-danger btn-sm rounded-4 px-3 cancel-carpool-btn" data-carpool-id="${covoiturageData.id}">Annuler</button>
+            `;
+        }
+
         covoiturageDiv.append(mainInfoSpan, statusSpan, actionButtonsDiv);
         prepend ? driverTripsContainer.prepend(covoiturageDiv) : driverTripsContainer.appendChild(covoiturageDiv);
-        updateTripActionButtonsForElement(covoiturageDiv, covoiturageData.statut, new Date(covoiturageData.dateDepart));
+        updateTripActionButtonsForElement(covoiturageDiv, covoiturageData.statut, new Date(covoiturageData.dateDepart.date));
     }
 
     async function loadAndDisplayDriverCovoiturages() {
@@ -175,12 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             userDriverCovoituragesData = await response.json();
             
-            driverTripsContainer.querySelectorAll('div.d-flex').forEach(el => el.remove());
-
+            driverTripsContainer.innerHTML = ''; // Vide le conteneur
             if (userDriverCovoituragesData.length === 0) {
                 if (noDriverTripsMessage) {
                     noDriverTripsMessage.innerHTML = "Vous n'avez pas de voyage de prévu.";
                     noDriverTripsMessage.classList.remove('d-none');
+                    driverTripsContainer.appendChild(noDriverTripsMessage);
                 }
             } else {
                 if (noDriverTripsMessage) noDriverTripsMessage.classList.add('d-none');
@@ -209,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const covoiturageData = userDriverCovoituragesData.find(c => c.id == covoiturageId);
             if(covoiturageData) covoiturageData.statut = result.newStatus;
-            updateTripActionButtonsForElement(covoiturageElement, result.newStatus, new Date(covoiturageData.dateDepart));
+            updateTripActionButtonsForElement(covoiturageElement, result.newStatus, new Date(covoiturageData.dateDepart.date)); // Utilise .date pour accéder à la date
             displayMessage(tripMessageContainer, result.message, 'success');
         } catch (error) {
             displayMessage(tripMessageContainer, error.message, 'danger');
@@ -219,26 +230,33 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTripActionButtonsForElement(covoiturageElement, status, tripDate) {
         const startBtn = covoiturageElement.querySelector('.start-trip-btn');
         const endBtn = covoiturageElement.querySelector('.end-trip-btn');
-        const statusSpan = covoiturageElement.querySelector('span:nth-of-type(2)');
+        const cancelBtn = covoiturageElement.querySelector('.cancel-carpool-btn'); // NOUVEAU : Sélection du bouton Annuler
+        const statusSpan = covoiturageElement.querySelector('span:nth-of-type(2)'); // Assurez-vous que c'est bien le bon span
 
-        startBtn.classList.add('d-none');
-        endBtn.classList.add('d-none');
+        // Cache tous les boutons par défaut
+        if (startBtn) startBtn.classList.add('d-none');
+        if (endBtn) endBtn.classList.add('d-none');
+        if (cancelBtn) cancelBtn.classList.add('d-none'); // Cache le bouton Annuler
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         tripDate.setHours(0, 0, 0, 0);
 
         statusSpan.textContent = translateStatus(status);
-        statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0';
+        statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0'; // Réinitialise les classes de statut
 
         switch(status) {
             case 'initialise':
-                startBtn.classList.remove('d-none');
-                startBtn.disabled = tripDate.getTime() !== today.getTime();
+                if (startBtn) {
+                    startBtn.classList.remove('d-none');
+                    startBtn.disabled = tripDate.getTime() !== today.getTime();
+                }
+                if (cancelBtn) cancelBtn.classList.remove('d-none'); // Annuler visible pour "initialise"
                 statusSpan.classList.add('text-info');
                 break;
             case 'en_cours':
-                endBtn.classList.remove('d-none');
+                if (endBtn) endBtn.classList.remove('d-none');
+                if (cancelBtn) cancelBtn.classList.remove('d-none'); // Annuler visible pour "en_cours"
                 statusSpan.classList.add('text-success');
                 break;
             case 'en_attente_validation':
@@ -246,6 +264,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'termine':
                 statusSpan.classList.add('text-danger');
+                break;
+            case 'annule': // NOUVEAU : Gestion du statut "annule"
+                statusSpan.classList.add('text-danger');
+                // Les boutons Commencer/Terminer/Annuler ne sont plus affichés
                 break;
         }
     }
@@ -276,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         mainInfoSpan.innerHTML = `
             <strong>${covoiturage.villeDepart}</strong> <i class="bi bi-arrow-right"></i> <strong>${covoiturage.villeArrivee}</strong><br>
-            Le ${formatDisplayDate(covoiturage.dateDepart)} à ${covoiturage.heureDepart}<br>
+            Le ${formatDisplayDate(covoiturage.dateDepart.date)} à ${covoiturage.heureDepart}<br>
             Conducteur: <strong>${driverPseudo}</strong> - Statut: <span class="fw-bold">${translatedStatus}</span>
         `;
         
@@ -284,6 +306,15 @@ document.addEventListener('DOMContentLoaded', () => {
         actionBtn.className = 'btn btn-outline-danger btn-sm rounded-4 px-3 ms-md-auto cancel-participation-btn';
         actionBtn.textContent = 'Annuler';
         actionBtn.dataset.participationId = participationData.id;
+
+        // NOUVEAU : Désactiver le bouton d'annulation si le covoiturage n'est pas "initialise"
+        if (covoiturage.statut !== 'initialise') {
+            actionBtn.disabled = true;
+            actionBtn.textContent = `Annulé (${translatedStatus})`;
+            actionBtn.classList.remove('btn-outline-danger');
+            actionBtn.classList.add('btn-secondary');
+        }
+
 
         tripDiv.append(mainInfoSpan, actionBtn);
         passengerTripsContainer.appendChild(tripDiv);
@@ -304,12 +335,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
             userPassengerCovoituragesData = await response.json();
             
-            passengerTripsContainer.querySelectorAll('div.d-flex').forEach(el => el.remove());
+            passengerTripsContainer.innerHTML = ''; // Vide le conteneur
 
             if (userPassengerCovoituragesData.length === 0) {
                 if (noPassengerTripsMessage) {
                     noPassengerTripsMessage.innerHTML = 'Vous ne participez à aucun voyage pour le moment. <a href="/covoiturage" class="link-primary">Trouver un voyage</a>';
                     noPassengerTripsMessage.classList.remove('d-none');
+                    passengerTripsContainer.appendChild(noPassengerTripsMessage);
                 }
             } else {
                 if (noPassengerTripsMessage) noPassengerTripsMessage.classList.add('d-none');
@@ -323,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // MODIFIÉ: Le clic sur "Annuler" ouvre la modale et affiche les crédits
     passengerTripsContainer?.addEventListener('click', (e) => {
         const cancelButton = e.target.closest('.cancel-participation-btn');
-        if (!cancelButton || !cancelModal) return;
+        if (!cancelButton || !cancelParticipationModal || cancelButton.disabled) return; // Ne pas ouvrir si désactivé
 
         const participationId = cancelButton.dataset.participationId;
         
@@ -338,20 +370,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // On stocke l'ID sur le bouton de confirmation de la modale pour l'utiliser plus tard
-        if(confirmCancelButton) {
-            confirmCancelButton.dataset.participationId = participationId;
+        if(confirmCancelParticipationButton) {
+            confirmCancelParticipationButton.dataset.participationId = participationId;
         }
-        cancelModal.show();
+        cancelParticipationModal.show();
     });
 
     // MODIFIÉ: Le clic sur le bouton de confirmation gère le chargement et le rafraîchissement
-    confirmCancelButton?.addEventListener('click', async () => {
-        const participationId = confirmCancelButton.dataset.participationId;
+    confirmCancelParticipationButton?.addEventListener('click', async () => {
+        const participationId = confirmCancelParticipationButton.dataset.participationId;
         if (!participationId) return;
 
         // Ajout d'un état de chargement pour un meilleur retour visuel
-        confirmCancelButton.disabled = true;
-        confirmCancelButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Annulation...';
+        confirmCancelParticipationButton.disabled = true;
+        confirmCancelParticipationButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Annulation...';
 
         try {
             const response = await fetch(`/api/participation/${participationId}`, {
@@ -370,12 +402,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Erreur lors de l\'annulation de la participation:', error);
-            cancelModal.hide(); // Cacher la modale en cas d'erreur
+            cancelParticipationModal.hide(); // Cacher la modale en cas d'erreur
             displayMessage(tripMessageContainer, error.message, 'danger');
             
             // Réactiver le bouton en cas d'erreur
-            confirmCancelButton.disabled = false;
-            confirmCancelButton.innerHTML = 'Oui, annuler';
+            confirmCancelParticipationButton.disabled = false;
+            confirmCancelParticipationButton.innerHTML = 'Oui, annuler';
         }
     });
 

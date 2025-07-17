@@ -86,12 +86,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     li.appendChild(a);
                     notificationList.appendChild(li);
                 });
-                // Ajout d'une ligne de séparation et du lien "Voir toutes les notifications"
-                const hr = document.createElement('hr');
-                notificationList.appendChild(hr);
-                const liViewAll = document.createElement('li');
-                liViewAll.innerHTML = '<a class="dropdown-item text-center text-primary small" href="#">Voir toutes les notifications</a>';
-                notificationList.appendChild(liViewAll);
+                // Suppression du lien "Voir toutes les notifications"
+                // const hr = document.createElement('hr');
+                // notificationList.appendChild(hr);
+                // const liViewAll = document.createElement('li');
+                // liViewAll.innerHTML = '<a class="dropdown-item text-center text-primary small" href="/mon-compte/notifications">Voir toutes les notifications</a>';
+                // notificationList.appendChild(liViewAll);
             }
         }
     };

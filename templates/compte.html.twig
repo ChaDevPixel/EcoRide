@@ -361,6 +361,24 @@
   </div>
 </div>
 
+<div class="modal fade" id="cancelCarpoolModal" tabindex="-1" aria-labelledby="cancelCarpoolModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title" id="cancelCarpoolModalLabel">Confirmer l'annulation du covoiturage</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+      </div>
+      <div class="modal-body">
+        Êtes-vous sûr de vouloir annuler ce covoiturage ? Cette action est irréversible et remboursera tous les participants.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non, annuler</button>
+        <button type="button" class="btn btn-danger" id="confirmCancelCarpoolBtn">Oui, annuler définitivement</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 {% endblock %}
 
@@ -370,6 +388,8 @@
     
     <script src="{{ asset('js/roles_vehicles.js') }}" defer></script>
     <script src="{{ asset('js/add_carpool.js') }}" defer></script>
+    <script src="{{ asset('js/cancel_carpool.js') }}" defer></script>
+
 
     {% if app.user %}
         <script src="{{ asset('js/notifications.js') }}" defer></script>

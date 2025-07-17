@@ -15,9 +15,9 @@
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
             
             {% block importmap %}{{ importmap('app') }}{% endblock %}
+
             <script src="{{ asset('js/search_carpool.js') }}" defer></script>
 
-            {# NOUVEAU: On inclut le script des notifications si l'utilisateur est connecté #}
             {% if app.user %}
                 <script src="{{ asset('js/notifications.js') }}" defer></script>
             {% endif %}
@@ -159,5 +159,6 @@
                 <div class="text-center small">2025 EcoRide</div>
             </div>
         </footer>
+
     </body>
 </html>
