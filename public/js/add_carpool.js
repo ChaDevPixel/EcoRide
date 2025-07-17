@@ -135,11 +135,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // MODIFICATION: On génère la liste des participants
+        let participantsHtml = '';
+        if (covoiturageData.participations && covoiturageData.participations.length > 0) {
+            const pseudos = covoiturageData.participations.map(p => p.passager?.pseudo || 'Inconnu').join(', ');
+            participantsHtml = `<br><small class="text-muted"><strong>Participants:</strong> ${pseudos}</small>`;
+        } else {
+            participantsHtml = `<br><small class="text-muted">Aucun participant pour le moment.</small>`;
+        }
+
         mainInfoSpan.innerHTML = `
             <strong>${covoiturageData.villeDepart}</strong> <i class="bi bi-arrow-right"></i> <strong>${covoiturageData.villeArrivee}</strong><br>
             Le ${formatDisplayDate(covoiturageData.dateDepart)} à ${covoiturageData.heureDepart} <br>
             Prix: ${covoiturageData.prix} crédits - Place(s): ${covoiturageData.placesDisponibles} <br>
             Véhicule: ${iconHtml}${vehiculeInfo}
+            ${participantsHtml} 
         `;
 
         const statusSpan = document.createElement('span');

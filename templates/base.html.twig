@@ -12,12 +12,15 @@
         {% endblock %}
 
         {% block javascripts %}
-            {# SCRIPT BOOTSTRAP INDISPENSABLE POUR LES ONGLETS, MODALES, ETC. #}
             <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" xintegrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
             
-            {# Votre importmap et autres scripts globaux #}
             {% block importmap %}{{ importmap('app') }}{% endblock %}
             <script src="{{ asset('js/search_carpool.js') }}" defer></script>
+
+            {# NOUVEAU: On inclut le script des notifications si l'utilisateur est connecté #}
+            {% if app.user %}
+                <script src="{{ asset('js/notifications.js') }}" defer></script>
+            {% endif %}
         {% endblock %}
     </head>
     <body class="d-flex flex-column min-vh-100">
@@ -25,15 +28,12 @@
             <nav class="navbar bg-primary px-3">
                 <div class="container-fluid d-flex justify-content-between align-items-center">
 
-                    <!-- Bloc gauche (Menu burger en mobile, nav en desktop) -->
+                    <!-- Bloc gauche -->
                     <div class="d-flex align-items-center gap-2">
-                        <!-- Menu burger mobile -->
                         <button class="navbar-toggler d-flex d-lg-none flex-column align-items-center px-2 py-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu" aria-controls="offcanvasMenu" aria-expanded="false" aria-label="Ouvrir le menu">
                             <i class="bi bi-list fs-1 text-light"></i>
                             <small class="btn-header text-light">Menu</small>
                         </button>
-
-                        <!-- Navigation desktop -->
                         <ul class="navbar-nav flex-row gap-3 d-none d-lg-flex ms-3">
                             <li class="nav-item"><a class="nav-link text-light" href="{{ path('app_home') }}">Accueil</a></li>
                             <li class="nav-item"><a class="nav-link text-light" href="{{ path('carpool_show') }}">Covoiturages</a></li>
@@ -51,8 +51,20 @@
                     <!-- Connexion / Compte -->
                     <div class="d-flex align-items-center justify-content-end gap-2">
                         <!-- VERSION DESKTOP -->
-                        <div class="d-none d-lg-flex">
+                        <div class="d-none d-lg-flex align-items-center">
                             {% if app.user %}
+                                <!-- NOUVEAU: Dropdown des notifications -->
+                                <div class="dropdown me-3">
+                                    <a href="#" class="d-block link-light text-decoration-none dropdown-toggle position-relative" id="notification-bell" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-bell-fill fs-4"></i>
+                                        <span id="notification-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                                            0
+                                        </span>
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end text-small shadow" aria-labelledby="notification-bell" id="notification-list">
+                                        <li><p class="text-center text-muted p-2 mb-0">Chargement...</p></li>
+                                    </ul>
+                                </div>
                                 <a href="{{ path('app_account') }}" class="btn btn-light">Mon compte</a>
                                 <a href="{{ path('app_logout') }}" class="btn btn-danger ms-2">Déconnexion</a>
                             {% else %}
@@ -63,9 +75,9 @@
                         <!-- VERSION MOBILE -->
                         {% if app.user %}
                              <button class="navbar-toggler d-flex d-lg-none flex-column align-items-center px-2 py-1" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasAccount" aria-controls="offcanvasAccount" aria-expanded="false" aria-label="Ouvrir le menu compte">
-                                <i class="bi bi-person-circle fs-1 text-light"></i>
-                                <small class="btn-header text-light">Mon compte</small>
-                            </button>
+                                 <i class="bi bi-person-circle fs-1 text-light"></i>
+                                 <small class="btn-header text-light">Mon compte</small>
+                             </button>
                         {% else %}
                             <button class="navbar-toggler d-flex d-lg-none flex-column align-items-center px-2 py-1" type="button" onclick="location.href='{{ path('app_login') }}'">
                                 <i class="bi bi-person-circle fs-1 text-light"></i>
@@ -99,6 +111,12 @@
                     <div class="offcanvas-body p-0">
                         <ul class="navbar-nav flex-column">
                             <li class="nav-item"><a class="nav-link text-light px-3 py-2" href="{{ path('app_account') }}">Mon profil</a></li>
+                            <li class="nav-item">
+                                <a class="nav-link text-light px-3 py-2 position-relative" href="#">
+                                    Notifications
+                                    <span id="notification-count-mobile" class="badge rounded-pill bg-danger ms-2 d-none">0</span>
+                                </a>
+                            </li>
                             <li class="nav-item"><hr class="dropdown-divider border-light mx-3"></li>
                             <li class="nav-item"><a class="nav-link text-danger px-3 py-2" href="{{ path('app_logout') }}">Déconnexion</a></li>
                         </ul>
@@ -107,10 +125,10 @@
             </nav>
         </header>
 
-        <div>
+                <div>
             {% block bigtitle %}{% endblock %}
         </div>
-        
+
         <main class="bg-light flex-grow-1">
             {% block body %}{% endblock %}
         </main>

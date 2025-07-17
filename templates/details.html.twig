@@ -3,141 +3,153 @@
 {% block title %}Détails du covoiturage - {{ trip.villeDepart }} à {{ trip.villeArrivee }}{% endblock %}
 
 {% block body %}
-<div class="container my-5">
-    <div class="row g-4">
-        {# Colonne de gauche : Informations principales du trajet #}
-        <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Détails du voyage</h4>
-                </div>
-                <div class="card-body">
-                    {# Section Départ / Arrivée #}
-                    <div class="d-flex align-items-center mb-4">
-                        <div class="text-center">
-                            <div class="fw-bold fs-4">{{ trip.heureDepart }}</div>
-                            <div class="text-muted">{{ trip.villeDepart }}</div>
-                            <small>{{ trip.dateDepart|format_datetime('full', 'none', locale='fr')|capitalize }}</small>
-                        </div>
-                        <div class="flex-grow-1 text-center text-primary px-3">
-                            <i class="bi bi-arrow-right-circle fs-1"></i>
-                        </div>
-                        <div class="text-center">
-                            <div class="fw-bold fs-4">{{ trip.heureArrivee }}</div>
-                            <div class="text-muted">{{ trip.villeArrivee }}</div>
-                            <small>{{ trip.dateArrivee|format_datetime('full', 'none', locale='fr')|capitalize }}</small>
-                        </div>
+{# CORRECTION FINALE: On attache le contrôleur à un élément qui englobe TOUT le contenu du body #}
+<div data-controller="participation">
+    <div class="container my-5">
+        <div class="row g-4">
+            {# Colonne de gauche : Informations principales du trajet #}
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Détails du voyage</h4>
                     </div>
-                    <hr>
-                    {# Section Véhicule #}
-                    <h5 class="mt-4">Véhicule</h5>
-                    <p>
-                        <i class="bi bi-car-front-fill me-2"></i>
-                        <strong>{{ trip.voiture.marque.libelle }} {{ trip.voiture.modele }}</strong>
-                    </p>
-                    <p>
-                        <i class="bi bi-palette-fill me-2"></i>
-                        Couleur : {{ trip.voiture.couleur|capitalize }}
-                    </p>
-                    <p>
-                        {% set isEco = trip.voiture.energie|lower == 'electric' or trip.voiture.energie|lower == 'hybrid' %}
-                        <i class="bi {{ isEco ? 'bi-leaf-fill text-primary' : 'bi-fuel-pump-fill text-secondary' }} me-2"></i>
-                        Énergie : {{ trip.voiture.energie|capitalize }}
-                    </p>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="text-center">
+                                <div class="fw-bold fs-4">{{ trip.heureDepart }}</div>
+                                <div class="text-muted">{{ trip.villeDepart }}</div>
+                                <small>{{ trip.dateDepart|format_datetime('full', 'none', locale='fr')|capitalize }}</small>
+                            </div>
+                            <div class="flex-grow-1 text-center text-primary px-3">
+                                <i class="bi bi-arrow-right-circle fs-1"></i>
+                            </div>
+                            <div class="text-center">
+                                <div class="fw-bold fs-4">{{ trip.heureArrivee }}</div>
+                                <div class="text-muted">{{ trip.villeArrivee }}</div>
+                                <small>{{ trip.dateArrivee|format_datetime('full', 'none', locale='fr')|capitalize }}</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <h5 class="mt-4">Véhicule</h5>
+                        <p>
+                            <i class="bi bi-car-front-fill me-2"></i>
+                            <strong>{{ trip.voiture.marque.libelle }} {{ trip.voiture.modele }}</strong>
+                        </p>
+                        <p>
+                            <i class="bi bi-palette-fill me-2"></i>
+                            Couleur : {{ trip.voiture.couleur|capitalize }}
+                        </p>
+                        <p>
+                            {% set isEco = trip.voiture.energie|lower == 'electric' or trip.voiture.energie|lower == 'hybrid' %}
+                            <i class="bi {{ isEco ? 'bi-leaf-fill text-primary' : 'bi-fuel-pump-fill text-secondary' }} me-2"></i>
+                            Énergie : {{ trip.voiture.energie|capitalize }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="card shadow-sm mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Avis sur le conducteur</h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted">La section des avis sera implémentée ici.</p>
+                    </div>
                 </div>
             </div>
-            
-            {# Section Avis (à développer plus tard) #}
-            <div class="card shadow-sm mt-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Avis sur le conducteur</h5>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted">La section des avis sera implémentée ici.</p>
-                </div>
-            </div>
-        </div>
 
-        {# Colonne de droite : Chauffeur et Actions #}
-        <div class="col-lg-4">
-            <div class="card shadow-sm">
-                <div class="card-header text-center">
-                    <img src="{{ trip.chauffeur.photo ? asset('uploads/photos/' ~ trip.chauffeur.photo) : 'https://i.pravatar.cc/100?u=' ~ trip.chauffeur.id }}" class="rounded-circle border border-3 border-primary" width="100" height="100" alt="photo de {{ trip.chauffeur.pseudo }}">
-                    <h5 class="mt-2 mb-0">{{ trip.chauffeur.pseudo }}</h5>
-                    <span class="text-warning"><i class="bi bi-star-fill"></i> {{ trip.chauffeur.noteMoyenne|number_format(1, ',')|default('N/A') }}</span>
-                </div>
-                <div class="card-body">
-                    <h6>Préférences du conducteur</h6>
-                    <ul class="list-unstyled">
-                        {% if trip.chauffeur.preferences.fumeurs_acceptes is defined %}
-                            <li><i class="bi {{ trip.chauffeur.preferences.fumeurs_acceptes ? 'bi-check-circle-fill text-secondary' : 'bi-x-circle-fill text-danger' }} me-2"></i> {{ trip.chauffeur.preferences.fumeurs_acceptes ? 'Fumeurs acceptés' : 'Non fumeur' }}</li>
-                        {% endif %}
-                        
-                        {% if trip.chauffeur.preferences.animaux_acceptes is defined %}
-                            <li><i class="bi {{ trip.chauffeur.preferences.animaux_acceptes ? 'bi-check-circle-fill text-secondary' : 'bi-x-circle-fill text-danger' }} me-2"></i> {{ trip.chauffeur.preferences.animaux_acceptes ? 'Animaux acceptés' : 'Pas d\'animaux' }}</li>
-                        {% endif %}
-
-                        {% if trip.chauffeur.preferences.personnalisees is not empty %}
-                            {% for pref in trip.chauffeur.preferences.personnalisees %}
-                                <li><i class="bi bi-heart-fill text-dark me-2"></i> {{ pref }}</li>
-                            {% endfor %}
-                        {% endif %}
-                    </ul>
-                    <hr>
-                    <div class="text-center">
-                        <h4 class="text-primary fw-bold"><i class="bi bi-cash-coin me-2"></i>{{ trip.prix }} crédits</h4>
-                        <p id="places-restantes" class="text-muted">{{ trip.placesDisponibles }} place(s) restante(s)</p>
-                        
-                        <div id="detailsMessageContainer"></div>
-
-                        <div class="d-grid">
-                            {% if app.user %}
-                                {# NOUVELLE CONDITION : Vérifie si l'utilisateur participe déjà #}
-                                {% if is_participant %}
-                                    <button class="btn btn-info btn-lg" disabled>Vous participez déjà</button>
-                                {% elseif app.user == trip.chauffeur %}
-                                    <button class="btn btn-secondary btn-lg" disabled>Vous êtes le conducteur</button>
-                                {% elseif trip.placesDisponibles <= 0 %}
-                                    <button class="btn btn-danger btn-lg" disabled>Complet</button>
-                                {% elseif app.user.credits < trip.prix %}
-                                    <button class="btn btn-warning btn-lg" disabled title="Crédits insuffisants">Participer</button>
-                                {% else %}
-                                    <button id="participateButton" class="btn btn-success btn-lg" data-covoiturage-id="{{ trip.id }}">Participer</button>
-                                {% endif %}
-                            {% else %}
-                                <a href="{{ path('app_login') }}" class="btn btn-success btn-lg">Se connecter pour participer</a>
+            {# Colonne de droite : Chauffeur et Actions #}
+            <div class="col-lg-4">
+                <div class="card shadow-sm">
+                    <div class="card-header text-center">
+                        <img src="{{ trip.chauffeur.photo ? asset('uploads/photos/' ~ trip.chauffeur.photo) : 'https://i.pravatar.cc/100?u=' ~ trip.chauffeur.id }}" class="rounded-circle border border-3 border-primary" width="100" height="100" alt="photo de {{ trip.chauffeur.pseudo }}">
+                        <h5 class="mt-2 mb-0">{{ trip.chauffeur.pseudo }}</h5>
+                        <span class="text-warning"><i class="bi bi-star-fill"></i> {{ trip.chauffeur.noteMoyenne|number_format(1, ',')|default('N/A') }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h6>Préférences du conducteur</h6>
+                        <ul class="list-unstyled">
+                            {% if trip.chauffeur.preferences.fumeurs_acceptes is defined %}
+                                <li><i class="bi {{ trip.chauffeur.preferences.fumeurs_acceptes ? 'bi-check-circle-fill text-secondary' : 'bi-x-circle-fill text-danger' }} me-2"></i> {{ trip.chauffeur.preferences.fumeurs_acceptes ? 'Fumeurs acceptés' : 'Non fumeur' }}</li>
                             {% endif %}
+                            
+                            {% if trip.chauffeur.preferences.animaux_acceptes is defined %}
+                                <li><i class="bi {{ trip.chauffeur.preferences.animaux_acceptes ? 'bi-check-circle-fill text-secondary' : 'bi-x-circle-fill text-danger' }} me-2"></i> {{ trip.chauffeur.preferences.animaux_acceptes ? 'Animaux acceptés' : 'Pas d\'animaux' }}</li>
+                            {% endif %}
+
+                            {% if trip.chauffeur.preferences.personnalisees is not empty %}
+                                {% for pref in trip.chauffeur.preferences.personnalisees %}
+                                    <li><i class="bi bi-heart-fill text-dark me-2"></i> {{ pref }}</li>
+                                {% endfor %}
+                            {% endif %}
+                        </ul>
+                        <hr>
+                        <div class="text-center">
+                            <h4 class="text-primary fw-bold"><i class="bi bi-cash-coin me-2"></i>{{ trip.prix }} crédits</h4>
+                            <p id="places-restantes" class="text-muted">{{ trip.placesDisponibles }} place(s) restante(s)</p>
+                            
+                            <div id="detailsMessageContainer" data-participation-target="messageContainer"></div>
+
+                            <div class="d-grid">
+                                {% if app.user %}
+                                    {% if is_participant %}
+                                        <button class="btn btn-info btn-lg" disabled>Vous participez déjà</button>
+                                    {% elseif app.user == trip.chauffeur %}
+                                        <button class="btn btn-secondary btn-lg" disabled>Vous êtes le conducteur</button>
+                                    {% elseif trip.placesDisponibles <= 0 %}
+                                        <button class="btn btn-danger btn-lg" disabled>Complet</button>
+                                    {% elseif app.user.credits < trip.prix %}
+                                        <button class="btn btn-warning btn-lg" disabled title="Crédits insuffisants">Participer</button>
+                                    {% else %}
+                                        <button id="participateButton" class="btn btn-success btn-lg" 
+                                                data-action="click->participation#openConfirmationModal"
+                                                data-participation-target="participateButton">
+                                            Participer
+                                        </button>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{{ path('app_login') }}" class="btn btn-success btn-lg">Se connecter pour participer</a>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Modal de Confirmation de Participation -->
-<div class="modal fade" id="participationModal" tabindex="-1" aria-labelledby="participationModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="participationModalLabel">Confirmer votre participation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p>Vous êtes sur le point de participer à ce covoiturage.</p>
-        <p>Coût : <strong>{{ trip.prix }} crédits</strong>.</p>
-        <p>Êtes-vous sûr de vouloir continuer ?</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-        <button type="button" class="btn btn-primary" id="confirm-participation-btn" data-covoiturage-id="{{ trip.id }}">Confirmer ma participation</button>
+    <!-- Modal de Confirmation de Participation -->
+    <div class="modal fade" id="participationModal" tabindex="-1" aria-labelledby="participationModalLabel" aria-hidden="true" data-participation-target="modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="participationModalLabel">Confirmer votre participation</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <p>Vous êtes sur le point de participer à ce covoiturage.</p>
+            <p>Coût : <strong>{{ trip.prix }} crédits</strong>.</p>
+            <p>Êtes-vous sûr de vouloir continuer ?</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-primary" id="confirm-participation-btn" 
+                    data-action="click->participation#submitParticipation"
+                    data-covoiturage-id="{{ trip.id }}"
+                    data-participation-target="confirmButton">
+                Confirmer ma participation
+            </button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="{{ asset('js/participation.js') }}" defer></script>
+
+    {% if app.user %}
+        <script src="{{ asset('js/notifications.js') }}" defer></script>
+    {% endif %}
+
 {% endblock %}

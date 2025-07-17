@@ -3,6 +3,7 @@
 namespace App\Controller\Api;
 
 use App\Entity\Covoiturage;
+use App\Entity\Notification;
 use App\Entity\Participation;
 use App\Entity\Utilisateur;
 use App\Repository\ParticipationRepository;
@@ -96,10 +97,16 @@ class CarpoolApiController extends AbstractController
             return $this->json(['message' => 'Utilisateur non authentifié.'], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
+        // Récupère les covoiturages conduits par l'utilisateur
+        // La méthode getCovoituragesConduits() retourne une Doctrine Collection.
+        // Il est important que les entités associées (Voiture, Marque, Participations, Passagers)
+        // aient les groupes de sérialisation corrects pour éviter les références circulaires.
         $covoiturages = $chauffeur->getCovoituragesConduits()->toArray();
-        
+
+        // Utilisation d'un groupe de sérialisation plus spécifique pour cette route.
+        // Assurez-vous que ce groupe est défini dans vos entités (voir explications ci-dessous).
         $jsonCovoiturages = $this->serializer->serialize($covoiturages, 'json', [
-            'groups' => ['covoiturage:read', 'voiture:read', 'marque:read', 'chauffeur:read']
+            'groups' => ['covoiturage:user_driven_read'] // Nouveau groupe plus spécifique
         ]);
 
         return new JsonResponse($jsonCovoiturages, JsonResponse::HTTP_OK, [], true);
@@ -120,13 +127,7 @@ class CarpoolApiController extends AbstractController
         $participations = $participationRepository->findBy(['passager' => $user]);
 
         $jsonParticipations = $this->serializer->serialize($participations, 'json', [
-            'groups' => [
-                'participation:read', 
-                'covoiturage:read', 
-                'chauffeur:read',
-                'voiture:read',
-                'marque:read'
-            ]
+            'groups' => ['participation:read', 'covoiturage_for_participation:read', 'chauffeur:read', 'voiture:read', 'marque:read']
         ]);
 
         return new JsonResponse($jsonParticipations, JsonResponse::HTTP_OK, [], true);
@@ -144,35 +145,29 @@ class CarpoolApiController extends AbstractController
             return $this->json(['message' => 'Vous devez être connecté pour participer.'], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
-        // Vérification 1: L'utilisateur ne peut pas être le chauffeur
         if ($covoiturage->getChauffeur() === $passager) {
             return $this->json(['message' => 'Vous ne pouvez pas participer à votre propre covoiturage.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        // Vérification 2: Le covoiturage doit être "Non démarré"
         if ($covoiturage->getStatut() !== 'initialise') {
             return $this->json(['message' => 'Ce covoiturage n\'est plus ouvert aux inscriptions.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        // Vérification 3: Il doit y avoir des places disponibles
         if ($covoiturage->getPlacesDisponibles() <= 0) {
             return $this->json(['message' => 'Ce covoiturage est complet.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        // Vérification 4: L'utilisateur ne doit pas déjà participer
         foreach ($covoiturage->getParticipations() as $existingParticipation) {
             if ($existingParticipation->getPassager() === $passager) {
                 return $this->json(['message' => 'Vous participez déjà à ce covoiturage.'], JsonResponse::HTTP_BAD_REQUEST);
             }
         }
 
-        // Vérification 5: L'utilisateur doit avoir assez de crédits
         $prix = $covoiturage->getPrix();
         if ($passager->getCredits() < $prix) {
             return $this->json(['message' => 'Crédits insuffisants pour participer à ce voyage.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        // Tout est OK, on procède avec une transaction pour la sécurité
         $this->entityManager->beginTransaction();
         try {
             // Débiter le passager
@@ -186,9 +181,27 @@ class CarpoolApiController extends AbstractController
             $participation->setPassager($passager);
             $participation->setCovoiturage($covoiturage);
 
+            // Créer la notification pour le chauffeur
+            $chauffeur = $covoiturage->getChauffeur();
+            $notification = new Notification();
+            $notification->setDestinataire($chauffeur);
+            $notification->setMessage(
+                sprintf(
+                    '%s participe à votre covoiturage %s -> %s du %s à %s.',
+                    $passager->getPseudo(),
+                    $covoiturage->getVilleDepart(),
+                    $covoiturage->getVilleArrivee(),
+                    $covoiturage->getDateDepart()->format('d/m/Y'),
+                    $covoiturage->getHeureDepart()
+                )
+            );
+            $notification->setCovoiturageAssocie($covoiturage);
+
+            // Persister toutes les entités modifiées ou créées
             $this->entityManager->persist($participation);
             $this->entityManager->persist($passager);
             $this->entityManager->persist($covoiturage);
+            $this->entityManager->persist($notification);
 
             $this->entityManager->flush();
             $this->entityManager->commit();
@@ -197,7 +210,8 @@ class CarpoolApiController extends AbstractController
 
         } catch (\Exception $e) {
             $this->entityManager->rollback();
-            // Idéalement, loguez l'erreur : error_log($e->getMessage());
+            // Log the exception for debugging
+            error_log($e->getMessage()); 
             return $this->json(['message' => 'Une erreur interne est survenue. Veuillez réessayer.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
@@ -256,7 +270,6 @@ class CarpoolApiController extends AbstractController
     #[Route('/covoiturage/{id}/validate-payment', name: 'covoiturage_validate_payment', methods: ['POST'])]
     public function validatePayment(Covoiturage $covoiturage): JsonResponse
     {
-        // SÉCURITÉ : À décommenter quand vous aurez un rôle 'ROLE_EMPLOYE'
         // $this->denyAccessUnlessGranted('ROLE_EMPLOYE');
 
         if ($covoiturage->getStatut() !== 'en_attente_validation') {
@@ -280,7 +293,7 @@ class CarpoolApiController extends AbstractController
 
 
     /**
-     * Annule la participation d'un passager, le rembourse et met à jour les places.
+     * MODIFIÉ : Annule la participation d'un passager, le rembourse et met à jour les places.
      */
     #[Route('/participation/{id}', name: 'delete_participation', methods: ['DELETE'])]
     public function deleteParticipation(Participation $participation): JsonResponse
@@ -300,7 +313,6 @@ class CarpoolApiController extends AbstractController
         $passager = $participation->getPassager();
         $prixVoyage = $covoiturage->getPrix();
 
-        // On utilise une transaction pour garantir la cohérence des données
         $this->entityManager->beginTransaction();
         try {
             // 1. Rembourser les crédits au passager
@@ -309,15 +321,31 @@ class CarpoolApiController extends AbstractController
             // 2. Mettre à jour le nombre de places disponibles
             $covoiturage->setPlacesDisponibles($covoiturage->getPlacesDisponibles() + 1);
 
-            // 3. Persister les changements et supprimer la participation
+            // 3. Créer une notification pour le chauffeur
+            $chauffeur = $covoiturage->getChauffeur();
+            $notification = new Notification();
+            $notification->setDestinataire($chauffeur);
+            $notification->setMessage(
+                sprintf(
+                    '%s a annulé sa participation à votre covoiturage %s -> %s du %s à %s.',
+                    $passager->getPseudo(),
+                    $covoiturage->getVilleDepart(),
+                    $covoiturage->getVilleArrivee(),
+                    $covoiturage->getDateDepart()->format('d/m/Y'),
+                    $covoiturage->getHeureDepart()
+                )
+            );
+            $notification->setCovoiturageAssocie($covoiturage);
+
+            // 4. Persister les changements et supprimer la participation
             $this->entityManager->persist($passager);
             $this->entityManager->persist($covoiturage);
+            $this->entityManager->persist($notification);
             $this->entityManager->remove($participation);
 
             $this->entityManager->flush();
             $this->entityManager->commit();
 
-            // MODIFIÉ: On retourne le nouveau solde de crédits
             return $this->json([
                 'message' => 'Participation annulée avec succès. Vos crédits ont été restitués.',
                 'newCredits' => $passager->getCredits()
@@ -325,7 +353,8 @@ class CarpoolApiController extends AbstractController
 
         } catch (\Exception $e) {
             $this->entityManager->rollback();
-            // Idéalement, loguez l'erreur ici
+            // Log the exception for debugging
+            error_log($e->getMessage());
             return $this->json(['message' => 'Une erreur est survenue lors de l\'annulation.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

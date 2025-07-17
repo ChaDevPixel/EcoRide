@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ParticipationRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups; // <-- AJOUTEZ CE USE
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ParticipationRepository::class)]
 class Participation
@@ -12,21 +12,28 @@ class Participation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['participation:read'])] // <-- AJOUTEZ CETTE LIGNE
+    // Ajout de 'covoiturage:user_driven_read' pour que l'ID de la participation soit visible
+    // lorsque le covoiturage est sérialisé via ce groupe (par exemple, pour les covoiturages conduits par l'utilisateur).
+    #[Groups(['participation:read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'participations')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Utilisateur $passager = null; // Pas de groupe ici, on ne veut pas l'exposer en boucle
+    // Le passager doit être exposé quand on lit une participation ('participation:read')
+    // ou quand on lit un covoiturage qui inclut ses participations ('covoiturage:user_driven_read').
+    #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
+    private ?Utilisateur $passager = null;
 
     #[ORM\ManyToOne(inversedBy: 'participations')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['participation:read'])] // <-- AJOUTEZ CETTE LIGNE (essentiel pour lier au covoiturage)
+    // Le covoiturage doit être exposé quand on lit une participation ('participation:read').
+    // Il est crucial de NE PAS inclure ici les groupes 'covoiturage:read' ou 'covoiturage:user_driven_read'
+    // pour éviter une référence circulaire avec la collection 'participations' de l'entité Covoiturage.
+    #[Groups(['participation:read'])]
     private ?Covoiturage $covoiturage = null;
 
     #[ORM\Column]
-    // Optionnel : ajoutez un groupe si vous voulez afficher cette date dans l'API
-    // #[Groups(['participation:read'])]
+    #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
     private ?\DateTimeImmutable $dateInscription = null;
 
     public function __construct()

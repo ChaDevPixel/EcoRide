@@ -16,59 +16,78 @@ class Voiture
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['voiture:read'])] // CORRIGÉ
+    // Ajout de 'covoiturage:user_driven_read' pour que l'ID de la voiture soit visible
+    // lorsque le covoiturage est sérialisé via ce groupe.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'voitures')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotBlank(message: 'La marque est obligatoire.')]
-    #[Groups(['voiture:read', 'covoiturage:search_read'])] // CORRIGÉ
+    // La marque doit être exposée avec les groupes appropriés.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read'])]
     private ?Marque $marque = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'Le modèle est obligatoire.')]
     #[Assert\Length(min: 1, max: 255)]
-    #[Groups(['voiture:read', 'covoiturage:search_read'])] // CORRIGÉ
+    // Ajout de 'covoiturage:user_driven_read'.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read'])]
     private ?string $modele = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank(message: 'L\'immatriculation est obligatoire.')]
-    #[Groups(['voiture:read'])] // CORRIGÉ
+    // L'immatriculation peut être sensible, mais pour les covoiturages de l'utilisateur, elle est souvent nécessaire.
+    // Ajout de 'covoiturage:user_driven_read'.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?string $immatriculation = null;
     
     #[ORM\Column(length: 2)]
     #[Assert\NotBlank(message: 'Le pays d\'immatriculation est obligatoire.')]
     #[Assert\Length(exactly: 2, exactMessage: 'Le code pays doit contenir exactement 2 caractères.')]
-    #[Groups(['voiture:read'])] // CORRIGÉ
+    // Ajout de 'covoiturage:user_driven_read'.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?string $paysImmatriculation = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Assert\NotNull(message: 'La date est obligatoire.')]
     #[Assert\LessThanOrEqual('today', message: 'La date ne peut pas être dans le futur.')]
-    #[Groups(['voiture:read'])] // CORRIGÉ
+    // Ajout de 'covoiturage:user_driven_read'.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?\DateTimeInterface $datePremiereImmatriculation = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
-    #[Groups(['voiture:read', 'covoiturage:search_read'])] // CORRIGÉ
+    // Ajout de 'covoiturage:user_driven_read'.
+    #[Groups(['voiture:read', 'covoiturage:search_read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?string $energie = null;
 
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
-    #[Groups(['voiture:read'])] // CORRIGÉ
+    // Ajout de 'covoiturage:user_driven_read'.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?string $couleur = null;
 
     #[ORM\Column(type: Types::INTEGER)]
     #[Assert\NotNull]
     #[Assert\Positive(message: 'Le nombre de places doit être supérieur à 0.')]
-    #[Groups(['voiture:read'])] // CORRIGÉ
+    // Ajout de 'covoiturage:user_driven_read'.
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?int $nombreDePlaces = null;
 
     #[ORM\ManyToOne(inversedBy: 'voitures')]
     #[ORM\JoinColumn(nullable: false)]
+    // L'utilisateur propriétaire de la voiture ne doit pas être sérialisé ici avec des groupes
+    // qui pourraient créer des références circulaires (ex: si Utilisateur sérialise ses voitures).
+    // Si vous avez besoin de l'utilisateur, utilisez un groupe spécifique pour la voiture elle-même
+    // ou un endpoint dédié.
+    // Pour le contexte des covoiturages, le chauffeur est déjà directement lié au covoiturage.
+    #[Groups(['voiture:read_full'])] // Exemple de groupe si vous voulez une lecture complète de la voiture avec son propriétaire
     private ?Utilisateur $utilisateur = null;
 
     #[ORM\OneToMany(targetEntity: Covoiturage::class, mappedBy: 'voiture')]
+    // Cette collection ne doit PAS avoir de groupe de sérialisation pour éviter les références circulaires.
+    // Les covoiturages sont déjà sérialisés via d'autres chemins (ex: covoituragesConduits de l'utilisateur).
     private Collection $covoiturages;
 
     public function __construct()

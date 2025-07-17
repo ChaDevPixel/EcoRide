@@ -184,4 +184,9 @@
 {% block javascripts %}
     {{ parent() }}
     <script src="{{ asset('js/search_carpool.js') }}" defer></script>
+    
+    {% if app.user %}
+        <script src="{{ asset('js/notifications.js') }}" defer></script>
+    {% endif %}
+
 {% endblock %}

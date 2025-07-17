@@ -6,7 +6,7 @@ use App\Repository\MarqueRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups; // AJOUTEZ CE USE
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: MarqueRepository::class)]
 class Marque
@@ -14,17 +14,24 @@ class Marque
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['marque:read'])] // AJOUTÉ
+    // Ajout de 'covoiturage:read', 'covoiturage:search_read' et 'covoiturage:user_driven_read'
+    // pour s'assurer que l'ID de la marque est disponible lorsque la voiture est sérialisée
+    // dans ces contextes.
+    #[Groups(['marque:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'voiture:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['marque:read', 'voiture:read'])] // AJOUTÉ
+    // Ajout de 'marque:read', 'covoiturage:search_read' et 'covoiturage:user_driven_read'
+    // pour que le libellé de la marque soit visible dans différents contextes de sérialisation.
+    #[Groups(['marque:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'voiture:read'])]
     private ?string $libelle = null;
 
     /**
      * @var Collection<int, Voiture>
      */
     #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'marque')]
+    // Cette collection ne doit PAS avoir de groupe de sérialisation pour éviter les références circulaires.
+    // Les voitures associées à cette marque seront sérialisées via l'entité Voiture elle-même.
     private Collection $voitures;
 
     public function __construct()

@@ -20,18 +20,24 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['covoiturage:read'])] // covoiturage_read -> covoiturage:read
+    // Ajout des groupes pour une meilleure granularité
+    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'participation:read', 'chauffeur:read', 'passager:read', 'voiture:read', 'notification:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    // Généralement, le nom complet n'est pas toujours nécessaire dans toutes les sérialisations.
+    // Vous pouvez ajouter un groupe spécifique si vous en avez besoin.
     private ?string $nom = null;
 
     #[ORM\Column(length: 50)]
+    // Idem pour le prénom.
     private ?string $prenom = null;
 
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\NotBlank(message: "L'adresse email est obligatoire.")]
     #[Assert\Email(message: "Veuillez saisir une adresse email valide.")]
+    // L'email peut être exposé pour l'utilisateur lui-même ou dans des contextes spécifiques.
+    #[Groups(['user:read_full'])] // Exemple de groupe pour une lecture complète de l'utilisateur
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
@@ -39,44 +45,69 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 50, nullable: true)]
+    // Le téléphone peut être exposé pour l'utilisateur lui-même ou des contacts spécifiques.
+    #[Groups(['user:read_full'])]
     private ?string $telephone = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    // L'adresse n'est généralement pas exposée via l'API publique.
     private ?string $adresse = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $date_naissance = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    #[Groups(['covoiturage:search_read'])] // covoiturage_search_read -> covoiturage:search_read
+    #[Groups(['covoiturage:search_read', 'chauffeur:read', 'passager:read'])] // Ajout des groupes pour le chauffeur/passager
     private ?string $photo = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    // L'AJOUT IMPORTANT EST ICI
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'chauffeur:read'])]
+    // Le pseudo est souvent utilisé, donc il est judicieux de l'inclure dans plusieurs groupes.
+    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'chauffeur:read', 'passager:read', 'participation:read', 'notification:read'])]
     private ?string $pseudo = null;
 
     #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur', orphanRemoval: true)]
+    // N'exposez pas directement les avis pour éviter les références circulaires et les charges inutiles.
+    // Créez un endpoint spécifique si vous avez besoin des avis d'un utilisateur.
     private Collection $avis;
 
     #[ORM\ManyToMany(targetEntity: Role::class, inversedBy: 'utilisateurs')]
+    // Les rôles sont généralement gérés en interne ou exposés via un groupe spécifique si nécessaire.
     private Collection $roles;
 
     #[ORM\Column(type: 'integer', options: ['default' => 0])]
+    // Les crédits sont sensibles et ne devraient être exposés que pour l'utilisateur lui-même.
+    #[Groups(['user:read_full'])]
     private int $credits = 0;
 
     #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'utilisateur', orphanRemoval: true)]
+    // N'exposez pas les voitures ici pour éviter les références circulaires.
+    // Les voitures sont sérialisées via le Covoiturage si elles sont liées.
     private Collection $voitures;
 
     #[ORM\Column(type: Types::JSON, nullable: true)]
-    #[Groups(['covoiturage:search_read'])] // covoiturage_search_read -> covoiturage:search_read
+    #[Groups(['covoiturage:search_read', 'user:read_full'])] // Les préférences peuvent être exposées pour l'utilisateur.
     private ?array $preferences = [];
 
     #[ORM\OneToMany(mappedBy: 'chauffeur', targetEntity: Covoiturage::class)]
+    // TRÈS IMPORTANT : Pour cette collection, nous utilisons 'covoiturage:user_driven_read'
+    // dans le contrôleur. Il ne faut PAS ajouter de groupe ici qui pourrait créer une boucle
+    // si Covoiturage sérialise son chauffeur avec un groupe qui inclut cette collection.
+    // La sérialisation se fait "à la demande" via le contrôleur.
+    #[Groups(['user:covoiturages_list'])] // Un groupe spécifique si vous voulez une API qui liste les covoiturages d'un user
     private Collection $covoituragesConduits;
 
     #[ORM\OneToMany(mappedBy: 'passager', targetEntity: Participation::class, orphanRemoval: true)]
+    // Similaire à covoituragesConduits, évitez les boucles.
+    #[Groups(['user:participations_list'])] // Un groupe spécifique si vous voulez une API qui liste les participations d'un user
     private Collection $participations;
+
+    /**
+     * NOUVEAU: Relation vers les notifications de l'utilisateur.
+     * @var Collection<int, Notification>
+     */
+    #[ORM\OneToMany(mappedBy: 'destinataire', targetEntity: Notification::class, orphanRemoval: true)]
+    // REMOVED: #[Groups(['user:notifications_list'])] // Suppression du groupe pour éviter les problèmes de sérialisation
+    private Collection $notifications;
 
     public function __construct()
     {
@@ -86,9 +117,10 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         $this->preferences = [];
         $this->covoituragesConduits = new ArrayCollection();
         $this->participations = new ArrayCollection();
+        $this->notifications = new ArrayCollection();
     }
     
-    #[Groups(['covoiturage:search_read'])] // covoiturage_search_read -> covoiturage:search_read
+    #[Groups(['covoiturage:search_read', 'chauffeur:read', 'passager:read'])] // Ajout des groupes pour le chauffeur/passager
     public function getNoteMoyenne(): ?float
     {
         if ($this->avis->isEmpty()) {
@@ -103,8 +135,9 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return round($total / $this->avis->count(), 1);
     }
 
-    // ... TOUS VOS GETTERS ET SETTERS RESTENT INCHANGÉS ...
+
     // --- GETTERS AND SETTERS ---
+    // ... (Le reste de vos getters et setters est conservé)
 
     public function getId(): ?int
     {
@@ -375,9 +408,39 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     public function removeParticipation(Participation $participation): static
     {
         if ($this->participations->removeElement($participation)) {
-            // set the owning side to null (unless already changed)
             if ($participation->getPassager() === $this) {
                 $participation->setPassager(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * NOUVEAU: Getter et setter pour les notifications.
+     * @return Collection<int, Notification>
+     */
+    public function getNotifications(): Collection
+    {
+        return $this->notifications;
+    }
+
+    public function addNotification(Notification $notification): static
+    {
+        if (!$this->notifications->contains($notification)) {
+            $this->notifications->add($notification);
+            $notification->setDestinataire($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNotification(Notification $notification): static
+    {
+        if ($this->notifications->removeElement($notification)) {
+            // set the owning side to null (unless already changed)
+            if ($notification->getDestinataire() === $this) {
+                $notification->setDestinataire(null);
             }
         }
 
