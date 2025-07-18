@@ -5,7 +5,7 @@ namespace App\Repository;
 use App\Entity\Covoiturage;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use DateTime; // J'ai ajouté cette ligne pour être sûr que la classe DateTime est disponible
+use DateTime;
 
 /**
  * @extends ServiceEntityRepository<Covoiturage>
@@ -17,7 +17,7 @@ class CovoiturageRepository extends ServiceEntityRepository
         parent::__construct($registry, Covoiturage::class);
     }
 
-    /**
+/**
      * Trouve les covoiturages correspondant aux critères de recherche.
      * @param string $villeDepart
      * @param string $villeArrivee
@@ -37,22 +37,30 @@ class CovoiturageRepository extends ServiceEntityRepository
             ->andWhere('c.villeArrivee = :arrivee')
             ->andWhere('c.dateDepart BETWEEN :startOfDay AND :endOfDay')
             ->andWhere('c.placesDisponibles > 0')
-            ->andWhere('c.statut = :statut')
+            ->andWhere('c.statut IN (:statuts)') 
             ->setParameter('depart', $villeDepart)
             ->setParameter('arrivee', $villeArrivee)
             ->setParameter('startOfDay', $startOfDay)
-            ->setParameter('endOfDay', $endOfDay)
-            ->setParameter('statut', 'initialise')
-            ->orderBy('c.heureDepart', 'ASC');
+            ->setParameter('endOfDay', $endOfDay) // J'ai corrigé une petite typo ici (c'était une chaîne de caractères)
+            ->setParameter('statuts', ['initialise', 'en_cours']);
 
-        // CORRECTION : Si la date de recherche est aujourd'hui,
-        // on s'assure que l'heure de départ n'est pas déjà passée.
-        $today = new DateTime('today');
-        if ($startOfDay->format('Y-m-d') === $today->format('Y-m-d')) {
-            $qb->andWhere('c.dateDepart >= :now')
-               ->setParameter('now', new DateTime());
+        // ✨ NOUVELLE LOGIQUE : Filtre sur l'heure si la recherche est pour aujourd'hui ✨
+        $maintenant = new DateTime();
+        // On vérifie si la date de début de recherche est la même qu'aujourd'hui
+        if ($startOfDay->format('Y-m-d') === $maintenant->format('Y-m-d')) {
+            // Si c'est le cas, on ajoute une condition pour ne prendre que les heures futures
+            $qb->andWhere('c.heureDepart > :heureActuelle')
+               ->setParameter('heureActuelle', $maintenant->format('H:i:s'));
         }
+        
+        $qb->orderBy('c.heureDepart', 'ASC');
 
+        // NOUVEAU : Logs de débogage pour les paramètres de date
+        error_log("DEBUG REPOSITORY: findBySearchCriteria - startOfDay: " . $startOfDay->format('Y-m-d H:i:s.u'));
+        error_log("DEBUG REPOSITORY: findBySearchCriteria - endOfDay: " . $endOfDay->format('Y-m-d H:i:s.u'));
+        error_log("DEBUG REPOSITORY: findBySearchCriteria - depart: " . $villeDepart);
+        error_log("DEBUG REPOSITORY: findBySearchCriteria - arrivee: " . $villeArrivee);
+        
         return $qb->getQuery()->getResult();
     }
 
@@ -67,14 +75,19 @@ class CovoiturageRepository extends ServiceEntityRepository
             ->andWhere('c.villeArrivee = :arrivee')
             ->andWhere('c.dateDepart > :date_depart') // Cherche après la date de recherche
             ->andWhere('c.placesDisponibles > 0')
-            ->andWhere('c.statut = :statut')
+            ->andWhere('c.statut IN (:statuts)')
             ->setParameter('depart', $villeDepart)
             ->setParameter('arrivee', $villeArrivee)
             ->setParameter('date_depart', $dateDepart)
-            ->setParameter('statut', 'initialise')
+            ->setParameter('statuts', ['initialise', 'en_cours'])
             ->orderBy('c.dateDepart', 'ASC')
             ->addOrderBy('c.heureDepart', 'ASC')
             ->setMaxResults(1);
+
+        // NOUVEAU : Logs de débogage pour les paramètres de date
+        error_log("DEBUG REPOSITORY: findNextAvailable - date_depart: " . $dateDepart->format('Y-m-d H:i:s.u'));
+        error_log("DEBUG REPOSITORY: findNextAvailable - depart: " . $villeDepart);
+        error_log("DEBUG REPOSITORY: findNextAvailable - arrivee: " . $villeArrivee);
 
         return $qb->getQuery()->getOneOrNullResult();
     }

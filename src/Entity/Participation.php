@@ -36,6 +36,14 @@ class Participation
     #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
     private ?\DateTimeImmutable $dateInscription = null;
 
+    #[ORM\Column]
+    #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
+    private ?bool $valideParPassager = false; // NOUVEAU : Indique si le passager a validé le trajet
+
+    #[ORM\Column]
+    #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
+    private ?bool $avisSoumis = false; // NOUVEAU : Indique si le passager a soumis un avis
+
     public function __construct()
     {
         $this->dateInscription = new \DateTimeImmutable();
@@ -76,6 +84,30 @@ class Participation
     public function setDateInscription(\DateTimeImmutable $dateInscription): static
     {
         $this->dateInscription = $dateInscription;
+        return $this;
+    }
+
+    // NOUVEAU : Getters et Setters pour valideParPassager
+    public function isValideParPassager(): ?bool
+    {
+        return $this->valideParPassager;
+    }
+
+    public function setValideParPassager(bool $valideParPassager): static
+    {
+        $this->valideParPassager = $valideParPassager;
+        return $this;
+    }
+
+    // NOUVEAU : Getters et Setters pour avisSoumis
+    public function isAvisSoumis(): ?bool
+    {
+        return $this->avisSoumis;
+    }
+
+    public function setAvisSoumis(bool $avisSoumis): static
+    {
+        $this->avisSoumis = $avisSoumis;
         return $this;
     }
 }

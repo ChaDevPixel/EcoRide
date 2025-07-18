@@ -26,10 +26,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const passengerTripsContainer = document.getElementById('passenger-trips-container');
     const noPassengerTripsMessage = document.getElementById('no-passenger-trips-message');
 
-    // NOUVEAU: On récupère les éléments de la modale d'annulation (pour participation, pas covoiturage chauffeur)
-    const cancelConfirmationModalElement = document.getElementById('cancelConfirmationModal'); // Modal pour annuler une participation
+    const cancelConfirmationModalElement = document.getElementById('cancelConfirmationModal');
     const cancelParticipationModal = cancelConfirmationModalElement ? new bootstrap.Modal(cancelConfirmationModalElement) : null;
     const confirmCancelParticipationButton = document.getElementById('confirmCancelButton');
+
+    // MODIFICATION: La modale est maintenant "statique" pour empêcher sa fermeture non désirée
+    const validateReviewModalElement = document.getElementById('validateReviewModal');
+    const validateReviewModal = validateReviewModalElement ? new bootstrap.Modal(validateReviewModalElement, { backdrop: 'static', keyboard: false }) : null;
+    
+    const validateReviewForm = document.getElementById('validateReviewForm');
+    const tripValidationStatusRadios = document.querySelectorAll('input[name="tripValidationStatus"]');
+    const ratingSection = document.getElementById('ratingSection');
+    const commentSection = document.getElementById('commentSection');
+    const ratingStars = document.querySelectorAll('.star-rating .star');
+    const reviewCommentInput = document.getElementById('reviewComment');
+    const reasonLitigeInput = document.getElementById('reasonLitige');
+    const submitReviewBtn = document.getElementById('submitReviewBtn');
+    let currentParticipationId = null;
+    let currentCovoiturageId = null;
+    let currentRating = 0;
+
 
     // --- Éléments du formulaire de voyage ---
     const departureCitySelect = document.getElementById('departureCity');
@@ -46,7 +62,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const availableSeatsInput = document.getElementById('availableSeats');
     const cancelTripBtn = document.getElementById('cancelTripBtn');
     
-    // Liste de villes
     const FRENCH_CITIES = [
         "Paris", "Marseille", "Lyon", "Toulouse", "Nice", "Nantes", "Strasbourg",
         "Montpellier", "Bordeaux", "Lille", "Rennes", "Reims", "Le Havre",
@@ -73,22 +88,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function formatDate(date) { return new Date(date).toISOString().split('T')[0]; }
-    function formatDisplayDate(dateString) { return new Date(dateString).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+    function formatDisplayDate(dateString) { 
+        const dateToParse = typeof dateString === 'object' && dateString !== null && dateString.date 
+                                ? dateString.date 
+                                : dateString;
+        const date = new Date(dateToParse);
+        if (isNaN(date.getTime())) { 
+            return "Date invalide"; 
+        }
+        return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }); 
+    }
     
     function translateStatus(status) {
         switch (status) {
-            case 'initialise':
-                return 'Non démarré';
-            case 'en_cours':
-                return 'En cours';
-            case 'en_attente_validation':
-                return 'En attente de validation';
-            case 'termine':
-                return 'Terminé';
-            case 'annule': // Ajout du statut annulé
-                return 'Annulé';
-            default:
-                return status || 'N/A';
+            case 'initialise': return 'Non démarré';
+            case 'en_cours': return 'En cours';
+            case 'en_attente_validation': return 'En attente de validation';
+            case 'termine': return 'Terminé';
+            case 'annule': return 'Annulé';
+            case 'litige': return '⚠ Litige';
+            default: return status || 'N/A';
         }
     }
 
@@ -115,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const covoiturageDiv = document.createElement('div');
         covoiturageDiv.id = `covoiturage-${covoiturageData.id}`;
-        covoiturageDiv.className = 'd-flex flex-column flex-md-row align-items-start align-items-md-center px-3 py-2 rounded border mb-2 bg-light carpool-item'; // Ajout de carpool-item
+        covoiturageDiv.className = 'd-flex flex-column flex-md-row align-items-start align-items-md-center px-3 py-2 rounded border mb-2 bg-light carpool-item'; 
 
         const mainInfoSpan = document.createElement('span');
         mainInfoSpan.className = 'mb-2 mb-md-0 flex-grow-1 text-sm';
@@ -137,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // MODIFICATION: On génère la liste des participants
         let participantsHtml = '';
         if (covoiturageData.participations && covoiturageData.participations.length > 0) {
             const pseudos = covoiturageData.participations.map(p => p.passager?.pseudo || 'Inconnu').join(', ');
@@ -148,26 +166,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         mainInfoSpan.innerHTML = `
             <strong>${covoiturageData.villeDepart}</strong> <i class="bi bi-arrow-right"></i> <strong>${covoiturageData.villeArrivee}</strong><br>
-            Le ${formatDisplayDate(covoiturageData.dateDepart.date)} à ${covoiturageData.heureDepart} <br>
+            Le ${formatDisplayDate(covoiturageData.dateDepart)} à ${covoiturageData.heureDepart} <br>
             Prix: ${covoiturageData.prix} crédits - Place(s): ${covoiturageData.placesDisponibles} <br>
             Véhicule: ${iconHtml}${vehiculeInfo}
             ${participantsHtml} 
         `;
 
         const statusSpan = document.createElement('span');
-        statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0';
+        statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0 carpool-status-display'; 
 
         const actionButtonsDiv = document.createElement('div');
         actionButtonsDiv.className = 'd-flex gap-2';
         
-        // Boutons Commencer et Terminer
         actionButtonsDiv.innerHTML = `
             <button type="button" class="btn btn-success btn-sm rounded-4 px-3 start-trip-btn" data-covoiturage-id="${covoiturageData.id}">Commencer</button>
-            <button type="button" class="btn btn-warning btn-sm rounded-4 px-3 end-trip-btn" data-covoiturage-id="${covoiturageData.id}">Terminer</button>
+            <button type="button" class="btn btn-primary btn-sm rounded-4 px-3 end-trip-btn" data-covoiturage-id="${covoiturageData.id}">Terminer</button>
         `;
 
-        // NOUVEAU : Bouton Annuler
-        if (covoiturageData.statut === 'initialise' || covoiturageData.statut === 'en_cours') {
+        if (covoiturageData.statut === 'initialise') {
             actionButtonsDiv.innerHTML += `
                 <button type="button" class="btn btn-danger btn-sm rounded-4 px-3 cancel-carpool-btn" data-carpool-id="${covoiturageData.id}">Annuler</button>
             `;
@@ -175,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         covoiturageDiv.append(mainInfoSpan, statusSpan, actionButtonsDiv);
         prepend ? driverTripsContainer.prepend(covoiturageDiv) : driverTripsContainer.appendChild(covoiturageDiv);
-        updateTripActionButtonsForElement(covoiturageDiv, covoiturageData.statut, new Date(covoiturageData.dateDepart.date));
+        updateTripActionButtonsForElement(covoiturageDiv, covoiturageData.statut, covoiturageData.dateDepart); 
     }
 
     async function loadAndDisplayDriverCovoiturages() {
@@ -186,7 +202,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             userDriverCovoituragesData = await response.json();
             
-            driverTripsContainer.innerHTML = ''; // Vide le conteneur
+            driverTripsContainer.innerHTML = ''; 
             if (userDriverCovoituragesData.length === 0) {
                 if (noDriverTripsMessage) {
                     noDriverTripsMessage.innerHTML = "Vous n'avez pas de voyage de prévu.";
@@ -208,7 +224,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const covoiturageId = button.dataset.covoiturageId;
         const actionType = button.classList.contains('start-trip-btn') ? 'start' : 'end';
-        const covoiturageElement = button.closest('div.d-flex');
+        
+        const covoiturageElement = button.closest('.carpool-item');
+        if (!covoiturageElement) return;
 
         try {
             const response = await fetch(`/api/covoiturage/${covoiturageId}/${actionType}`, {
@@ -219,55 +237,76 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!response.ok) throw new Error(result.message);
 
             const covoiturageData = userDriverCovoituragesData.find(c => c.id == covoiturageId);
-            if(covoiturageData) covoiturageData.statut = result.newStatus;
-            updateTripActionButtonsForElement(covoiturageElement, result.newStatus, new Date(covoiturageData.dateDepart.date)); // Utilise .date pour accéder à la date
+            if(covoiturageData) {
+                covoiturageData.statut = result.newStatus;
+            }
+            
+            updateTripActionButtonsForElement(covoiturageElement, result.newStatus, covoiturageData.dateDepart); 
             displayMessage(tripMessageContainer, result.message, 'success');
         } catch (error) {
             displayMessage(tripMessageContainer, error.message, 'danger');
         }
     });
 
-    function updateTripActionButtonsForElement(covoiturageElement, status, tripDate) {
+    function updateTripActionButtonsForElement(covoiturageElement, status, tripDateObj) {
         const startBtn = covoiturageElement.querySelector('.start-trip-btn');
         const endBtn = covoiturageElement.querySelector('.end-trip-btn');
-        const cancelBtn = covoiturageElement.querySelector('.cancel-carpool-btn'); // NOUVEAU : Sélection du bouton Annuler
-        const statusSpan = covoiturageElement.querySelector('span:nth-of-type(2)'); // Assurez-vous que c'est bien le bon span
+        const cancelBtn = covoiturageElement.querySelector('.cancel-carpool-btn'); 
+        const statusSpan = covoiturageElement.querySelector('.carpool-status-display'); 
 
-        // Cache tous les boutons par défaut
         if (startBtn) startBtn.classList.add('d-none');
         if (endBtn) endBtn.classList.add('d-none');
-        if (cancelBtn) cancelBtn.classList.add('d-none'); // Cache le bouton Annuler
+        if (cancelBtn) cancelBtn.classList.add('d-none'); 
 
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        tripDate.setHours(0, 0, 0, 0);
+        const todayYear = today.getFullYear();
+        const todayMonth = today.getMonth();
+        const todayDay = today.getDate();
+        
+        let dateStringForParsing = '';
+        if (tripDateObj && typeof tripDateObj.date === 'string') {
+            const match = tripDateObj.date.match(/^(\d{4}-\d{2}-\d{2})\s(\d{2}:\d{2}:\d{2})/);
+            if (match) {
+                dateStringForParsing = `${match[1]}T${match[2]}`;
+            } else {
+                dateStringForParsing = tripDateObj.date.split('.')[0].replace(' ', 'T');
+            }
+        } else if (typeof tripDateObj === 'string') {
+            dateStringForParsing = tripDateObj.split('.')[0].replace(' ', 'T');
+        }
 
-        statusSpan.textContent = translateStatus(status);
-        statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0'; // Réinitialise les classes de statut
+        const tripDate = new Date(dateStringForParsing);
+        const isToday = (tripDate.getFullYear() === todayYear && tripDate.getMonth() === todayMonth && tripDate.getDate() === todayDay);
+
+        if (statusSpan) {
+            statusSpan.textContent = translateStatus(status);
+            statusSpan.className = 'fw-bold ms-md-auto me-md-2 mb-2 mb-md-0 carpool-status-display';
+        }
 
         switch(status) {
             case 'initialise':
                 if (startBtn) {
                     startBtn.classList.remove('d-none');
-                    startBtn.disabled = tripDate.getTime() !== today.getTime();
+                    startBtn.disabled = !isToday;
                 }
-                if (cancelBtn) cancelBtn.classList.remove('d-none'); // Annuler visible pour "initialise"
-                statusSpan.classList.add('text-info');
+                if (cancelBtn) cancelBtn.classList.remove('d-none'); 
+                if (statusSpan) statusSpan.classList.add('text-info');
                 break;
             case 'en_cours':
                 if (endBtn) endBtn.classList.remove('d-none');
-                if (cancelBtn) cancelBtn.classList.remove('d-none'); // Annuler visible pour "en_cours"
-                statusSpan.classList.add('text-success');
+                if (statusSpan) statusSpan.classList.add('text-info');
                 break;
             case 'en_attente_validation':
-                statusSpan.classList.add('text-warning');
+                if (statusSpan) statusSpan.classList.add('text-warning');
                 break;
             case 'termine':
-                statusSpan.classList.add('text-danger');
+                if (statusSpan) statusSpan.classList.add('text-primary');
                 break;
-            case 'annule': // NOUVEAU : Gestion du statut "annule"
-                statusSpan.classList.add('text-danger');
-                // Les boutons Commencer/Terminer/Annuler ne sont plus affichés
+            case 'annule': 
+                if (statusSpan) statusSpan.classList.add('text-danger');
+                break;
+            case 'litige': 
+                if (statusSpan) statusSpan.classList.add('text-danger');
                 break;
         }
     }
@@ -293,35 +332,46 @@ document.addEventListener('DOMContentLoaded', () => {
         mainInfoSpan.className = 'mb-2 mb-md-0 flex-grow-1 text-sm';
         
         const driverPseudo = covoiturage.chauffeur?.pseudo || 'Inconnu';
-        
         const translatedStatus = translateStatus(covoiturage.statut);
         
         mainInfoSpan.innerHTML = `
             <strong>${covoiturage.villeDepart}</strong> <i class="bi bi-arrow-right"></i> <strong>${covoiturage.villeArrivee}</strong><br>
-            Le ${formatDisplayDate(covoiturage.dateDepart.date)} à ${covoiturage.heureDepart}<br>
+            Le ${formatDisplayDate(covoiturage.dateDepart)} à ${covoiturage.heureDepart}<br>
             Conducteur: <strong>${driverPseudo}</strong> - Statut: <span class="fw-bold">${translatedStatus}</span>
         `;
         
-        const actionBtn = document.createElement('button');
-        actionBtn.className = 'btn btn-outline-danger btn-sm rounded-4 px-3 ms-md-auto cancel-participation-btn';
-        actionBtn.textContent = 'Annuler';
-        actionBtn.dataset.participationId = participationData.id;
+        const actionBtnContainer = document.createElement('div');
+        actionBtnContainer.className = 'd-flex gap-2 ms-md-auto';
 
-        // NOUVEAU : Désactiver le bouton d'annulation si le covoiturage n'est pas "initialise"
-        if (covoiturage.statut !== 'initialise') {
-            actionBtn.disabled = true;
-            actionBtn.textContent = `Annulé (${translatedStatus})`;
-            actionBtn.classList.remove('btn-outline-danger');
-            actionBtn.classList.add('btn-secondary');
+        if (covoiturage.statut === 'initialise') {
+            const cancelParticipationBtn = document.createElement('button');
+            cancelParticipationBtn.className = 'btn btn-outline-danger btn-sm rounded-4 px-3 cancel-participation-btn';
+            cancelParticipationBtn.textContent = 'Annuler';
+            cancelParticipationBtn.dataset.participationId = participationData.id;
+            actionBtnContainer.appendChild(cancelParticipationBtn);
         }
 
+        if (covoiturage.statut === 'en_attente_validation' && !participationData.valideParPassager) {
+            const validateTripBtn = document.createElement('button');
+            validateTripBtn.className = 'btn btn-primary btn-sm rounded-4 px-3 validate-trip-btn';
+            validateTripBtn.textContent = 'Valider le covoiturage';
+            validateTripBtn.dataset.participationId = participationData.id;
+            validateTripBtn.dataset.covoiturageId = covoiturage.id;
+            actionBtnContainer.appendChild(validateTripBtn);
+        } 
+        else if (participationData.valideParPassager) {
+            const validatedBadge = document.createElement('span');
+            validatedBadge.className = 'badge bg-secondary text-dark px-4 py-2 ms-2 rounded-pill';
+            validatedBadge.textContent = 'Validé';
+            actionBtnContainer.appendChild(validatedBadge);
+        }
 
-        tripDiv.append(mainInfoSpan, actionBtn);
+        tripDiv.append(mainInfoSpan, actionBtnContainer);
         passengerTripsContainer.appendChild(tripDiv);
     }
     
     async function loadAndDisplayPassengerTrips() {
-        if (!passengerTripsContainer) return;
+        if (!passengerTripsContainer) return [];
         try {
             const response = await fetch('/api/user-participations'); 
             if (!response.ok) {
@@ -335,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             userPassengerCovoituragesData = await response.json();
             
-            passengerTripsContainer.innerHTML = ''; // Vide le conteneur
+            passengerTripsContainer.innerHTML = ''; 
 
             if (userPassengerCovoituragesData.length === 0) {
                 if (noPassengerTripsMessage) {
@@ -347,41 +397,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (noPassengerTripsMessage) noPassengerTripsMessage.classList.add('d-none');
                 userPassengerCovoituragesData.forEach(participation => addPassengerTripToList(participation));
             }
+            return userPassengerCovoituragesData;
         } catch (error) {
             displayMessage(passengerTripsContainer, `Impossible de charger vos participations: ${error.message}`, 'danger');
+            return [];
         }
     }
 
-    // MODIFIÉ: Le clic sur "Annuler" ouvre la modale et affiche les crédits
     passengerTripsContainer?.addEventListener('click', (e) => {
         const cancelButton = e.target.closest('.cancel-participation-btn');
-        if (!cancelButton || !cancelParticipationModal || cancelButton.disabled) return; // Ne pas ouvrir si désactivé
+        if (cancelButton) { 
+            if (!cancelButton.disabled && cancelParticipationModal) {
+                const participationId = cancelButton.dataset.participationId;
+                
+                const participation = userPassengerCovoituragesData.find(p => p.id == participationId);
+                const creditsToRefund = participation?.covoiturage?.prix || 0;
 
-        const participationId = cancelButton.dataset.participationId;
-        
-        // Trouver la participation pour récupérer le prix
-        const participation = userPassengerCovoituragesData.find(p => p.id == participationId);
-        const creditsToRefund = participation?.covoiturage?.prix || 0;
-
-        // Mettre à jour le texte de la modale avec le montant des crédits
-        const creditsSpan = document.getElementById('creditsToRefund');
-        if (creditsSpan) {
-            creditsSpan.textContent = creditsToRefund;
+                const creditsSpan = document.getElementById('creditsToRefund');
+                if (creditsSpan) creditsSpan.textContent = creditsToRefund;
+                
+                if(confirmCancelParticipationButton) confirmCancelParticipationButton.dataset.participationId = participationId;
+                cancelParticipationModal.show();
+            }
         }
         
-        // On stocke l'ID sur le bouton de confirmation de la modale pour l'utiliser plus tard
-        if(confirmCancelParticipationButton) {
-            confirmCancelParticipationButton.dataset.participationId = participationId;
+        const validateButton = e.target.closest('.validate-trip-btn');
+        if (validateButton && validateReviewModal) {
+            currentParticipationId = validateButton.dataset.participationId;
+            currentCovoiturageId = validateButton.dataset.covoiturageId;
+            
+            const modalTitle = document.getElementById('validateReviewModalLabel');
+            if (modalTitle) {
+                const participation = userPassengerCovoituragesData.find(p => p.id == currentParticipationId);
+                if (participation && participation.covoiturage) {
+                     const covoit = participation.covoiturage;
+                     const driverPseudo = covoit.chauffeur?.pseudo || 'Inconnu';
+                     modalTitle.innerHTML = `Valider: ${covoit.villeDepart} <i class="bi bi-arrow-right"></i> ${covoit.villeArrivee}<br><small class="fw-normal">avec ${driverPseudo}</small>`;
+                } else {
+                     modalTitle.textContent = 'Valider le covoiturage';
+                }
+            }
+            
+            validateReviewForm.reset();
+            ratingSection.classList.add('d-none');
+            commentSection.classList.add('d-none');
+            reasonLitigeInput.required = false; 
+            ratingStars.forEach(star => star.classList.remove('selected'));
+            currentRating = 0;
+
+            validateReviewModal.show();
         }
-        cancelParticipationModal.show();
     });
 
-    // MODIFIÉ: Le clic sur le bouton de confirmation gère le chargement et le rafraîchissement
     confirmCancelParticipationButton?.addEventListener('click', async () => {
         const participationId = confirmCancelParticipationButton.dataset.participationId;
         if (!participationId) return;
 
-        // Ajout d'un état de chargement pour un meilleur retour visuel
         confirmCancelParticipationButton.disabled = true;
         confirmCancelParticipationButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Annulation...';
 
@@ -390,24 +461,102 @@ document.addEventListener('DOMContentLoaded', () => {
                 method: 'DELETE',
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
-
             const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || 'Impossible d\'annuler la participation.');
-            }
-
-            // SUCCÈS: On rafraîchit la page pour voir tous les changements (crédits, liste)
+            if (!response.ok) throw new Error(result.message || 'Impossible d\'annuler la participation.');
             location.reload();
-
         } catch (error) {
-            console.error('Erreur lors de l\'annulation de la participation:', error);
-            cancelParticipationModal.hide(); // Cacher la modale en cas d'erreur
+            cancelParticipationModal.hide(); 
             displayMessage(tripMessageContainer, error.message, 'danger');
-            
-            // Réactiver le bouton en cas d'erreur
             confirmCancelParticipationButton.disabled = false;
             confirmCancelParticipationButton.innerHTML = 'Oui, annuler';
+        }
+    });
+
+
+    // =====================================================================
+    // LOGIQUE DE LA MODAL DE VALIDATION/AVIS DU PASSAGER (US11)
+    // =====================================================================
+
+    tripValidationStatusRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            ratingSection.classList.remove('d-none');
+            commentSection.classList.remove('d-none');
+            
+            const commentLabel = document.querySelector('label[for="reviewComment"]');
+
+            if (document.getElementById('tripStatusYes').checked) {
+                reviewCommentInput.required = false;
+                if(commentLabel) commentLabel.innerHTML = 'Commentaire (facultatif)';
+            } else {
+                reviewCommentInput.required = true;
+                if(commentLabel) commentLabel.innerHTML = 'Commentaire (obligatoire pour expliquer le problème) <span class="text-danger">*</span>';
+            }
+        });
+    });
+
+    ratingStars.forEach(star => {
+        star.addEventListener('click', () => {
+            currentRating = parseInt(star.dataset.rating);
+            ratingStars.forEach((s, index) => {
+                s.classList.toggle('selected', index < currentRating);
+            });
+        });
+    });
+
+    submitReviewBtn?.addEventListener('click', async () => {
+        const tripStatusYes = document.getElementById('tripStatusYes').checked;
+        const tripStatusNo = document.getElementById('tripStatusNo').checked;
+
+        if (!tripStatusYes && !tripStatusNo) {
+            displayMessage(validateReviewForm, 'Veuillez indiquer si le voyage s\'est bien déroulé.', 'danger');
+            return;
+        }
+
+        if (currentRating === 0) {
+            displayMessage(validateReviewForm, 'Veuillez donner une note en étoiles.', 'danger');
+            return;
+        }
+
+        let reviewData = {
+            participationId: currentParticipationId,
+            covoiturageId: currentCovoiturageId,
+            validationStatus: tripStatusYes,
+            note: currentRating,
+            commentaire: reviewCommentInput.value
+        };
+
+        if (tripStatusNo) {
+            if (!reviewCommentInput.value.trim()) {
+                displayMessage(validateReviewForm, 'Veuillez indiquer la raison du problème dans le commentaire.', 'danger');
+                return;
+            }
+            reviewData.raisonLitige = reviewCommentInput.value;
+        }
+
+        submitReviewBtn.disabled = true;
+        submitReviewBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Envoi...';
+
+        try {
+            const response = await fetch(`/api/participation/${currentParticipationId}/validate-review`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reviewData)
+            });
+            const result = await response.json();
+
+            if (response.ok) {
+                validateReviewModal.hide();
+                displayMessage(tripMessageContainer, result.message, 'success');
+                const updatedTrips = await loadAndDisplayPassengerTrips();
+                checkForPendingValidation(updatedTrips);
+            } else {
+                displayMessage(validateReviewForm, result.message || 'Erreur lors de la validation du voyage.', 'danger');
+            }
+        } catch (error) {
+            displayMessage(validateReviewForm, 'Impossible de communiquer avec le serveur.', 'danger');
+        } finally {
+            submitReviewBtn.disabled = false;
+            submitReviewBtn.innerHTML = 'Valider';
         }
     });
 
@@ -542,13 +691,56 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAvailableSeats();
     }
 
+    // =====================================================================
+    // NOUVELLE FONCTION POUR VÉRIFIER LES VALIDATIONS EN ATTENTE
+    // =====================================================================
+    function checkForPendingValidation(participations) {
+        if (!participations || participations.length === 0) return;
+
+        const pendingValidation = participations.find(p => 
+            p.covoiturage && 
+            p.covoiturage.statut === 'en_attente_validation' && 
+            !p.valideParPassager
+        );
+
+        if (pendingValidation && validateReviewModal) {
+            displayMessage(tripMessageContainer, '<strong>Action requise :</strong> Vous avez un voyage en attente de validation. Veuillez le traiter pour continuer.', 'info');
+
+            currentParticipationId = pendingValidation.id;
+            currentCovoiturageId = pendingValidation.covoiturage.id;
+            
+            const modalTitle = document.getElementById('validateReviewModalLabel');
+            if (modalTitle) {
+                const covoit = pendingValidation.covoiturage;
+                const driverPseudo = covoit.chauffeur?.pseudo || 'Inconnu';
+                modalTitle.innerHTML = `Valider: ${covoit.villeDepart} <i class="bi bi-arrow-right"></i> ${covoit.villeArrivee}<br><small class="fw-normal">avec ${driverPseudo}</small>`;
+            }
+            
+            validateReviewForm.reset();
+            ratingSection.classList.add('d-none');
+            commentSection.classList.add('d-none');
+            reasonLitigeInput.required = false; 
+            ratingStars.forEach(star => star.classList.remove('selected'));
+            currentRating = 0;
+
+            validateReviewModal.show();
+        }
+    }
 
     // =====================================================================
-    // CHARGEMENT INITIAL
+    // CHARGEMENT INITIAL (MODIFIÉ POUR ÊTRE ASYNCHRONE)
     // =====================================================================
-    initializeTripForm();
-    loadAndDisplayDriverCovoiturages();
-    loadAndDisplayPassengerTrips();
+    async function initializePage() {
+        initializeTripForm();
+        await loadAndDisplayDriverCovoiturages();
+        const passengerTrips = await loadAndDisplayPassengerTrips();
+        
+        checkForPendingValidation(passengerTrips); 
+        
+        activateTabFromHash();
+    }
+
+    initializePage();
 
     function activateTabFromHash() {
         const hash = window.location.hash;
@@ -560,6 +752,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-
-    activateTabFromHash();
 });
