@@ -21,6 +21,19 @@ function initializeEmployeeDashboard() {
     const rejectModal = rejectModalElement ? new bootstrap.Modal(rejectModalElement) : null;
     const confirmRejectBtn = document.getElementById('confirm-reject-btn');
 
+    // NOUVELLE VÉRIFICATION GLOBALE AU DÉBUT
+    // Si un de ces éléments est null, cela signifie qu'il n'a pas été trouvé dans le DOM.
+    if (!pendingReviewsContainer || !noPendingReviewsMessage ||
+        !disputedCarpoolsContainer || !noDisputedCarpoolsMessage ||
+        !rejectedReviewsContainer || !noRejectedReviewsMessage ||
+        !resolvedDisputesContainer || !noResolvedDisputesMessage ||
+        !confirmRejectBtn // confirmRejectBtn est utilisé dans un listener global
+    ) {
+        console.warn('EMPLOYEE DASHBOARD: Un ou plusieurs conteneurs DOM essentiels sont manquants lors de l\'initialisation. Les données pourraient ne pas s\'afficher correctement.');
+        // Nous ne retournons pas ici pour permettre aux fonctions loadData de logger plus spécifiquement si elles sont appelées.
+        // Mais cette alerte globale est utile pour le diagnostic.
+    }
+
     // --- Fonctions utilitaires pour charger les données depuis l'API ---
     async function loadData(url, container, noDataMessage) {
         // Vérification de l'existence du conteneur et du message avant de procéder
@@ -60,7 +73,8 @@ function initializeEmployeeDashboard() {
 
     // --- Fonctions pour charger et afficher les différents types de données ---
     async function loadPendingReviews() {
-        if (!pendingReviewsContainer || !noPendingReviewsMessage) return; // Vérification spécifique
+        // La vérification est déjà faite dans loadData, mais on peut garder celle-ci pour un retour précoce
+        if (!pendingReviewsContainer || !noPendingReviewsMessage) return; 
         const reviews = await loadData('/api/employee/pending-reviews', pendingReviewsContainer, noPendingReviewsMessage);
         if (!reviews) return; // Si loadData retourne null ou undefined en cas d'erreur
         reviews.forEach(review => {
@@ -70,7 +84,7 @@ function initializeEmployeeDashboard() {
             reviewCard.innerHTML = `
                 <div class="card-body">
                     <p class="card-text">"${review.commentaire}"</p>
-                    <footer class="blockquote-footer">
+                    <footer class="blockquote-footer mb-0">
                         Note: <span class="text-warning">${'★'.repeat(review.note)}${'☆'.repeat(5 - review.note)}</span><br>
                         Par <strong>${review.auteur.pseudo}</strong> sur <strong>${review.utilisateur.pseudo}</strong> (Covoit. n°${review.covoiturage.id})
                     </footer>
@@ -163,7 +177,22 @@ function initializeEmployeeDashboard() {
         reviews.forEach(review => {
             const reviewCard = document.createElement('div');
             reviewCard.className = 'card mb-3 bg-light';
-            reviewCard.innerHTML = `<div class="card-body"><p class="card-text text-muted"><em>"${review.commentaire}"</em></p><footer class="blockquote-footer">Rejeté le ${new Date(review.creeLe).toLocaleDateString('fr-FR')}<br>Note initiale: <span class="text-warning">${'★'.repeat(review.note)}${'☆'.repeat(5 - review.note)}</span></footer></div>`;
+            // MODIFICATION ICI: Ajout du pseudo de l'auteur et du numéro de covoiturage
+            const authorPseudo = review.auteur?.pseudo || 'N/A';
+            const carpoolId = review.covoiturage?.id || 'N/A';
+            const formattedDate = new Date(review.creeLe).toLocaleDateString('fr-FR');
+
+            reviewCard.innerHTML = `
+                <div class="card-body">
+                    <h6 class="card-title mb-1">
+                        Avis de <strong>${authorPseudo}</strong> pour Covoit. n°${carpoolId}
+                    </h6>
+                    <p class="card-text text-muted mb-3"><em>"${review.commentaire}"</em></p>
+                    <footer class="blockquote-footer mb-0">
+                        Rejeté le ${formattedDate}<br>
+                        Note initiale: <span class="text-warning">${'★'.repeat(review.note)}${'☆'.repeat(5 - review.note)}</span>
+                    </footer>
+                </div>`;
             rejectedReviewsContainer.appendChild(reviewCard);
         });
     }
@@ -174,7 +203,8 @@ function initializeEmployeeDashboard() {
         if (!carpools) return;
         carpools.forEach(carpool => {
             const details = carpool.moderationDetails;
-            const decision = details.decisionFinale === 'approve' ? '<span class="badge bg-success">Avis validé</span>' : '<span class="badge bg-danger">Avis rejeté</span>';
+            // MODIFICATION ICI: bg-success remplacé par bg-primary pour les avis validés
+            const decision = details.decisionFinale === 'approve' ? '<span class="badge bg-primary">Avis validé</span>' : '<span class="badge bg-danger">Avis rejeté</span>';
             
             // Correction pour l'erreur "Cannot read properties of undefined (reading 'date')"
             const dateToUse = details.dateCloture?.date || details.dateCloture;
@@ -190,6 +220,8 @@ function initializeEmployeeDashboard() {
     // --- Fonctions de gestion d'événements (déplacées pour être attachées une seule fois) ---
     // Ces fonctions sont maintenant des gestionnaires d'événements délégués.
     // Elles sont appelées par les écouteurs sur 'document'.
+    
+    // Définitions des fonctions de gestion d'événements
     async function handleReviewActions(e) {
         // Utilisation de .closest() pour trouver le bouton ou un parent avec la classe
         const approveBtn = e.target.closest('.approve-review-btn');
