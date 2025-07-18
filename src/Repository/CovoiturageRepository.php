@@ -17,7 +17,7 @@ class CovoiturageRepository extends ServiceEntityRepository
         parent::__construct($registry, Covoiturage::class);
     }
 
-/**
+    /**
      * Trouve les covoiturages correspondant aux critères de recherche.
      * @param string $villeDepart
      * @param string $villeArrivee
@@ -41,21 +41,17 @@ class CovoiturageRepository extends ServiceEntityRepository
             ->setParameter('depart', $villeDepart)
             ->setParameter('arrivee', $villeArrivee)
             ->setParameter('startOfDay', $startOfDay)
-            ->setParameter('endOfDay', $endOfDay) // J'ai corrigé une petite typo ici (c'était une chaîne de caractères)
+            ->setParameter('endOfDay', $endOfDay)
             ->setParameter('statuts', ['initialise', 'en_cours']);
 
-        // ✨ NOUVELLE LOGIQUE : Filtre sur l'heure si la recherche est pour aujourd'hui ✨
         $maintenant = new DateTime();
-        // On vérifie si la date de début de recherche est la même qu'aujourd'hui
         if ($startOfDay->format('Y-m-d') === $maintenant->format('Y-m-d')) {
-            // Si c'est le cas, on ajoute une condition pour ne prendre que les heures futures
             $qb->andWhere('c.heureDepart > :heureActuelle')
                ->setParameter('heureActuelle', $maintenant->format('H:i:s'));
         }
         
         $qb->orderBy('c.heureDepart', 'ASC');
 
-        // NOUVEAU : Logs de débogage pour les paramètres de date
         error_log("DEBUG REPOSITORY: findBySearchCriteria - startOfDay: " . $startOfDay->format('Y-m-d H:i:s.u'));
         error_log("DEBUG REPOSITORY: findBySearchCriteria - endOfDay: " . $endOfDay->format('Y-m-d H:i:s.u'));
         error_log("DEBUG REPOSITORY: findBySearchCriteria - depart: " . $villeDepart);
@@ -84,11 +80,25 @@ class CovoiturageRepository extends ServiceEntityRepository
             ->addOrderBy('c.heureDepart', 'ASC')
             ->setMaxResults(1);
 
-        // NOUVEAU : Logs de débogage pour les paramètres de date
         error_log("DEBUG REPOSITORY: findNextAvailable - date_depart: " . $dateDepart->format('Y-m-d H:i:s.u'));
         error_log("DEBUG REPOSITORY: findNextAvailable - depart: " . $villeDepart);
         error_log("DEBUG REPOSITORY: findNextAvailable - arrivee: " . $villeArrivee);
 
         return $qb->getQuery()->getOneOrNullResult();
+    }
+
+    /**
+     * NOUVEAU : Trouve les covoiturages qui étaient en litige mais sont maintenant terminés.
+     * @return Covoiturage[]
+     */
+    public function findResolvedDisputes(): array
+    {
+        return $this->createQueryBuilder('c')
+            ->where('c.statut = :statut')
+            ->andWhere('c.moderationDetails IS NOT NULL') // S'assure qu'il y a eu une modération
+            ->setParameter('statut', 'termine')
+            ->orderBy('c.dateDepart', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }

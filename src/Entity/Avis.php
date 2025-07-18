@@ -17,17 +17,20 @@ class Avis
     #[Groups(['avis:read', 'user:avis_read', 'covoiturage:user_driven_read'])]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(inversedBy: 'avisRecus')] // L'utilisateur qui reçoit l'avis (le chauffeur)
+    #[ORM\ManyToOne(inversedBy: 'avisRecus')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['avis:read'])]
     private ?Utilisateur $utilisateur = null; 
 
-    #[ORM\ManyToOne(inversedBy: 'avisLaisses')] // L'utilisateur qui a laissé l'avis (le passager)
+    #[ORM\ManyToOne(inversedBy: 'avisLaisses')]
     #[ORM\JoinColumn(nullable: false)] 
+    #[Groups(['avis:read', 'covoiturage:dispute_read'])]
     private ?Utilisateur $auteur = null; 
 
     #[ORM\ManyToOne(inversedBy: 'avis')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Covoiturage $covoiturage = null; // Le covoiturage concerné par l'avis
+    #[Groups(['avis:read'])]
+    private ?Covoiturage $covoiturage = null;
 
     #[ORM\Column]
     #[Assert\NotNull(message: "La note est obligatoire.")]
@@ -46,107 +49,47 @@ class Avis
 
     #[ORM\Column]
     #[Groups(['avis:read', 'user:avis_read', 'covoiturage:user_driven_read'])]
-    private ?bool $valideParEmploye = false; // Indique si l'avis a été validé par un employé
+    private ?bool $valideParEmploye = false;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
-    #[Groups(['avis:read', 'user:avis_read', 'covoiturage:user_driven_read'])] // Peut être exposé pour l'employé ou le chauffeur
-    private ?string $raisonLitige = null; // Pour les avis négatifs, pourquoi le problème
+    #[Groups(['avis:read', 'user:avis_read', 'covoiturage:user_driven_read', 'covoiturage:dispute_read'])]
+    private ?string $raisonLitige = null;
+
+    #[ORM\Column(options: ['default' => false])] // NOUVEAU CHAMP
+    #[Groups(['avis:read'])]
+    private ?bool $rejete = false;
 
     public function __construct()
     {
         $this->creeLe = new \DateTimeImmutable();
     }
 
-    public function getId(): ?int
+    public function getId(): ?int { return $this->id; }
+    public function getUtilisateur(): ?Utilisateur { return $this->utilisateur; }
+    public function setUtilisateur(?Utilisateur $utilisateur): static { $this->utilisateur = $utilisateur; return $this; }
+    public function getAuteur(): ?Utilisateur { return $this->auteur; }
+    public function setAuteur(?Utilisateur $auteur): static { $this->auteur = $auteur; return $this; }
+    public function getCovoiturage(): ?Covoiturage { return $this->covoiturage; }
+    public function setCovoiturage(?Covoiturage $covoiturage): static { $this->covoiturage = $covoiturage; return $this; }
+    public function getNote(): ?int { return $this->note; }
+    public function setNote(int $note): static { $this->note = $note; return $this; }
+    public function getCommentaire(): ?string { return $this->commentaire; }
+    public function setCommentaire(?string $commentaire): static { $this->commentaire = $commentaire; return $this; }
+    public function getCreeLe(): ?\DateTimeImmutable { return $this->creeLe; }
+    public function setCreeLe(\DateTimeImmutable $creeLe): static { $this->creeLe = $creeLe; return $this; }
+    public function isValideParEmploye(): ?bool { return $this->valideParEmploye; }
+    public function setValideParEmploye(bool $valideParEmploye): static { $this->valideParEmploye = $valideParEmploye; return $this; }
+    public function getRaisonLitige(): ?string { return $this->raisonLitige; }
+    public function setRaisonLitige(?string $raisonLitige): static { $this->raisonLitige = $raisonLitige; return $this; }
+
+    public function isRejete(): ?bool // NOUVEAU GETTER
     {
-        return $this->id;
+        return $this->rejete;
     }
 
-    public function getUtilisateur(): ?Utilisateur
+    public function setRejete(bool $rejete): static // NOUVEAU SETTER
     {
-        return $this->utilisateur;
-    }
-
-    public function setUtilisateur(?Utilisateur $utilisateur): static
-    {
-        $this->utilisateur = $utilisateur;
-        return $this;
-    }
-
-    public function getAuteur(): ?Utilisateur
-    {
-        return $this->auteur;
-    }
-
-    public function setAuteur(?Utilisateur $auteur): static
-    {
-        $this->auteur = $auteur;
-        return $this;
-    }
-
-    public function getCovoiturage(): ?Covoiturage
-    {
-        return $this->covoiturage;
-    }
-
-    public function setCovoiturage(?Covoiturage $covoiturage): static
-    {
-        $this->covoiturage = $covoiturage;
-        return $this;
-    }
-
-    public function getNote(): ?int
-    {
-        return $this->note;
-    }
-
-    public function setNote(int $note): static
-    {
-        $this->note = $note;
-        return $this;
-    }
-
-    public function getCommentaire(): ?string
-    {
-        return $this->commentaire;
-    }
-
-    public function setCommentaire(?string $commentaire): static
-    {
-        $this->commentaire = $commentaire;
-        return $this;
-    }
-
-    public function getCreeLe(): ?\DateTimeImmutable
-    {
-        return $this->creeLe;
-    }
-
-    public function setCreeLe(\DateTimeImmutable $creeLe): static
-    {
-        $this->creeLe = $creeLe;
-        return $this;
-    }
-
-    public function isValideParEmploye(): ?bool
-    {
-        return $this->valideParEmploye;
-    }
-
-    public function setValideParEmploye(bool $valideParEmploye): static
-    {
-        $this->valideParEmploye = $valideParEmploye;
-        return $this;
-    }
-
-    public function getRaisonLitige(): ?string
-    {
-        return $this->raisonLitige;
-    }
-
-    public function setRaisonLitige(?string $raisonLitige): static
-    {
-        $this->raisonLitige = $raisonLitige;
+        $this->rejete = $rejete;
         return $this;
     }
 }

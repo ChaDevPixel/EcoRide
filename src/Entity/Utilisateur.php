@@ -24,15 +24,17 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['covoiturage:dispute_read'])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(['covoiturage:dispute_read'])]
     private ?string $prenom = null;
 
     #[ORM\Column(length: 180, unique: true)]
     #[Assert\NotBlank(message: "L'adresse email est obligatoire.")]
     #[Assert\Email(message: "Veuillez saisir une adresse email valide.")]
-    #[Groups(['user:read_full'])]
+    #[Groups(['user:read_full', 'covoiturage:dispute_read', 'avis:read'])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
@@ -40,7 +42,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    #[Groups(['user:read_full'])]
+    #[Groups(['user:read_full', 'covoiturage:dispute_read'])]
     private ?string $telephone = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -54,7 +56,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $photo = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'chauffeur:read', 'passager:read', 'participation:read', 'notification:read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'chauffeur:read', 'passager:read', 'participation:read', 'notification:read', 'avis:read', 'covoiturage:dispute_read'])]
     private ?string $pseudo = null;
 
     #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur', orphanRemoval: true)] // Avis reçus par cet utilisateur (en tant que chauffeur)
@@ -103,7 +105,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['covoiturage:search_read', 'chauffeur:read', 'passager:read'])]
     public function getNoteMoyenne(): ?float
     {
-        // Calcule la moyenne des notes des avis reçus
         if ($this->avisRecus->isEmpty()) {
             return null;
         }
@@ -111,14 +112,13 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         $total = 0;
         $count = 0;
         foreach ($this->avisRecus as $avis) {
-            // Ne prendre en compte que les avis validés par un employé pour la moyenne publique
             if ($avis->isValideParEmploye()) {
                 $total += $avis->getNote();
                 $count++;
             }
         }
         if ($count === 0) {
-            return null; // Aucun avis validé
+            return null;
         }
 
         return round($total / $count, 1);

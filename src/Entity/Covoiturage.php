@@ -15,15 +15,15 @@ class Covoiturage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
     private ?string $villeDepart = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
     private ?\DateTimeInterface $dateDepart = null;
 
     #[ORM\Column(length: 5)]
@@ -31,7 +31,7 @@ class Covoiturage
     private ?string $heureDepart = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
     private ?string $villeArrivee = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -64,7 +64,7 @@ class Covoiturage
 
     #[ORM\ManyToOne(inversedBy: 'covoituragesConduits')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
     private ?Utilisateur $chauffeur = null;
 
     #[ORM\ManyToOne(targetEntity: Voiture::class, inversedBy: 'covoiturages')]
@@ -83,8 +83,12 @@ class Covoiturage
      * @var Collection<int, Avis>
      */
     #[ORM\OneToMany(mappedBy: 'covoiturage', targetEntity: Avis::class, orphanRemoval: true)]
-    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read'])] // Expose les avis liés à ce covoiturage
+    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'covoiturage:dispute_read'])]
     private Collection $avis;
+
+    #[ORM\Column(type: Types::JSON, nullable: true)] // NOUVEAU CHAMP
+    #[Groups(['covoiturage:dispute_read'])]
+    private ?array $moderationDetails = [];
 
     public function __construct()
     {
@@ -124,32 +128,18 @@ class Covoiturage
     public function getParticipations(): Collection { return $this->participations; }
     public function addParticipation(Participation $participation): static { if (!$this->participations->contains($participation)) { $this->participations->add($participation); $participation->setCovoiturage($this); } return $this; }
     public function removeParticipation(Participation $participation): static { if ($this->participations->removeElement($participation)) { if ($participation->getCovoiturage() === $this) { $participation->setCovoiturage(null); } } return $this; }
+    public function getAvis(): Collection { return $this->avis; }
+    public function addAvi(Avis $avi): static { if (!$this->avis->contains($avi)) { $this->avis->add($avi); $avi->setCovoiturage($this); } return $this; }
+    public function removeAvi(Avis $avi): static { if ($this->avis->removeElement($avi)) { if ($avi->getCovoiturage() === $this) { $avi->setCovoiturage(null); } } return $this; }
 
-    /**
-     * @return Collection<int, Avis>
-     */
-    public function getAvis(): Collection
+    public function getModerationDetails(): ?array // NOUVEAU GETTER
     {
-        return $this->avis;
+        return $this->moderationDetails;
     }
 
-    public function addAvi(Avis $avi): static
+    public function setModerationDetails(?array $moderationDetails): static // NOUVEAU SETTER
     {
-        if (!$this->avis->contains($avi)) {
-            $this->avis->add($avi);
-            $avi->setCovoiturage($this);
-        }
-        return $this;
-    }
-
-    public function removeAvi(Avis $avi): static
-    {
-        if ($this->avis->removeElement($avi)) {
-            // set the owning side to null (unless already changed)
-            if ($avi->getCovoiturage() === $this) {
-                $avi->setCovoiturage(null);
-            }
-        }
+        $this->moderationDetails = $moderationDetails;
         return $this;
     }
 }

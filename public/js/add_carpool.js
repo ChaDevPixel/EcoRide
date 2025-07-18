@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tripForm = document.getElementById('tripForm');
 
     // --- Section Passager ---
+    // Correction: Utiliser document.getElementById() pour récupérer l'élément
     const passengerTripsContainer = document.getElementById('passenger-trips-container');
     const noPassengerTripsMessage = document.getElementById('no-passenger-trips-message');
 
@@ -40,11 +41,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const commentSection = document.getElementById('commentSection');
     const ratingStars = document.querySelectorAll('.star-rating .star');
     const reviewCommentInput = document.getElementById('reviewComment');
-    const reasonLitigeInput = document.getElementById('reasonLitige');
+    // Suppression de reasonLitigeInput car il n'existe plus dans le HTML et sa logique est gérée par reviewCommentInput
+    // const reasonLitigeInput = document.getElementById('reasonLitige'); 
     const submitReviewBtn = document.getElementById('submitReviewBtn');
     let currentParticipationId = null;
     let currentCovoiturageId = null;
     let currentRating = 0;
+
+    // NOUVEAU: Conteneur de message spécifique pour le formulaire de validation/avis
+    const validateReviewFormMessageContainer = document.getElementById('validateReviewFormMessage');
 
 
     // --- Éléments du formulaire de voyage ---
@@ -67,7 +72,11 @@ document.addEventListener('DOMContentLoaded', () => {
         "Montpellier", "Bordeaux", "Lille", "Rennes", "Reims", "Le Havre",
         "Saint-Étienne", "Toulon", "Grenoble", "Dijon", "Angers", "Villeurbanne",
         "Saint-Denis", "Le Mans", "Aix-en-Provence", "Brest", "Limoges", "Tours",
-        "Perpignan", "Metz", "Besançon", "Orléans", "Mulhouse", "Rouen", "Caen"
+        "Perpignan", "Metz", "Besançon", "Orléans", "Mulhouse", "Rouen",
+        "Caen", "Nancy", "Argenteuil", "Montreuil", "Saint-Paul", "Avignon",
+        "Versailles", "Nîmes", "Clermont-Ferrand", "Le Tampon", "Annecy",
+        "Saint-Denis (Réunion)", "Boulogne-Billancourt", "Saint-Pierre (Réunion)",
+        "Mérignac", "Troyes", "Poitiers", "Pau", "Antibes", "La Rochelle"
     ].sort();
 
 
@@ -78,13 +87,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function displayMessage(container, message, type) {
         const targetContainer = typeof container === 'string' ? document.getElementById(container) : container;
         if (!targetContainer) return;
-        targetContainer.innerHTML = '';
+        // IMPORTANT: Ne pas effacer tout le contenu du conteneur si c'est un formulaire
+        // Nous effaçons seulement le contenu précédent du message.
+        targetContainer.innerHTML = ''; 
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.setAttribute('role', 'alert');
         alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
         targetContainer.appendChild(alertDiv);
-        setTimeout(() => alertDiv.classList.remove('show'), 5000);
+        // Retirer l'alerte après 5 secondes pour les messages non critiques
+        if (type !== 'danger') { // Les messages d'erreur peuvent rester plus longtemps
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 5000);
+        }
     }
 
     function formatDate(date) { return new Date(date).toISOString().split('T')[0]; }
@@ -430,20 +448,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (modalTitle) {
                 const participation = userPassengerCovoituragesData.find(p => p.id == currentParticipationId);
                 if (participation && participation.covoiturage) {
-                     const covoit = participation.covoiturage;
-                     const driverPseudo = covoit.chauffeur?.pseudo || 'Inconnu';
-                     modalTitle.innerHTML = `Valider: ${covoit.villeDepart} <i class="bi bi-arrow-right"></i> ${covoit.villeArrivee}<br><small class="fw-normal">avec ${driverPseudo}</small>`;
+                    const covoit = participation.covoiturage;
+                    const driverPseudo = covoit.chauffeur?.pseudo || 'Inconnu';
+                    modalTitle.innerHTML = `Valider: ${covoit.villeDepart} <i class="bi bi-arrow-right"></i> ${covoit.villeArrivee}<br><small class="fw-normal">avec ${driverPseudo}</small>`;
                 } else {
-                     modalTitle.textContent = 'Valider le covoiturage';
+                    modalTitle.textContent = 'Valider le covoiturage';
                 }
             }
             
             validateReviewForm.reset();
             ratingSection.classList.add('d-none');
             commentSection.classList.add('d-none');
-            reasonLitigeInput.required = false; 
+            // Suppression de la ligne problematic car reasonLitigeInput n'existe plus
+            // reasonLitigeInput.required = false; 
             ratingStars.forEach(star => star.classList.remove('selected'));
             currentRating = 0;
+            
+            // Effacer les messages d'erreur/succès précédents de la modale
+            if (validateReviewFormMessageContainer) {
+                validateReviewFormMessageContainer.innerHTML = '';
+            }
 
             validateReviewModal.show();
         }
@@ -479,17 +503,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tripValidationStatusRadios.forEach(radio => {
         radio.addEventListener('change', () => {
-            ratingSection.classList.remove('d-none');
-            commentSection.classList.remove('d-none');
-            
-            const commentLabel = document.querySelector('label[for="reviewComment"]');
+            // Effacer tout message précédent lorsque l'utilisateur change d'option
+            if (validateReviewFormMessageContainer) {
+                validateReviewFormMessageContainer.innerHTML = '';
+            }
 
-            if (document.getElementById('tripStatusYes').checked) {
-                reviewCommentInput.required = false;
-                if(commentLabel) commentLabel.innerHTML = 'Commentaire (facultatif)';
+            // Afficher/masquer les sections de note/commentaire et raison de litige
+            const isYesChecked = document.getElementById('tripStatusYes').checked;
+            const isNoChecked = document.getElementById('tripStatusNo').checked;
+
+            if (isYesChecked) {
+                if (ratingSection) ratingSection.classList.remove('d-none');
+                if (commentSection) commentSection.classList.remove('d-none');
+                // La label 'reasonLitigeLabel' n'existe plus dans le HTML, donc cette ligne est inutile.
+                // if (document.getElementById('reasonLitigeLabel')) document.getElementById('reasonLitigeLabel').innerHTML = 'Raison du problème'; // Réinitialiser le label
+            } else if (isNoChecked) {
+                // MODIFICATION: Garder la section de notation visible pour le cas "Non"
+                if (ratingSection) ratingSection.classList.remove('d-none'); 
+                if (commentSection) commentSection.classList.remove('d-none'); // Le commentaire est toujours visible
+                // La label 'reasonLitigeLabel' n'existe plus dans le HTML, donc cette ligne est inutile.
+                // if (document.getElementById('reasonLitigeLabel')) document.getElementById('reasonLitigeLabel').innerHTML = 'Raison du problème (obligatoire) <span class="text-danger">*</span>';
             } else {
-                reviewCommentInput.required = true;
-                if(commentLabel) commentLabel.innerHTML = 'Commentaire (obligatoire pour expliquer le problème) <span class="text-danger">*</span>';
+                if (ratingSection) ratingSection.classList.add('d-none');
+                if (commentSection) commentSection.classList.add('d-none');
+            }
+
+            const commentLabel = document.querySelector('label[for="reviewComment"]');
+            if (commentLabel) {
+                if (isYesChecked) {
+                    commentLabel.innerHTML = 'Commentaire (facultatif)';
+                    reviewCommentInput.required = false;
+                } else if (isNoChecked) {
+                    commentLabel.innerHTML = 'Commentaire (obligatoire pour expliquer le problème) <span class="text-danger">*</span>';
+                    reviewCommentInput.required = true; // Le commentaire devient obligatoire pour le litige
+                } else {
+                    commentLabel.innerHTML = 'Commentaire';
+                    reviewCommentInput.required = false;
+                }
             }
         });
     });
@@ -504,16 +554,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     submitReviewBtn?.addEventListener('click', async () => {
+        // Effacer les messages précédents avant de valider
+        if (validateReviewFormMessageContainer) {
+            validateReviewFormMessageContainer.innerHTML = '';
+        }
+
         const tripStatusYes = document.getElementById('tripStatusYes').checked;
         const tripStatusNo = document.getElementById('tripStatusNo').checked;
 
         if (!tripStatusYes && !tripStatusNo) {
-            displayMessage(validateReviewForm, 'Veuillez indiquer si le voyage s\'est bien déroulé.', 'danger');
-            return;
-        }
-
-        if (currentRating === 0) {
-            displayMessage(validateReviewForm, 'Veuillez donner une note en étoiles.', 'danger');
+            displayMessage(validateReviewFormMessageContainer, 'Veuillez indiquer si le voyage s\'est bien déroulé.', 'danger');
             return;
         }
 
@@ -522,15 +572,29 @@ document.addEventListener('DOMContentLoaded', () => {
             covoiturageId: currentCovoiturageId,
             validationStatus: tripStatusYes,
             note: currentRating,
-            commentaire: reviewCommentInput.value
+            commentaire: reviewCommentInput.value // Le commentaire est toujours envoyé
         };
 
-        if (tripStatusNo) {
+        if (tripStatusYes) {
+            // Si "Oui", la note est obligatoire
+            if (currentRating === 0) {
+                displayMessage(validateReviewFormMessageContainer, 'Veuillez donner une note en étoiles.', 'danger');
+                return;
+            }
+            reviewData.raisonLitige = null; // Pas de raison de litige pour un avis positif
+        } else { // tripStatusNo est coché
+            // Si "Non", la raison du litige (via le champ commentaire) est obligatoire
             if (!reviewCommentInput.value.trim()) {
-                displayMessage(validateReviewForm, 'Veuillez indiquer la raison du problème dans le commentaire.', 'danger');
+                displayMessage(validateReviewFormMessageContainer, 'Veuillez indiquer la raison du problème dans le commentaire.', 'danger');
+                return;
+            }
+            // NOUVEAU: Si "Non", la note est aussi obligatoire
+            if (currentRating === 0) {
+                displayMessage(validateReviewFormMessageContainer, 'Veuillez donner une note en étoiles même si le voyage s\'est mal déroulé.', 'danger');
                 return;
             }
             reviewData.raisonLitige = reviewCommentInput.value;
+            reviewData.note = 0; // Note 0 pour un litige
         }
 
         submitReviewBtn.disabled = true;
@@ -550,10 +614,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const updatedTrips = await loadAndDisplayPassengerTrips();
                 checkForPendingValidation(updatedTrips);
             } else {
-                displayMessage(validateReviewForm, result.message || 'Erreur lors de la validation du voyage.', 'danger');
+                // Afficher le message d'erreur du serveur dans le conteneur dédié
+                displayMessage(validateReviewFormMessageContainer, result.message || 'Erreur lors de la validation du voyage.', 'danger');
             }
         } catch (error) {
-            displayMessage(validateReviewForm, 'Impossible de communiquer avec le serveur.', 'danger');
+            displayMessage(validateReviewFormMessageContainer, 'Impossible de communiquer avec le serveur.', 'danger');
         } finally {
             submitReviewBtn.disabled = false;
             submitReviewBtn.innerHTML = 'Valider';
@@ -719,9 +784,15 @@ document.addEventListener('DOMContentLoaded', () => {
             validateReviewForm.reset();
             ratingSection.classList.add('d-none');
             commentSection.classList.add('d-none');
-            reasonLitigeInput.required = false; 
+            // Suppression de la ligne problematic car reasonLitigeInput n'existe plus
+            // reasonLitigeInput.required = false; 
             ratingStars.forEach(star => star.classList.remove('selected'));
             currentRating = 0;
+
+            // Effacer les messages d'erreur/succès précédents de la modale
+            if (validateReviewFormMessageContainer) {
+                validateReviewFormMessageContainer.innerHTML = '';
+            }
 
             validateReviewModal.show();
         }

@@ -13,11 +13,19 @@
                 {# Affichage de la photo de profil, ou une image par défaut si non définie #}
                 <img src="{{ asset('uploads/photos/' ~ (utilisateur.photo ? utilisateur.photo : 'default.png')) }}" alt="Photo de profil" class="rounded-circle img-thumbnail mb-2 profile-picture">
                 <h4 id="userPseudo">{{ utilisateur.pseudo }}</h4> {# Affichage du pseudo de l'utilisateur #}
+                
+                <!-- La note et le lien sont maintenant dynamiques -->
                 <p>
-                    <span class="text-warning fs-5">★★★★☆</span><br>
-                    <small>(4.3/5)</small><br>
-                    <a href="#" class="text-dark text-decoration-underline">Voir les avis</a>
+                    {% set noteMoyenne = utilisateur.noteMoyenne|default(0) %}
+                    <span class="text-warning fs-5">
+                        {% for i in 1..5 %}
+                            <i class="bi {{ i <= noteMoyenne ? 'bi-star-fill' : 'bi-star' }}"></i>
+                        {% endfor %}
+                    </span><br>
+                    <small>({{ noteMoyenne|number_format(1, ',') }}/5)</small><br>
+                    <a href="{{ path('app_avis_show', {'id': utilisateur.id}) }}" class="text-dark text-decoration-underline">Voir les avis</a>
                 </p>
+
             </div>
             
             <div class="d-flex align-items-center justify-content-center">
@@ -392,7 +400,8 @@
         <h5 class="modal-title" id="validateReviewModalLabel">Valider le covoiturage</h5>
       </div>
       <div class="modal-body">
-        <form id="validateReviewForm">
+        {# AJOUT DE data-turbo="false" pour empêcher Turbo d'interférer avec la soumission du formulaire #}
+        <form id="validateReviewForm" data-turbo="false">
           <div class="mb-3">
             <p class="mb-2">Le voyage s'est-il bien déroulé ?</p>
             <div class="form-check form-check-inline">
@@ -417,10 +426,16 @@
           </div>
 
           <div id="commentSection" class="mb-3 d-none">
-            <label for="reviewComment" class="form-label">Commentaire (facultatif si "Oui", obligatoire si "Non")</label>
+            {# CHANGEMENT: Utilisation de 'reviewComment' pour le commentaire et la raison du litige #}
+            <label for="reviewComment" class="form-label" id="reviewCommentLabel">Commentaire (facultatif si "Oui", obligatoire si "Non")</label>
             <textarea class="form-control" id="reviewComment" rows="3" placeholder="Laissez un commentaire sur votre expérience..."></textarea>
-            <input type="hidden" id="reasonLitige" name="reasonLitige"> {# Champ pour la raison du litige si "Non" #}
+            {# Le champ 'reasonLitige' est maintenant géré par le JS en interne via 'reviewCommentInput' #}
+            {# Il n'est plus nécessaire d'avoir un input hidden séparé pour 'reasonLitige' dans le HTML #}
+            {# <input type="hidden" id="reasonLitige" name="reasonLitige"> #}
           </div>
+
+          {# NOUVEAU: Conteneur pour les messages d'erreur/succès du formulaire d'avis #}
+          <div id="validateReviewFormMessage" class="mt-2"></div> 
         </form>
       </div>
       <div class="modal-footer">
@@ -437,9 +452,12 @@
 {% block javascripts %}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
-    <script src="{{ asset('js/roles_vehicles.js') }}" defer></script>
-    <script src="{{ asset('js/add_carpool.js') }}" defer></script>
-    <script src="{{ asset('js/cancel_carpool.js') }}" defer></script>
+    {# Ces scripts ne sont utiles que pour les utilisateurs normaux, pas pour les employés #}
+    {% if 'ROLE_EMPLOYE' not in app.user.roles %}
+        <script src="{{ asset('js/roles_vehicles.js') }}" defer></script>
+        <script src="{{ asset('js/add_carpool.js') }}" defer></script>
+        <script src="{{ asset('js/cancel_carpool.js') }}" defer></script>
+    {% endif %}
 
 
     {% if app.user %}

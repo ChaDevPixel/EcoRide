@@ -1,0 +1,50 @@
+{# templates/avis/show.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Avis sur {{ chauffeur.pseudo }} - Ecoride{% endblock %}
+
+{% block body %}
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-4 text-center">
+            <img src="{{ asset('uploads/photos/' ~ (chauffeur.photo ? chauffeur.photo : 'default.png')) }}" alt="Photo de {{ chauffeur.pseudo }}" class="rounded-circle img-thumbnail mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+            <h3>{{ chauffeur.pseudo }}</h3>
+            <p class="text-warning fs-4">
+                {% set noteMoyenne = chauffeur.noteMoyenne|default(0) %}
+                {% for i in 1..5 %}
+                    <i class="bi {{ i <= noteMoyenne ? 'bi-star-fill' : 'bi-star' }}"></i>
+                {% endfor %}
+            </p>
+            <p class="text-muted">({{ noteMoyenne|number_format(1, ',') }}/5 sur la base de {{ avis_list|length }} avis)</p>
+        </div>
+
+        <div class="col-md-8">
+            <h2 class="mb-4">Avis reçus</h2>
+            
+            {% if avis_list is not empty %}
+                {% for avis in avis_list %}
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ avis.auteur.pseudo }}</strong>
+                                <span class="text-muted">{{ avis.creeLe|date('d/m/Y') }}</span>
+                            </div>
+                            <p class="text-warning my-1">
+                                {% for i in 1..5 %}
+                                    <i class="bi {{ i <= avis.note ? 'bi-star-fill' : 'bi-star' }}"></i>
+                                {% endfor %}
+                            </p>
+                            <p class="card-text">"{{ avis.commentaire|nl2br }}"</p>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Ce chauffeur n'a pas encore d'avis validés.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

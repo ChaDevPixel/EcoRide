@@ -16,7 +16,6 @@ use DateTime;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-// REMOVED: use Symfony\Bundle\SecurityBundle\Security; // Cette ligne est supprimée
 
 class SecurityController extends AbstractController
 {
@@ -49,12 +48,18 @@ class SecurityController extends AbstractController
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function account(): Response
     {
+        // ==================== MODIFICATION CI-DESSOUS ====================
+        // Si l'utilisateur est un employé, on le redirige vers son tableau de bord.
+        if ($this->isGranted('ROLE_EMPLOYE')) {
+            return $this->redirectToRoute('employee_dashboard');
+        }
+        // ==================== FIN DE LA MODIFICATION ====================
+
         /** @var Utilisateur $utilisateur */
         $utilisateur = $this->getUser();
 
         if (!$utilisateur) {
-            // Gérer le cas où l'utilisateur n'est pas connecté
-            return $this->redirectToRoute('app_login'); // Rediriger vers la page de connexion
+            return $this->redirectToRoute('app_login');
         }
 
         // --- Préparation des données des véhicules pour le JSON ---
@@ -72,15 +77,13 @@ class SecurityController extends AbstractController
                 'couleur' => $voiture->getCouleur(),
                 'nombreDePlaces' => $voiture->getNombreDePlaces(),
                 'energie' => $voiture->getEnergie(),
-                'paysImmatriculation' => $voiture->getPaysImmatriculation(), // Inclut le pays d'immatriculation
+                'paysImmatriculation' => $voiture->getPaysImmatriculation(),
             ];
         }
         // --- Fin de la préparation des données des véhicules ---
 
-        // --- NOUVEAU : Préparation des données des préférences pour le JSON ---
-        // Récupère les préférences existantes de l'utilisateur. Si null, utilise un tableau vide.
+        // --- Préparation des données des préférences pour le JSON ---
         $preferencesArray = $utilisateur->getPreferences() ?? [];
-        // Assurez-vous que les clés principales existent pour éviter les erreurs JavaScript
         $preferencesArray = array_merge([
             'fumeurs_acceptes' => false,
             'animaux_acceptes' => false,
@@ -91,7 +94,7 @@ class SecurityController extends AbstractController
         return $this->render('compte.html.twig', [
             'utilisateur' => $utilisateur,
             'utilisateur_voitures_json' => json_encode($voituresArray, JSON_PRETTY_PRINT),
-            'utilisateur_preferences_json' => json_encode($preferencesArray, JSON_PRETTY_PRINT), // NOUVEAU
+            'utilisateur_preferences_json' => json_encode($preferencesArray, JSON_PRETTY_PRINT),
         ]);
     }
 
@@ -189,7 +192,6 @@ class SecurityController extends AbstractController
             $utilisateur->setNom($nom);
             $utilisateur->setPrenom($prenom);
             $utilisateur->setEmail($email);
-            $utilisateur->setEmail($email); // Doublon, peut être supprimé
             $utilisateur->setPseudo($pseudo);
             $utilisateur->setAdresse($adresse);
             $utilisateur->setTelephone($telephone);
@@ -275,7 +277,6 @@ class SecurityController extends AbstractController
             return new JsonResponse(['success' => false, 'message' => 'Au moins un rôle (Passager ou Chauffeur) doit être sélectionné.'], Response::HTTP_BAD_REQUEST);
         }
 
-        // NOUVEAU: Vérification de l'âge pour le rôle de chauffeur
         if ($isDriverChecked) {
             $dateNaissance = $utilisateur->getDateNaissance();
             if (!$dateNaissance) {
@@ -289,7 +290,6 @@ class SecurityController extends AbstractController
                 return new JsonResponse(['success' => false, 'message' => 'Vous devez avoir au moins 18 ans pour devenir chauffeur.'], Response::HTTP_FORBIDDEN);
             }
         }
-        // FIN NOUVEAU
 
         $rolePassenger = $this->entityManager->getRepository(Role::class)->findOneBy(['libelle' => 'ROLE_PASSENGER']);
         $roleDriver = $this->entityManager->getRepository(Role::class)->findOneBy(['libelle' => 'ROLE_DRIVER']);
@@ -298,12 +298,10 @@ class SecurityController extends AbstractController
             return new JsonResponse(['success' => false, 'message' => 'Erreur: Rôles système introuvables.'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        // On retire tous les rôles existants pour repartir d'une base propre
         foreach ($utilisateur->getRolesCollection() as $existingRole) {
             $utilisateur->removeRole($existingRole);
         }
 
-        // Ensuite, on ajoute les rôles sélectionnés
         if ($isPassengerChecked) {
             $utilisateur->addRole($rolePassenger);
         }
@@ -312,23 +310,20 @@ class SecurityController extends AbstractController
         }
 
         try {
-            $this->entityManager->flush(); // Sauvegarde les changements en base de données
+            $this->entityManager->flush();
 
-            // Ajout d'un message flash pour la page de connexion
             $this->addFlash('success', 'Vos rôles ont été mis à jour avec succès. Veuillez vous reconnecter pour que les changements soient pleinement effectifs.');
 
-            // Renvoie une réponse JSON avec l'URL de redirection
             return new JsonResponse([
                 'success' => true,
                 'message' => 'Redirection nécessaire.',
-                'redirectUrl' => $this->generateUrl('app_login') // Génère l'URL de la page de connexion
+                'redirectUrl' => $this->generateUrl('app_login')
             ]);
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la sauvegarde des rôles: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
-    // NOUVELLE ROUTE POUR LA MISE À JOUR DES PRÉFÉRENCES
     #[Route('/mon-compte/update-preferences', name: 'app_account_update_preferences', methods: ['POST'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function updatePreferences(Request $request): JsonResponse
@@ -342,23 +337,20 @@ class SecurityController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
 
-        // Récupérer les préférences du JSON envoyé par le client
         $fumeursAcceptes = $data['fumeursAcceptes'] ?? false;
         $animauxAcceptes = $data['animauxAcceptes'] ?? false;
         $preferencesPersonnalisees = $data['preferencesPersonnalisees'] ?? [];
 
-        // Construire le tableau PHP qui sera encodé en JSON pour la base de données
         $preferencesToSave = [
             'fumeurs_acceptes' => (bool) $fumeursAcceptes,
             'animaux_acceptes' => (bool) $animauxAcceptes,
             'personnalisees' => (array) $preferencesPersonnalisees,
         ];
 
-        // Mettre à jour le champ 'preferences' de l'entité Utilisateur
         $utilisateur->setPreferences($preferencesToSave);
 
         try {
-            $this->entityManager->flush(); // Sauvegarde les changements en base de données
+            $this->entityManager->flush();
             return new JsonResponse(['success' => true, 'message' => 'Préférences mises à jour avec succès.']);
         } catch (\Exception $e) {
             return new JsonResponse(['success' => false, 'message' => 'Erreur lors de la sauvegarde des préférences: ' . $e->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
