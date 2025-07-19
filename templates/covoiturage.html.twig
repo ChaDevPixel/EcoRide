@@ -44,14 +44,14 @@
                                             <label for="rating-range" class="form-label fw-bold d-block mb-2"><i class="bi bi-star-half me-2 text-success fs-5"></i>Note min.</label>
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <input type="range" class="form-range w-50" min="0" max="5" step="1" id="rating-range" value="0">
-                                                <span id="rating-output" class="badge bg-success ms-3" style="width: 80px;">Toutes</span>
+                                                <span id="rating-output" class="badge bg-success text-dark ms-3" style="width: 80px;">Toutes</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-lg-3 text-center">
-                                            <label for="duration-range" class="form-label fw-bold d-block mb-2"><i class="bi bi-clock-history me-2 text-info fs-5"></i>Durée max.</label>
+                                            <label for="duration-range" class="form-label fw-bold d-block mb-2"><i class="bi bi-clock-history me-2 text-dark fs-5"></i>Durée max.</label>
                                             <div class="d-flex align-items-center justify-content-center">
                                                 <input type="range" class="form-range w-50" min="0" max="1440" step="30" id="duration-range" value="1440">
-                                                <span id="duration-output" class="badge bg-info ms-3" style="width: 80px;">Illimitée</span>
+                                                <span id="duration-output" class="badge bg-dark ms-3" style="width: 80px;">Illimitée</span>
                                             </div>
                                         </div>
                                         <div class="col-md-6 col-lg-3 text-center">
@@ -63,8 +63,8 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-3 text-center mt-3 mt-lg-0">
-                                    <button id="apply-filters-btn" class="btn btn-primary">Appliquer</button>
-                                    <button id="reset-filters-btn" class="btn btn-dark ms-2">Réinitialiser</button>
+                                    <button id="apply-filters-btn" class="btn btn-primary rounded-pill">Appliquer</button>
+                                    <button id="reset-filters-btn" class="btn btn-outline-dark ms-2 rounded-pill">Réinitialiser</button>
                                 </div>
                             </div>
                         </div>
@@ -120,7 +120,7 @@
                                     <hr class="my-2">
                                     <div class="d-flex justify-content-around text-center small">
                                         <div>
-                                            <i class="bi bi-cash-coin text-success fs-5 d-block"></i>
+                                            <i class="bi bi-cash-coin text-primary fs-5 d-block"></i>
                                             <div class="fw-bold">{{ trip.prix }} crédits</div>
                                         </div>
                                         <div>
@@ -128,7 +128,7 @@
                                             <div class="fw-bold">{{ trip.placesDisponibles }} places</div>
                                         </div>
                                         <div>
-                                            <i class="bi bi-clock-history text-secondary fs-5 d-block"></i>
+                                            <i class="bi bi-clock-history text-dark fs-5 d-block"></i>
                                             <div class="fw-bold">
                                                 {% set hours = (duration_minutes / 60)|round(0, 'floor') %}
                                                 {% set minutes = duration_minutes % 60 %}
@@ -141,7 +141,7 @@
                                         </div>
                                         <div>
                                             {% set isEco = trip.voiture and (trip.voiture.energie|lower == 'electric' or trip.voiture.energie|lower == 'hybrid') %}
-                                            <i class="bi {{ isEco ? 'bi-leaf-fill text-primary' : 'bi-fuel-pump-fill text-secondary' }} fs-5 d-block"></i>
+                                            <i class="bi {{ isEco ? 'bi-leaf-fill text-primary' : 'bi-fuel-pump-fill text-primary' }} fs-5 d-block"></i>
                                             <div class="fw-bold">{{ isEco ? 'Éco' : 'Thermique' }}</div>
                                         </div>
                                     </div>
@@ -152,7 +152,7 @@
                                             <i class="bi bi-car-front-fill"></i>
                                             {{ trip.voiture.marque.libelle }} {{ trip.voiture.modele }}
                                         </span>
-                                        <a href="{{ path('carpool_detail', {'id': trip.id}) }}" class="btn btn-primary fw-bold rounded-5">Détails</a>
+                                        <a href="{{ path('carpool_detail', {'id': trip.id}) }}" class="btn btn-primary fw-bold rounded-pill">Détails</a>
                                     </div>
                                 </div>
                             </div>

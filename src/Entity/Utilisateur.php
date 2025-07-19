@@ -58,6 +58,10 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 50, nullable: true)]
     #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'chauffeur:read', 'passager:read', 'participation:read', 'notification:read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?string $pseudo = null;
+    
+    // NOUVEAU : Ajout de la propriété 'statut'
+    #[ORM\Column(length: 20, options: ['default' => 'actif'])]
+    private ?string $statut = 'actif';
 
     #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur', orphanRemoval: true)] // Avis reçus par cet utilisateur (en tant que chauffeur)
     private Collection $avisRecus; 
@@ -229,6 +233,19 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
                 $avisLaiss->setAuteur(null);
             }
         }
+        return $this;
+    }
+
+    // NOUVEAU : Getter et Setter pour la propriété 'statut'
+    public function getStatut(): ?string
+    {
+        return $this->statut;
+    }
+
+    public function setStatut(string $statut): static
+    {
+        $this->statut = $statut;
+
         return $this;
     }
 }

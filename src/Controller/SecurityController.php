@@ -17,15 +17,14 @@ use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use App\Repository\NotificationRepository;
-use Symfony\Component\HttpFoundation\File\Exception\FileException; // NOUVEAU
-use Symfony\Component\String\Slugger\SluggerInterface; // NOUVEAU
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 class SecurityController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
     private NotificationRepository $notificationRepository;
 
-    // Le constructeur reste le même, les nouvelles dépendances seront injectées directement dans la méthode 'update'
     public function __construct(EntityManagerInterface $entityManager, NotificationRepository $notificationRepository)
     {
         $this->entityManager = $entityManager;
@@ -54,6 +53,12 @@ class SecurityController extends AbstractController
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function account(): Response
     {
+        // NOUVEAU : Redirige l'administrateur vers son tableau de bord
+        if ($this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('admin_dashboard');
+        }
+
+        // Logique existante pour les employés
         if ($this->isGranted('ROLE_EMPLOYE')) {
             return $this->redirectToRoute('employee_dashboard');
         }
@@ -103,7 +108,7 @@ class SecurityController extends AbstractController
     }
 
     /**
-     * NOUVEAU : Gère la mise à jour du profil (pseudo et photo)
+     * Gère la mise à jour du profil (pseudo et photo)
      */
     #[Route('/mon-compte/modifier', name: 'app_account_update', methods: ['POST'])]
     public function updateProfile(Request $request, SluggerInterface $slugger): Response

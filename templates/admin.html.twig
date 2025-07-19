@@ -1,0 +1,227 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Tableau de Bord Administrateur - EcoRide{% endblock %}
+
+{% block body %}
+    {# La balise <main> est fournie par base.html.twig. Le contenu est directement ici. #}
+    <div class="container my-5"> {# Utilisation d'un div conteneur au lieu de <main> #}
+        {# Messages Flash Symfony #}
+        {% for label, messages in app.flashes %}
+            {% for message in messages %}
+                <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endfor %}
+
+        <h1 class="mb-4">Gestion Administrative EcoRide</h1>
+
+        <!-- Navigation par onglets -->
+        <ul class="nav nav-tabs" id="adminTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                    <i class="bi bi-speedometer2 me-2"></i>Vue d'ensemble
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="create-employee-tab" data-bs-toggle="tab" data-bs-target="#create-employee" type="button" role="tab" aria-controls="create-employee" aria-selected="false">
+                    <i class="bi bi-person-plus-fill me-2"></i>Créer Employé
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="users-tab" data-bs-toggle="tab" data-bs-target="#users" type="button" role="tab" aria-controls="users" aria-selected="false">
+                    <i class="bi bi-people-fill me-2"></i>Gestion Utilisateurs
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenu des onglets -->
+        {# L'attribut data-api-url est ici pour que le JS puisse le lire #}
+        <div class="tab-content" id="adminTabContent" data-api-url="{{ path('admin_api_chart_data') }}"> 
+            <!-- Onglet Vue d'ensemble (maintenant avec les deux graphiques et les totaux) -->
+            <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+                    <div class="card-body">
+                        <div class="row g-4 mb-1"> {# Augmentation de l'espacement avec mb-5 #}
+                            {# Carte Total Crédits Gagnés #}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card h-100">
+                                    <div class="card-body d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h5 class="card-title text-muted text-uppercase">Crédits Totaux Gagnés</h5>
+                                            <p class="card-text fs-2 fw-bold text-dark mt-2">{{ totalCreditsGagnes }} <i class="bi bi-coin text-success"></i></p>
+                                        </div>
+                                        <div class="text-success opacity-50 fs-1">
+                                            <i class="bi bi-trophy-fill"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {# Carte Nombre Total de Voyages Terminés #}
+                            <div class="col-md-6 col-lg-4">
+                                <div class="card h-100">
+                                    <div class="card-body d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h5 class="card-title text-muted text-uppercase">Total Voyages Terminés</h5>
+                                            <p class="card-text fs-2 fw-bold text-dark mt-2">{{ totalCovoituragesTermines|default(0) }} <i class="bi bi-car-front-fill text-primary"></i></p>
+                                        </div>
+                                        <div class="text-primary opacity-50 fs-1">
+                                            <i class="bi bi-geo-alt-fill"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-4 mt-1"> {# Ajout de mt-5 pour espacement avec les cartes du haut #}
+                            {# Graphique Covoiturages par Jour #}
+                            <div class="col-12 col-lg-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Nombre de Covoiturages par Jour</h5>
+                                        <canvas id="carpoolChart" class="w-100" style="max-height: 400px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {# Graphique Crédits Gagnés par Jour #}
+                            <div class="col-12 col-lg-6">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Crédits Gagnés par Jour</h5>
+                                        <canvas id="earningsChart" class="w-100" style="max-height: 400px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Créer un Compte Employé -->
+            <div class="tab-pane fade" id="create-employee" role="tabpanel" aria-labelledby="create-employee-tab">
+                <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+                    <div class="card-body">
+                        <h5 class="card-title">Créer un Compte Employé</h5>
+                        <form action="{{ path('admin_create_employee') }}" method="POST" class="needs-validation" novalidate>
+                            <div class="mb-0">
+                                <label for="nom" class="form-label mb-1">Nom</label>
+                                <input type="text" class="form-control mb-2" id="nom" name="nom" required>
+                                <div class="invalid-feedback">Veuillez saisir le nom.</div>
+                            </div>
+                            <div class="mb-0">
+                                <label for="prenom" class="form-label mb-1">Prénom</label>
+                                <input type="text" class="form-control mb-2" id="prenom" name="prenom" required>
+                                <div class="invalid-feedback">Veuillez saisir le prénom.</div>
+                            </div>
+             
+                            <div class="mb-0">
+                                <label for="email" class="form-label mb-1">Email</label>
+                                <input type="email" class="form-control mb-2" id="email" name="email" required>
+                                <div class="invalid-feedback">Veuillez saisir une adresse email valide.</div>
+                            </div>
+                            <div class="mb-0">
+                                <label for="password" class="form-label mb-1">Mot de passe</label>
+                                <input type="password" class="form-control mb-2" id="password" name="password" required>
+                                <div class="invalid-feedback">Veuillez saisir un mot de passe.</div>
+                            </div>
+                            <div class="mb-0">
+                                <label for="pseudo" class="form-label mb-1">Pseudo</label>
+                                <input type="text" class="form-control mb-2" id="pseudo" name="pseudo" required>
+                                <div class="invalid-feedback">Veuillez saisir un pseudo.</div>
+                            </div>
+                            <button type="submit" class="btn btn-secondary rounded-pill">Créer l'Employé</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Onglet Gestion des Utilisateurs -->
+            <div class="tab-pane fade" id="users" role="tabpanel" aria-labelledby="users-tab">
+                <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+                    <div class="card-body">
+                        <h5 class="card-title">Gestion des Utilisateurs et Employés</h5>
+                        {# Le code de débogage a été retiré. #}
+
+                        {% if users is empty %}
+                            <p class="text-muted">Aucun utilisateur à afficher.</p>
+                        {% else %}
+                            <p class="text-info">Nombre d'utilisateurs trouvés : {{ users|length }}</p>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Email</th>
+                                            <th scope="col">Pseudo</th>
+                                            <th scope="col">Rôles</th>
+                                            <th scope="col">Statut</th>
+                                            <th scope="col" class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {# Les données utilisateurs seront affichées ici par Twig #}
+                                        {% for user in users %}
+                                            <tr>
+                                                <td>{{ user.id }}</td>
+                                                <td>{{ user.email }}</td>
+                                                <td>{{ user.pseudo }}</td>
+                                                <td>
+                                                    {# MODIFICATION ICI : Affiche le rôle seulement s'il n'est PAS 'ROLE_USER' #}
+                                                    {% for role in user.roles %}
+                                                        {% if role != 'ROLE_USER' %}
+                                                            <span class="badge 
+                                                                {% if role == 'ROLE_ADMIN' %}bg-danger
+                                                                {% elseif role == 'ROLE_EMPLOYE' %}bg-info
+                                                                {% elseif role == 'ROLE_DRIVER' %}bg-primary text-light
+                                                                {% elseif role == 'ROLE_PASSENGER' %}bg-secondary text-dark
+                                                                {% else %}bg-secondary{% endif %}">
+                                                                {{ role|replace({'ROLE_': ''}) }}
+                                                            </span>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if user.statut == 'actif' %}bg-secondary text-dark
+                                                        {% elseif user.statut == 'suspendu' %}bg-danger
+                                                        {% else %}bg-secondary{% endif %}">
+                                                        {{ user.statut|default('actif') }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-center">
+                                                    {% if user.id != app.user.id %} {# Empêche un admin de se suspendre lui-même #}
+                                                        <form action="{{ path('admin_suspend_user', {'id': user.id}) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir suspendre ce compte ?');" class="d-inline">
+                                                            <input type="hidden" name="_token" value="{{ csrf_token('suspend' ~ user.id) }}">
+                                                            <button type="submit" class="btn btn-danger rounded-pill btn-sm">
+                                                                <i class="bi bi-ban me-1"></i> Suspendre
+                                                            </button>
+                                                        </form>
+                                                    {% else %}
+                                                        <span class="text-muted">Action impossible</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %} {# Fin de la vérification if users is empty #}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> {# Fin du div conteneur #}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }} {# Inclut les scripts de base.html.twig #}
+    
+    {# Inclusion de Chart.js via CDN #}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    {# Inclusion de admin_dashboard.js #}
+    <script src="{{ asset('js/admin_dashboard.js') }}" defer></script>
+{% endblock %}

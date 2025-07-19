@@ -18,6 +18,84 @@ class CovoiturageRepository extends ServiceEntityRepository
     }
 
     /**
+     * Calcule le nombre total de crédits gagnés par la plateforme.
+     * (2 crédits par participation sur les trajets terminés)
+     */
+    public function getTotalPlatformCredits(): int
+    {
+        // Supposons que le statut 'terminé' est le statut final pour le calcul des crédits
+        // Et que chaque participation rapporte 2 crédits à la plateforme.
+        // CORRECTION : Utilisation de c.participations (au pluriel)
+        return $this->createQueryBuilder('c')
+            ->select('SUM(SIZE(c.participations) * 2)') // Multiplie le nombre de participants par 2 crédits
+            ->where('c.statut = :statutTermine') // Filtre par statut 'terminé'
+            ->setParameter('statutTermine', 'terminé')
+            ->getQuery()
+            ->getSingleScalarResult() ?? 0; // Retourne 0 si aucun résultat
+    }
+
+    /**
+     * Compte le nombre de covoiturages par jour.
+     * Retourne un tableau associatif [date => count].
+     */
+    public function countByDay(): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            // CORRECTION : Utilisation de c.dateDepart au lieu de c.dateHeureDepart
+            ->select('SUBSTRING(c.dateDepart, 1, 10) as tripDate, COUNT(c.id) as tripCount')
+            ->groupBy('tripDate')
+            ->orderBy('tripDate', 'ASC');
+
+        $results = $qb->getQuery()->getResult();
+
+        $data = [];
+        foreach ($results as $row) {
+            $data[$row['tripDate']] = (int) $row['tripCount'];
+        }
+
+        return $data;
+    }
+
+    /**
+     * Calcule les crédits gagnés par la plateforme par jour.
+     * Retourne un tableau associatif [date => credits].
+     */
+    public function getPlatformCreditsByDay(): array
+    {
+        // Cette méthode doit refléter la logique de getTotalPlatformCredits mais par jour
+        // CORRECTION : Utilisation de c.participations (au pluriel)
+        // CORRECTION : Utilisation de c.dateDepart au lieu de c.dateHeureDepart
+        $qb = $this->createQueryBuilder('c')
+            ->select('SUBSTRING(c.dateDepart, 1, 10) as tripDate, SUM(SIZE(c.participations) * 2) as dailyCredits')
+            ->where('c.statut = :statutTermine')
+            ->setParameter('statutTermine', 'terminé')
+            ->groupBy('tripDate')
+            ->orderBy('tripDate', 'ASC');
+
+        $results = $qb->getQuery()->getResult();
+
+        $data = [];
+        foreach ($results as $row) {
+            $data[$row['tripDate']] = (int) $row['dailyCredits'];
+        }
+
+        return $data;
+    }
+
+    /**
+     * Compte le nombre total de covoiturages avec le statut 'terminé'.
+     */
+    public function countFinishedCovoiturages(): int
+    {
+        return $this->createQueryBuilder('c')
+            ->select('count(c.id)')
+            ->where('c.statut = :statutTermine')
+            ->setParameter('statutTermine', 'terminé')
+            ->getQuery()
+            ->getSingleScalarResult() ?? 0;
+    }
+
+    /**
      * Trouve les covoiturages correspondant aux critères de recherche.
      * @param string $villeDepart
      * @param string $villeArrivee
