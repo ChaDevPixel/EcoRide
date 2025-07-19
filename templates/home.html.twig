@@ -11,16 +11,18 @@
 {% endblock %}
 
 {% block body %}
-    <!-- présentation Ecoride -->
+    {# NOUVEAU : Ajout du style pour écarter les flèches du carrousel #}
+    <style>
+
+    </style>
+
     <section class="container my-5">
         
         <h2 class="text-center mb-5 display-5 text-primary">Ecoride, le covoiturage en toute confiance</h2>
 
-        <!-- Carousel -->
         <div id="ecorideCarousel" class="carousel slide" data-bs-ride="carousel">
             <div class="carousel-inner">
 
-                <!-- Slide 1 -->
                 <div class="carousel-item active bg-light py-5">
                     <div class="row align-items-center">
                         <div class="col-md-6 mb-4 mb-md-0">
@@ -37,7 +39,6 @@
                     </div>
                 </div>
 
-                <!-- Slide 2 -->
                 <div class="carousel-item bg-light py-5">
                     <div class="row align-items-center flex-md-row-reverse">
                         <div class="col-md-6 mb-4 mb-md-0">
@@ -55,7 +56,6 @@
                 </div>
             </div>
 
-            <!-- Contrôles -->
             <button class="carousel-control-prev" type="button" data-bs-target="#ecorideCarousel" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon bg-dark rounded-circle p-3" aria-hidden="true"></span>
                 <span class="visually-hidden">Précédent</span>
@@ -65,5 +65,5 @@
                 <span class="visually-hidden">Suivant</span>
             </button>
         </div>
-    </section>                            
+    </section>
 {% endblock %}

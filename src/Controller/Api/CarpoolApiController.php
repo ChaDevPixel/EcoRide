@@ -13,6 +13,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\SerializerInterface;
@@ -25,18 +27,21 @@ class CarpoolApiController extends AbstractController
     private Security $security;
     private SerializerInterface $serializer;
     private ValidatorInterface $validator;
+    private MailerInterface $mailer; // NOUVEAU : Propriété pour le Mailer
 
     public function __construct(
         EntityManagerInterface $entityManager, 
         Security $security, 
         SerializerInterface $serializer, 
-        ValidatorInterface $validator
+        ValidatorInterface $validator,
+        MailerInterface $mailer // NOUVEAU : Injection du Mailer
     )
     {
         $this->entityManager = $entityManager;
         $this->security = $security;
         $this->validator = $validator;
         $this->serializer = $serializer;
+        $this->mailer = $mailer; // NOUVEAU : Assignation du Mailer
     }
 
     /**
@@ -170,29 +175,20 @@ class CarpoolApiController extends AbstractController
 
         $this->entityManager->beginTransaction();
         try {
-            error_log("DEBUG PARTICIPATE: Début de la transaction de participation.");
-
             // Débiter le passager
-            error_log("DEBUG PARTICIPATE: Tentative de débit des crédits du passager. Crédits avant: " . $passager->getCredits() . ", Prix: " . $prix);
             $passager->setCredits($passager->getCredits() - $prix);
-            error_log("DEBUG PARTICIPATE: Crédits passager après débit: " . $passager->getCredits());
             
             // Décrémenter les places disponibles
-            error_log("DEBUG PARTICIPATE: Tentative de décrémentation des places disponibles. Places avant: " . $covoiturage->getPlacesDisponibles());
             $covoiturage->setPlacesDisponibles($covoiturage->getPlacesDisponibles() - 1);
-            error_log("DEBUG PARTICIPATE: Places disponibles après décrémentation: " . $covoiturage->getPlacesDisponibles());
 
             // Créer la participation
-            error_log("DEBUG PARTICIPATE: Création de l'entité Participation.");
             $participation = new Participation();
             $participation->setPassager($passager);
             $participation->setCovoiturage($covoiturage);
             $participation->setValideParPassager(false); // Initialiser à false
             $participation->setAvisSoumis(false); // Initialiser à false
-            error_log("DEBUG PARTICIPATE: Entité Participation créée.");
 
             // Créer la notification pour le chauffeur
-            error_log("DEBUG PARTICIPATE: Création de la notification pour le chauffeur.");
             $chauffeur = $covoiturage->getChauffeur();
             $notification = new Notification();
             $notification->setDestinataire($chauffeur);
@@ -207,27 +203,20 @@ class CarpoolApiController extends AbstractController
                 )
             );
             $notification->setCovoiturageAssocie($covoiturage);
-            error_log("DEBUG PARTICIPATE: Notification pour le chauffeur créée.");
 
             // Persister toutes les entités modifiées ou créées
-            error_log("DEBUG PARTICIPATE: Persistance des entités (Participation, Passager, Covoiturage, Notification).");
             $this->entityManager->persist($participation);
             $this->entityManager->persist($passager);
             $this->entityManager->persist($covoiturage);
             $this->entityManager->persist($notification);
 
-            error_log("DEBUG PARTICIPATE: Flush des modifications.");
             $this->entityManager->flush();
-            error_log("DEBUG PARTICIPATE: Commit de la transaction.");
             $this->entityManager->commit();
 
             return $this->json(['message' => 'Participation enregistrée avec succès ! Vous allez être redirigé.'], JsonResponse::HTTP_OK);
 
         } catch (\Exception $e) {
-            error_log("DEBUG PARTICIPATE: Erreur capturée dans la transaction de participation: " . $e->getMessage());
-            error_log("DEBUG PARTICIPATE: Trace de l'erreur: " . $e->getTraceAsString()); // AJOUTÉ : Trace complète de l'erreur
             $this->entityManager->rollback();
-            // Log the exception for debugging
             error_log($e->getMessage()); 
             return $this->json(['message' => 'Une erreur interne est survenue. Veuillez réessayer.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -257,7 +246,7 @@ class CarpoolApiController extends AbstractController
 
     /**
      * Termine un covoiturage et le met en attente de validation par les participants.
-     * NOUVEAU : Envoie des notifications (in-app et email simulé) aux participants.
+     * MODIFIÉ : Envoie un vrai email aux participants.
      */
     #[Route('/covoiturage/{id}/end', name: 'covoiturage_end', methods: ['POST'])]
     public function endCovoiturage(Covoiturage $covoiturage): JsonResponse
@@ -277,7 +266,7 @@ class CarpoolApiController extends AbstractController
             $covoiturage->setStatut('en_attente_validation');
             $this->entityManager->persist($covoiturage);
 
-            // Envoyer des notifications (in-app et email simulé) à chaque participant
+            // Envoyer des notifications (in-app et email) à chaque participant
             foreach ($covoiturage->getParticipations() as $participation) {
                 $passager = $participation->getPassager();
                 
@@ -296,35 +285,21 @@ class CarpoolApiController extends AbstractController
                 $notification->setCovoiturageAssocie($covoiturage);
                 $this->entityManager->persist($notification);
 
-                // 2. Simuler l'envoi d'e-mail
-                $emailContent = sprintf(
-                    "Bonjour %s,\n\nLe covoiturage de %s à %s, prévu le %s à %s, est terminé.\n\nVeuillez vous rendre sur votre espace EcoRide pour valider le trajet et, si vous le souhaitez, laisser un avis.\n\nCordialement,\nL'équipe EcoRide",
-                    $passager->getPseudo(),
-                    $covoiturage->getVilleDepart(),
-                    $covoiturage->getVilleArrivee(),
-                    $covoiturage->getDateDepart()->format('d/m/Y'),
-                    $covoiturage->getHeureDepart()
-                );
-
-                // Pour un vrai envoi d'e-mail avec Symfony Mailer, vous feriez ceci (décommentez et configurez votre mailer) :
-                /*
-                $email = (new Email())
-                    ->from('no-reply@ecoride.com')
-                    ->to($passager->getEmail())
-                    ->subject('Covoiturage EcoRide terminé - Validation requise')
-                    ->text($emailContent);
-                $this->mailer->send($email);
-                */
-                
-                // Ici, nous allons simplement logguer l'envoi pour la démonstration :
-                error_log(sprintf(
-                    "EMAIL SIMULÉ ENVOYÉ à %s (%s) pour validation du covoiturage %s -> %s. Contenu: %s",
-                    $passager->getPseudo(),
-                    $passager->getEmail(),
-                    $covoiturage->getVilleDepart(),
-                    $covoiturage->getVilleArrivee(),
-                    $emailContent
-                ));
+                // 2. MODIFIÉ : Envoyer un vrai e-mail
+                try {
+                    $email = (new Email())
+                        ->from('no-reply@ecoride.com')
+                        ->to($passager->getEmail())
+                        ->subject('Votre covoiturage EcoRide est terminé - Validation requise')
+                        ->html($this->renderView('emails/trip_ended.html.twig', [
+                            'passager' => $passager,
+                            'covoiturage' => $covoiturage,
+                        ]));
+                    $this->mailer->send($email);
+                } catch (\Exception $e) {
+                    // On log l'erreur d'envoi d'email mais on ne bloque pas la transaction
+                    error_log('Erreur lors de l\'envoi de l\'email de fin de trajet: ' . $e->getMessage());
+                }
             }
 
             $this->entityManager->flush();
@@ -343,7 +318,7 @@ class CarpoolApiController extends AbstractController
     }
 
     /**
-     * NOUVEAU : API pour la validation du trajet et la soumission d'avis par un passager.
+     * API pour la validation du trajet et la soumission d'avis par un passager.
      * Gère le remboursement du chauffeur et la création d'avis/litiges.
      */
     #[Route('/participation/{id}/validate-review', name: 'participation_validate_review', methods: ['POST'])]
@@ -352,25 +327,22 @@ class CarpoolApiController extends AbstractController
         /** @var Utilisateur $passager */
         $passager = $this->security->getUser();
 
-        // 1. Vérifier que l'utilisateur est bien le passager de cette participation
         if (!$passager || $participation->getPassager() !== $passager) {
             return $this->json(['message' => 'Accès non autorisé. Vous n\'êtes pas le passager de cette participation.'], JsonResponse::HTTP_FORBIDDEN);
         }
 
         $covoiturage = $participation->getCovoiturage();
 
-        // 2. Vérifier que le covoiturage est bien en attente de validation par les passagers
         if ($covoiturage->getStatut() !== 'en_attente_validation') {
             return $this->json(['message' => 'Ce covoiturage n\'est pas en attente de validation.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        // 3. Vérifier que le passager n'a pas déjà validé/soumis un avis pour cette participation
         if ($participation->isValideParPassager() || $participation->isAvisSoumis()) {
             return $this->json(['message' => 'Vous avez déjà validé ou soumis un avis pour ce trajet.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
         $data = json_decode($request->getContent(), true);
-        $validationStatus = $data['validationStatus'] ?? null; // true pour "Oui", false pour "Non"
+        $validationStatus = $data['validationStatus'] ?? null;
         $note = $data['note'] ?? null;
         $commentaire = $data['commentaire'] ?? null;
         $raisonLitige = $data['raisonLitige'] ?? null;
@@ -386,15 +358,13 @@ class CarpoolApiController extends AbstractController
             $commissionPlateforme = 2;
             $gainChauffeurParPassager = $prixParPassager - $commissionPlateforme;
 
-            // Marquer la participation comme validée et l'avis soumis
             $participation->setValideParPassager(true);
             $participation->setAvisSoumis(true);
             $this->entityManager->persist($participation);
 
-            // Créer un avis
             $avis = new Avis();
-            $avis->setAuteur($passager); // Le passager est l'auteur de l'avis
-            $avis->setUtilisateur($chauffeur); // Le chauffeur est l'utilisateur qui reçoit l'avis
+            $avis->setAuteur($passager);
+            $avis->setUtilisateur($chauffeur);
             $avis->setCovoiturage($covoiturage);
             $avis->setCommentaire($commentaire);
 
@@ -403,10 +373,9 @@ class CarpoolApiController extends AbstractController
                     throw new \Exception('La note est obligatoire et doit être entre 1 et 5 pour une validation positive.');
                 }
                 $avis->setNote($note);
-                $avis->setValideParEmploye(false); // Sera validé par un employé plus tard
+                $avis->setValideParEmploye(false);
                 $avis->setRaisonLitige(null);
 
-                // Vérifier si tous les participants ont validé pour transférer les crédits
                 $allParticipantsValidated = true;
                 foreach ($covoiturage->getParticipations() as $p) {
                     if (!$p->isValideParPassager()) {
@@ -416,13 +385,11 @@ class CarpoolApiController extends AbstractController
                 }
 
                 if ($allParticipantsValidated) {
-                    // Tous les participants ont validé, transférer les crédits au chauffeur
                     $chauffeur->setCredits($chauffeur->getCredits() + ($gainChauffeurParPassager * count($covoiturage->getParticipations())));
                     $this->entityManager->persist($chauffeur);
-                    $covoiturage->setStatut('termine'); // Le covoiturage est terminé
+                    $covoiturage->setStatut('termine');
                     $this->entityManager->persist($covoiturage);
 
-                    // Notification pour le chauffeur : crédits reçus
                     $notificationChauffeur = new Notification();
                     $notificationChauffeur->setDestinataire($chauffeur);
                     $notificationChauffeur->setMessage(
@@ -435,23 +402,19 @@ class CarpoolApiController extends AbstractController
                     );
                     $notificationChauffeur->setCovoiturageAssocie($covoiturage);
                     $this->entityManager->persist($notificationChauffeur);
-                } else {
-                    // Le covoiturage reste en attente de validation si d'autres passagers n'ont pas encore validé
-                    // Pas de changement de statut global du covoiturage ni de transfert de crédits pour le moment
                 }
 
             } else { // Le voyage s'est mal déroulé (Non)
                 if (!$raisonLitige) {
                     throw new \Exception('La raison du problème est obligatoire si le voyage s\'est mal déroulé.');
                 }
-                $avis->setNote(0); // Note 0 pour un problème
+                $avis->setNote(0);
                 $avis->setRaisonLitige($raisonLitige);
-                $avis->setValideParEmploye(false); // Sera validé par un employé
+                $avis->setValideParEmploye(false);
                 
-                $covoiturage->setStatut('litige'); // Le covoiturage passe en statut litige
+                $covoiturage->setStatut('litige');
                 $this->entityManager->persist($covoiturage);
 
-                // Notification pour un employé (simulée)
                 error_log(sprintf(
                     "ALERTE EMPLOYE : Litige signalé pour le covoiturage %s -> %s du %s par %s. Raison: %s",
                     $covoiturage->getVilleDepart(),
@@ -504,7 +467,8 @@ class CarpoolApiController extends AbstractController
 
     /**
      * Annule un covoiturage initié par le chauffeur.
-     * Rembourse les participants et envoie des notifications (in-app et email simulé).
+     * Rembourse les participants et envoie des notifications (in-app et email).
+     * MODIFIÉ : Envoie un vrai email aux participants.
      */
     #[Route('/covoiturage/{id}/cancel', name: 'covoiturage_cancel', methods: ['POST'])]
     public function cancelCovoiturage(Covoiturage $covoiturage): JsonResponse
@@ -512,23 +476,19 @@ class CarpoolApiController extends AbstractController
         /** @var Utilisateur $chauffeur */
         $chauffeur = $this->security->getUser();
 
-        // 1. Vérifier que l'utilisateur est bien le chauffeur du covoiturage
         if (!$chauffeur || $covoiturage->getChauffeur() !== $chauffeur) {
             return $this->json(['message' => 'Accès non autorisé. Vous n\'êtes pas le chauffeur de ce covoiturage.'], JsonResponse::HTTP_FORBIDDEN);
         }
 
-        // 2. Vérifier le statut du covoiturage (ne peut annuler que s'il n'est pas déjà terminé ou annulé)
         if ($covoiturage->getStatut() === 'termine' || $covoiturage->getStatut() === 'annule') {
             return $this->json(['message' => 'Ce covoiturage ne peut pas être annulé car il est déjà terminé ou annulé.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
         $this->entityManager->beginTransaction();
         try {
-            // 3. Mettre à jour le statut du covoiturage
             $covoiturage->setStatut('annule');
             $this->entityManager->persist($covoiturage);
 
-            // 4. Rembourser les participants et les notifier
             foreach ($covoiturage->getParticipations() as $participation) {
                 $passager = $participation->getPassager();
                 $prixVoyage = $covoiturage->getPrix();
@@ -553,46 +513,29 @@ class CarpoolApiController extends AbstractController
                 $notification->setCovoiturageAssocie($covoiturage);
                 $this->entityManager->persist($notification);
 
-                // NOUVEAU : Simulation d'envoi d'e-mail au participant
-                $emailContent = sprintf(
-                    "Bonjour %s,\n\nLe covoiturage de %s à %s, prévu le %s à %s, a été annulé par le chauffeur.\n\nVos %s crédits ont été restitués à votre compte EcoRide.\n\nCordialement,\nL'équipe EcoRide",
-                    $passager->getPseudo(),
-                    $covoiturage->getVilleDepart(),
-                    $covoiturage->getVilleArrivee(),
-                    $covoiturage->getDateDepart()->format('d/m/Y'),
-                    $covoiturage->getHeureDepart(),
-                    $prixVoyage
-                );
+                // MODIFIÉ : Envoyer un vrai e-mail d'annulation
+                try {
+                    $email = (new Email())
+                        ->from('no-reply@ecoride.com')
+                        ->to($passager->getEmail())
+                        ->subject('Annulation de votre covoiturage EcoRide')
+                        ->html($this->renderView('emails/trip_canceled.html.twig', [
+                            'passager' => $passager,
+                            'covoiturage' => $covoiturage,
+                            'prixVoyage' => $prixVoyage,
+                        ]));
+                    $this->mailer->send($email);
+                } catch (\Exception $e) {
+                    error_log('Erreur lors de l\'envoi de l\'email d\'annulation: ' . $e->getMessage());
+                }
 
-                // Pour un vrai envoi d'e-mail avec Symfony Mailer, vous feriez ceci (décommentez et configurez votre mailer) :
-                /*
-                $email = (new Email())
-                    ->from('no-reply@ecoride.com')
-                    ->to($passager->getEmail())
-                    ->subject('Annulation de votre covoiturage EcoRide')
-                    ->text($emailContent);
-                $this->mailer->send($email);
-                */
-                
-                // Ici, nous allons simplement logguer l'envoi pour la démonstration :
-                error_log(sprintf(
-                    "EMAIL SIMULÉ ENVOYÉ à %s (%s) pour l'annulation du covoiturage %s -> %s. Contenu: %s",
-                    $passager->getPseudo(),
-                    $passager->getEmail(),
-                    $covoiturage->getVilleDepart(),
-                    $covoiturage->getVilleArrivee(),
-                    $emailContent
-                ));
-
-
-                // Supprimer la participation (si le covoiturage est annulé, la participation n'a plus lieu d'être)
                 $this->entityManager->remove($participation);
             }
 
             $this->entityManager->flush();
             $this->entityManager->commit();
 
-            return $this->json(['message' => 'Covoiturage annulé avec succès. Les participants ont été remboursés et notifiés par l\'application et par email.'], JsonResponse::HTTP_OK);
+            return $this->json(['message' => 'Covoiturage annulé avec succès. Les participants ont été remboursés et notifiés.'], JsonResponse::HTTP_OK);
 
         } catch (\Exception $e) {
             $this->entityManager->rollback();
@@ -600,8 +543,9 @@ class CarpoolApiController extends AbstractController
             return $this->json(['message' => 'Une erreur est survenue lors de l\'annulation du covoiturage. Veuillez réessayer.'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-     /**
-     * MODIFIÉ : Annule la participation d'un passager, le rembourse et met à jour les places.
+    
+    /**
+     * Annule la participation d'un passager, le rembourse et met à jour les places.
      */
     #[Route('/participation/{id}', name: 'delete_participation', methods: ['DELETE'])]
     public function deleteParticipation(Participation $participation): JsonResponse

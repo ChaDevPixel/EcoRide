@@ -1,0 +1,66 @@
+{# templates/emails/contact_email.html.twig #}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .header {
+            background-color: #f2f2f2;
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        .content {
+            padding: 20px 0;
+        }
+        .content p {
+            margin: 0 0 10px;
+        }
+        .message-box {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #777;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>Nouveau message depuis le formulaire de contact Ecoride</h2>
+        </div>
+        <div class="content">
+            <p><strong>Nom :</strong> {{ firstname }} {{ lastname }}</p>
+            <p><strong>Email :</strong> <a href="mailto:{{ emailUser }}">{{ emailUser }}</a></p>
+            <p><strong>Objet :</strong> {{ subject }}</p> {# NOUVEAU : Affichage de l'objet #}
+            <p><strong>Message :</strong></p>
+            <div class="message-box">
+                {{ message|nl2br }} {# nl2br pour conserver les sauts de ligne #}
+            </div>
+        </div>
+        <div class="footer">
+            <p>Cet e-mail a été envoyé depuis le formulaire de contact du site Ecoride.</p>
+        </div>
+    </div>
+</body>
+</html>

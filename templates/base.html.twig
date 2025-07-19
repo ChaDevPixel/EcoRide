@@ -167,6 +167,15 @@
         </div>
 
         <main class="bg-light flex-grow-1">
+            {# NOUVEAU : Le bloc pour afficher les messages flash #}
+            {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ label }} text-center m-3" role="alert">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endfor %}
+
             {# Le contenu principal de la page sera inséré ici #}
             {% block body %}{% endblock %}
         </main>
