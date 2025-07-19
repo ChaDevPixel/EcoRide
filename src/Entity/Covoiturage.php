@@ -15,15 +15,15 @@ class Covoiturage
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?string $villeDepart = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?\DateTimeInterface $dateDepart = null;
 
     #[ORM\Column(length: 5)]
@@ -31,11 +31,11 @@ class Covoiturage
     private ?string $heureDepart = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'notification:read', 'covoiturage_for_participation:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?string $villeArrivee = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read', 'trip_info'])]
     private ?\DateTimeInterface $dateArrivee = null;
 
     #[ORM\Column(length: 5)]
@@ -43,7 +43,7 @@ class Covoiturage
     private ?string $heureArrivee = null;
 
     #[ORM\Column]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read', 'trip_info'])]
     private ?int $prix = null;
 
     #[ORM\Column]
@@ -64,19 +64,19 @@ class Covoiturage
 
     #[ORM\ManyToOne(inversedBy: 'covoituragesConduits')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:search_read', 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?Utilisateur $chauffeur = null;
 
     #[ORM\ManyToOne(targetEntity: Voiture::class, inversedBy: 'covoiturages')]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["covoiturage:read", "covoiturage:search_read", 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read'])]
+    #[Groups(["covoiturage:read", "covoiturage:search_read", 'covoiturage_for_participation:read', 'notification:read', 'covoiturage:user_driven_read', 'avis:read', 'trip_info'])]
     private ?Voiture $voiture = null;
 
     /**
      * @var Collection<int, Participation>
      */
     #[ORM\OneToMany(mappedBy: 'covoiturage', targetEntity: Participation::class, orphanRemoval: true)]
-    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'trip_info'])]
     private Collection $participations;
 
     /**

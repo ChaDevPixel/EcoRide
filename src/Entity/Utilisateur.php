@@ -56,7 +56,7 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     private ?string $photo = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'chauffeur:read', 'passager:read', 'participation:read', 'notification:read', 'avis:read', 'covoiturage:dispute_read'])]
+    #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'chauffeur:read', 'passager:read', 'participation:read', 'notification:read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?string $pseudo = null;
 
     #[ORM\OneToMany(targetEntity: Avis::class, mappedBy: 'utilisateur', orphanRemoval: true)] // Avis reçus par cet utilisateur (en tant que chauffeur)

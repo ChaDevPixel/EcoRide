@@ -1,0 +1,63 @@
+{# templates/notification.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Toutes mes Notifications - EcoRide{% endblock %}
+
+{% block body %}
+    <div class="container mt-4">
+        <h1 class="mb-4"><i class="bi bi-bell-fill text-primary"></i> Toutes mes Notifications</h1>
+
+        <div class="card shadow-sm rounded">
+            <div class="card-body">
+                <div id="all-notifications-list" class="list-group">
+                    {% if notifications is empty %}
+                        <p class="text-center text-muted p-4">Vous n'avez aucune notification pour le moment.</p>
+                    {% else %}
+                        {% for notification in notifications %}
+                            <div class="list-group-item list-group-item-action {% if not notification.estLue %}bg-light{% endif %}">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">{{ notification.message }}</h6>
+                                    <small class="text-muted">{{ notification.creeLe|date('d/m/Y H:i') }}</small>
+                                </div>
+                                {% if notification.covoiturageAssocie %}
+                                    <small>Covoiturage n°{{ notification.covoiturageAssocie.id }}</small>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="text-center mt-3">
+                    {# Ce bouton marquera toutes les notifications comme lues via une API #}
+                    <button id="mark-all-read-page-btn" class="btn btn-primary btn-sm rounded-pill px-3 {% if notifications is empty or notifications|filter(n => not n.estLue)|length == 0 %}d-none{% endif %}">Marquer tout comme lu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const markAllReadPageBtn = document.getElementById('mark-all-read-page-btn');
+            if (markAllReadPageBtn) {
+                markAllReadPageBtn.addEventListener('click', async () => {
+                    try {
+                        const response = await fetch('/api/notifications/mark-all-as-read', { method: 'POST' });
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('Erreur lors du marquage de toutes les notifications comme lues:', response.status, errorText);
+                            alert('Erreur: Impossible de marquer toutes les notifications comme lues.'); // Utilisez un modal si possible
+                        } else {
+                            alert('Toutes les notifications ont été marquées comme lues !'); // Utilisez un modal si possible
+                            location.reload(); // Recharger la page pour afficher l'état mis à jour
+                        }
+                    } catch (error) {
+                        console.error("Erreur lors du marquage de toutes les notifications comme lues:", error);
+                        alert('Erreur de communication avec le serveur.'); // Utilisez un modal si possible
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

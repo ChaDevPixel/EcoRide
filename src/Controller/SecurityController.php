@@ -16,14 +16,17 @@ use DateTime;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Repository\NotificationRepository; // Importation du NotificationRepository
 
 class SecurityController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
+    private NotificationRepository $notificationRepository; // Déclaration du NotificationRepository
 
-    public function __construct(EntityManagerInterface $entityManager)
+    public function __construct(EntityManagerInterface $entityManager, NotificationRepository $notificationRepository) // Injection du NotificationRepository
     {
         $this->entityManager = $entityManager;
+        $this->notificationRepository = $notificationRepository; // Initialisation
     }
 
     #[Route('/connexion', name: 'app_login', methods: ['GET', 'POST'])]
@@ -95,6 +98,32 @@ class SecurityController extends AbstractController
             'utilisateur' => $utilisateur,
             'utilisateur_voitures_json' => json_encode($voituresArray, JSON_PRETTY_PRINT),
             'utilisateur_preferences_json' => json_encode($preferencesArray, JSON_PRETTY_PRINT),
+        ]);
+    }
+
+    /**
+     * NOUVELLE ACTION: Affiche une page dédiée pour toutes les notifications de l'utilisateur.
+     * Cette route sera appelée par le lien "Voir toutes les notifications" du dropdown desktop.
+     */
+    #[Route('/mon-compte/notifications', name: 'app_account_notifications', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function allNotifications(): Response
+    {
+        /** @var Utilisateur $user */
+        $user = $this->getUser();
+
+        // Récupérer toutes les notifications de l'utilisateur, triées par date (les plus récentes en premier)
+        $notifications = $this->notificationRepository->findBy(
+            ['destinataire' => $user],
+            ['creeLe' => 'DESC']
+        );
+
+        // Vous pouvez choisir de marquer les notifications comme lues ici si vous le souhaitez.
+        // Ou laisser le JavaScript de la page le faire via l'API mark-all-as-read.
+
+        return $this->render('notification.html.twig', [ // Rendre le nouveau template
+            'notifications' => $notifications,
+            'utilisateur' => $user, // Passer l'utilisateur pour la sidebar si nécessaire
         ]);
     }
 

@@ -14,16 +14,13 @@ class Marque
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    // Ajout de 'covoiturage:read', 'covoiturage:search_read' et 'covoiturage:user_driven_read'
-    // pour s'assurer que l'ID de la marque est disponible lorsque la voiture est sérialisée
-    // dans ces contextes.
-    #[Groups(['marque:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'voiture:read'])]
+    // Ajout de 'trip_info' pour permettre la sérialisation de l'ID de la marque.
+    #[Groups(['marque:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'voiture:read', 'trip_info'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
-    // Ajout de 'marque:read', 'covoiturage:search_read' et 'covoiturage:user_driven_read'
-    // pour que le libellé de la marque soit visible dans différents contextes de sérialisation.
-    #[Groups(['marque:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'voiture:read'])]
+    // Ajout de 'trip_info' pour permettre la sérialisation du libellé de la marque.
+    #[Groups(['marque:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'voiture:read', 'trip_info'])]
     private ?string $libelle = null;
 
     /**
@@ -31,7 +28,6 @@ class Marque
      */
     #[ORM\OneToMany(targetEntity: Voiture::class, mappedBy: 'marque')]
     // Cette collection ne doit PAS avoir de groupe de sérialisation pour éviter les références circulaires.
-    // Les voitures associées à cette marque seront sérialisées via l'entité Voiture elle-même.
     private Collection $voitures;
 
     public function __construct()

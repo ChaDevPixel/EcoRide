@@ -96,22 +96,22 @@
                             <div class="d-grid">
                                 {% if app.user %}
                                     {% if is_participant %}
-                                        <button class="btn btn-info btn-lg" disabled>Vous participez déjà</button>
+                                        <button class="btn btn-info btn-lg rounded-5" disabled>Vous participez déjà</button>
                                     {% elseif app.user == trip.chauffeur %}
-                                        <button class="btn btn-secondary btn-lg" disabled>Vous êtes le conducteur</button>
+                                        <button class="btn btn-secondary btn-lg rounded-5" disabled>Vous êtes le conducteur</button>
                                     {% elseif trip.placesDisponibles <= 0 %}
-                                        <button class="btn btn-danger btn-lg" disabled>Complet</button>
+                                        <button class="btn btn-danger btn-lg rounded-5" disabled>Complet</button>
                                     {% elseif app.user.credits < trip.prix %}
-                                        <button class="btn btn-warning btn-lg" disabled title="Crédits insuffisants">Participer</button>
+                                        <button class="btn btn-warning btn-lg rounded-5" disabled title="Crédits insuffisants">Participer</button>
                                     {% else %}
-                                        <button id="participateButton" class="btn btn-success btn-lg" 
+                                        <button id="participateButton" class="btn btn-success btn-lg rounded-5" 
                                                 data-action="click->participation#openConfirmationModal"
                                                 data-participation-target="participateButton">
                                             Participer
                                         </button>
                                     {% endif %}
                                 {% else %}
-                                    <a href="{{ path('app_login') }}" class="btn btn-success btn-lg">Se connecter pour participer</a>
+                                    <a href="{{ path('app_login') }}" class="btn btn-success btn-lg rounded-5">Se connecter pour participer</a>
                                 {% endif %}
                             </div>
                         </div>
@@ -147,13 +147,4 @@
       </div>
     </div>
 </div>
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-
-    {% if app.user %}
-        <script src="{{ asset('js/notifications.js') }}" defer></script>
-    {% endif %}
-
 {% endblock %}

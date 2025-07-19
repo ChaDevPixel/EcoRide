@@ -3,12 +3,3 @@
 
 
 
-
-{% block javascripts %}
-    {{ parent() }}
- 
-    {% if app.user %}
-        <script src="{{ asset('js/notifications.js') }}" defer></script>
-    {% endif %}
-
-{% endblock %}

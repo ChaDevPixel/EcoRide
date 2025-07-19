@@ -152,7 +152,7 @@
                                             <i class="bi bi-car-front-fill"></i>
                                             {{ trip.voiture.marque.libelle }} {{ trip.voiture.modele }}
                                         </span>
-                                        <a href="{{ path('carpool_detail', {'id': trip.id}) }}" class="btn btn-primary fw-bold">Détails</a>
+                                        <a href="{{ path('carpool_detail', {'id': trip.id}) }}" class="btn btn-primary fw-bold rounded-5">Détails</a>
                                     </div>
                                 </div>
                             </div>
@@ -189,9 +189,4 @@
 {% block javascripts %}
     {{ parent() }}
     <script src="{{ asset('js/search_carpool.js') }}" defer></script>
-    
-    {% if app.user %}
-        <script src="{{ asset('js/notifications.js') }}" defer></script>
-    {% endif %}
-
 {% endblock %}

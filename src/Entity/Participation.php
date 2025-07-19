@@ -12,8 +12,6 @@ class Participation
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    // Ajout de 'covoiturage:user_driven_read' pour que l'ID de la participation soit visible
-    // lorsque le covoiturage est sérialisé via ce groupe (par exemple, pour les covoiturages conduits par l'utilisateur).
     #[Groups(['participation:read', 'covoiturage:read', 'covoiturage:user_driven_read'])]
     private ?int $id = null;
 
@@ -21,7 +19,8 @@ class Participation
     #[ORM\JoinColumn(nullable: false)]
     // Le passager doit être exposé quand on lit une participation ('participation:read')
     // ou quand on lit un covoiturage qui inclut ses participations ('covoiturage:user_driven_read').
-    #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
+    // AJOUT: 'trip_info' pour exposer le passager dans notre API d'historique.
+    #[Groups(['participation:read', 'covoiturage:user_driven_read', 'trip_info'])]
     private ?Utilisateur $passager = null;
 
     #[ORM\ManyToOne(inversedBy: 'participations')]
