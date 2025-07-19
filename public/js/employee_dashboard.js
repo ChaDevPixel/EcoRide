@@ -1,12 +1,10 @@
 // public/js/employee_dashboard.js
 
-// Le flag employeeDashboardInitialized n'est plus nécessaire avec l'event delegation
-// let employeeDashboardInitialized = false; 
+// Flag global pour s'assurer que les écouteurs ne sont attachés qu'une seule fois.
+let listenersAttached = false;
 
 function initializeEmployeeDashboard() {
     // Déclaration des éléments DOM et des variables.
-    // Ces déclarations sont locales à cette fonction, donc elles sont recréées à chaque appel,
-    // ce qui est correct et évite l'erreur "already been declared".
     const pendingReviewsContainer = document.getElementById('pending-reviews-container');
     const noPendingReviewsMessage = document.getElementById('no-pending-reviews');
     const disputedCarpoolsContainer = document.getElementById('disputed-carpools-container');
@@ -17,26 +15,11 @@ function initializeEmployeeDashboard() {
     const noResolvedDisputesMessage = document.getElementById('no-resolved-disputes');
     
     const rejectModalElement = document.getElementById('rejectConfirmModal');
-    // Assurez-vous que Bootstrap est chargé avant d'essayer d'initialiser le modal.
     const rejectModal = rejectModalElement ? new bootstrap.Modal(rejectModalElement) : null;
     const confirmRejectBtn = document.getElementById('confirm-reject-btn');
 
-    // NOUVELLE VÉRIFICATION GLOBALE AU DÉBUT
-    // Si un de ces éléments est null, cela signifie qu'il n'a pas été trouvé dans le DOM.
-    if (!pendingReviewsContainer || !noPendingReviewsMessage ||
-        !disputedCarpoolsContainer || !noDisputedCarpoolsMessage ||
-        !rejectedReviewsContainer || !noRejectedReviewsMessage ||
-        !resolvedDisputesContainer || !noResolvedDisputesMessage ||
-        !confirmRejectBtn // confirmRejectBtn est utilisé dans un listener global
-    ) {
-        console.warn('EMPLOYEE DASHBOARD: Un ou plusieurs conteneurs DOM essentiels sont manquants lors de l\'initialisation. Les données pourraient ne pas s\'afficher correctement.');
-        // Nous ne retournons pas ici pour permettre aux fonctions loadData de logger plus spécifiquement si elles sont appelées.
-        // Mais cette alerte globale est utile pour le diagnostic.
-    }
-
     // --- Fonctions utilitaires pour charger les données depuis l'API ---
     async function loadData(url, container, noDataMessage) {
-        // Vérification de l'existence du conteneur et du message avant de procéder
         if (!container || !noDataMessage) {
             console.warn(`Conteneur ou message manquant pour l'URL: ${url}. Chargement annulé.`);
             return [];
@@ -47,25 +30,20 @@ function initializeEmployeeDashboard() {
             if (!response.ok) throw new Error('Erreur serveur lors du chargement des données.');
             const data = await response.json();
 
-            // Nettoyage du conteneur avant d'ajouter de nouvelles données
             container.innerHTML = '';
             
             if (data.length === 0) {
-                // Si aucune donnée, afficher le message "pas de données"
                 noDataMessage.style.display = 'block';
-                // Ajouter le message au conteneur s'il n'y est pas déjà
                 if (noDataMessage.parentNode !== container) {
                     container.appendChild(noDataMessage);
                 }
-                return []; // Retourne un tableau vide
+                return [];
             }
-            // Si des données sont présentes, masquer le message "pas de données"
             noDataMessage.style.display = 'none';
             return data;
         } catch (error) {
-            // Afficher l'erreur dans le message "pas de données"
             noDataMessage.textContent = `Erreur de chargement: ${error.message}`;
-            noDataMessage.style.display = 'block'; // S'assurer que le message d'erreur est visible
+            noDataMessage.style.display = 'block';
             console.error('Erreur lors du chargement des données:', error);
             return [];
         }
@@ -73,10 +51,9 @@ function initializeEmployeeDashboard() {
 
     // --- Fonctions pour charger et afficher les différents types de données ---
     async function loadPendingReviews() {
-        // La vérification est déjà faite dans loadData, mais on peut garder celle-ci pour un retour précoce
         if (!pendingReviewsContainer || !noPendingReviewsMessage) return; 
         const reviews = await loadData('/api/employee/pending-reviews', pendingReviewsContainer, noPendingReviewsMessage);
-        if (!reviews) return; // Si loadData retourne null ou undefined en cas d'erreur
+        if (!reviews) return;
         reviews.forEach(review => {
             const reviewCard = document.createElement('div');
             reviewCard.className = 'card mb-3';
@@ -98,7 +75,8 @@ function initializeEmployeeDashboard() {
     }
 
     async function loadDisputedCarpools() {
-        if (!disputedCarpoolsContainer || !noDisputedCarpoolsMessage) return; // Vérification spécifique
+        // ... (Le code de cette fonction reste le même)
+        if (!disputedCarpoolsContainer || !noDisputedCarpoolsMessage) return;
         const carpools = await loadData('/api/employee/disputed-carpools', disputedCarpoolsContainer, noDisputedCarpoolsMessage);
         if (!carpools) return;
         carpools.forEach(carpool => {
@@ -107,22 +85,14 @@ function initializeEmployeeDashboard() {
             disputeCard.id = `dispute-${carpool.id}`;
             
             const disputeReview = carpool.avis.find(a => a.raisonLitige);
-            // Fallbacks pour les données manquantes
             const passenger = disputeReview ? disputeReview.auteur : { prenom: 'N/A', nom: '', pseudo: 'N/A', email: 'N/A', telephone: 'N/A' };
             const driver = carpool.chauffeur || { prenom: 'N/A', nom: '', pseudo: 'N/A', email: 'N/A', telephone: 'N/A' };
-            const dateValue = carpool.dateDepart?.date || carpool.dateDepart;
-            let dateDepart = 'Date inconnue';
-            if (typeof dateValue === 'string') {
-                const date = new Date(dateValue);
-                if (!isNaN(date.getTime())) dateDepart = date.toLocaleDateString('fr-FR');
-            }
-
+            
             disputeCard.innerHTML = `
                 <div class="card-body">
                     <h6 class="card-title">Covoiturage n°${carpool.id} - ${carpool.villeDepart} → ${carpool.villeArrivee}</h6>
                     <p class="card-text"><small><strong>Raison :</strong> "${disputeReview ? disputeReview.raisonLitige : 'N/A'}"</small></p>
                     
-                    <!-- Nouvelle section déroulante pour les infos Passager/Chauffeur -->
                     <div class="mb-2">
                         <a class="btn btn-link text-dark fw-semibold p-0" data-bs-toggle="collapse" href="#passenger-driver-info-${carpool.id}" role="button" aria-expanded="false" aria-controls="passenger-driver-info-${carpool.id}">
                             Détails des parties impliquées <span class="ms-2 arrow-icon">&#9660;</span>
@@ -139,7 +109,6 @@ function initializeEmployeeDashboard() {
                             </div>
                         </div>
                     </div>
-                    <!-- Fin de la nouvelle section -->
 
                     <button class="btn btn-secondary btn-sm rounded-pill px-3 moderate-dispute-btn" data-bs-toggle="collapse" data-bs-target="#moderate-form-${carpool.id}">Modérer ce litige</button>
                     <div class="collapse mt-3" id="moderate-form-${carpool.id}">
@@ -158,7 +127,6 @@ function initializeEmployeeDashboard() {
                                 <div class="form-text text-danger mt-2" id="dispute-form-message-${carpool.id}"></div>
                                 <hr>
                                 <div class="text-end">
-                                    <!-- Boutons avec styles mis à jour -->
                                     <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3" name="decision" value="approve">Valider l'avis et clôturer</button>
                                     <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3" name="decision" value="reject">Rejeter l'avis et clôturer</button>
                                 </div>
@@ -171,13 +139,13 @@ function initializeEmployeeDashboard() {
     }
 
     async function loadRejectedReviews() {
-        if (!rejectedReviewsContainer || !noRejectedReviewsMessage) return; // Vérification spécifique
+        // ... (Le code de cette fonction reste le même)
+        if (!rejectedReviewsContainer || !noRejectedReviewsMessage) return;
         const reviews = await loadData('/api/employee/rejected-reviews', rejectedReviewsContainer, noRejectedReviewsMessage);
         if (!reviews) return;
         reviews.forEach(review => {
             const reviewCard = document.createElement('div');
             reviewCard.className = 'card mb-3 bg-light';
-            // MODIFICATION ICI: Ajout du pseudo de l'auteur et du numéro de covoiturage
             const authorPseudo = review.auteur?.pseudo || 'N/A';
             const carpoolId = review.covoiturage?.id || 'N/A';
             const formattedDate = new Date(review.creeLe).toLocaleDateString('fr-FR');
@@ -198,15 +166,13 @@ function initializeEmployeeDashboard() {
     }
 
     async function loadResolvedDisputes() {
-        if (!resolvedDisputesContainer || !noResolvedDisputesMessage) return; // Vérification spécifique
+        // ... (Le code de cette fonction reste le même)
+        if (!resolvedDisputesContainer || !noResolvedDisputesMessage) return;
         const carpools = await loadData('/api/employee/resolved-disputes', resolvedDisputesContainer, noResolvedDisputesMessage);
         if (!carpools) return;
         carpools.forEach(carpool => {
             const details = carpool.moderationDetails;
-            // MODIFICATION ICI: bg-success remplacé par bg-primary pour les avis validés
             const decision = details.decisionFinale === 'approve' ? '<span class="badge bg-primary">Avis validé</span>' : '<span class="badge bg-danger">Avis rejeté</span>';
-            
-            // Correction pour l'erreur "Cannot read properties of undefined (reading 'date')"
             const dateToUse = details.dateCloture?.date || details.dateCloture;
             const dateClotureFormatted = dateToUse ? new Date(dateToUse).toLocaleDateString('fr-FR') : 'Date inconnue';
 
@@ -217,13 +183,8 @@ function initializeEmployeeDashboard() {
         });
     }
     
-    // --- Fonctions de gestion d'événements (déplacées pour être attachées une seule fois) ---
-    // Ces fonctions sont maintenant des gestionnaires d'événements délégués.
-    // Elles sont appelées par les écouteurs sur 'document'.
-    
-    // Définitions des fonctions de gestion d'événements
+    // --- Fonctions de gestion d'événements ---
     async function handleReviewActions(e) {
-        // Utilisation de .closest() pour trouver le bouton ou un parent avec la classe
         const approveBtn = e.target.closest('.approve-review-btn');
         const rejectBtn = e.target.closest('.reject-review-btn');
         
@@ -234,11 +195,8 @@ function initializeEmployeeDashboard() {
                 const response = await fetch(`/api/employee/reviews/${reviewId}/approve`, { method: 'POST' });
                 if (!response.ok) throw new Error('L\'action d\'approbation a échoué.');
                 document.getElementById(`review-${reviewId}`)?.remove();
-                // Recharger toutes les sections après une action réussie
                 loadPendingReviews();
-                loadDisputedCarpools();
                 loadRejectedReviews();
-                loadResolvedDisputes();
             } catch (error) { 
                 console.error(`Erreur lors de l'approbation de l'avis ${reviewId}:`, error);
             }
@@ -246,12 +204,10 @@ function initializeEmployeeDashboard() {
 
         if (rejectBtn) {
             const reviewId = rejectBtn.dataset.reviewId;
-            if (!reviewId) return;
-            // Vérifier que confirmRejectBtn existe avant d'accéder à ses propriétés
-            if (confirmRejectBtn) {
+            if (!reviewId && confirmRejectBtn) {
                 confirmRejectBtn.dataset.reviewId = reviewId;
             }
-            if (rejectModal) rejectModal.show(); // S'assurer que le modal existe avant de l'afficher
+            if (rejectModal) rejectModal.show();
         }
     }
 
@@ -265,48 +221,40 @@ function initializeEmployeeDashboard() {
             
             if (rejectModal) rejectModal.hide();
             document.getElementById(`review-${reviewId}`)?.remove();
-            // Recharger toutes les sections après une action réussie
             loadPendingReviews();
-            loadDisputedCarpools();
             loadRejectedReviews();
-            loadResolvedDisputes();
         } catch (error) { 
             console.error(`Erreur lors du rejet de l'avis ${reviewId}:`, error);
         }
     }
 
     async function handleDisputeResolution(e) {
-        // Vérifier que l'événement provient d'un formulaire de résolution de litige
         const form = e.target.closest('.resolve-dispute-form');
         if (!form) return;
 
-        e.preventDefault(); // Empêcher la soumission par défaut du formulaire
+        e.preventDefault();
 
         const carpoolId = form.dataset.disputeId;
-        // Trouver le bouton qui a déclenché la soumission
         const submitter = e.submitter; 
-        if (!submitter) return; // Si aucun bouton n'a déclenché la soumission, sortir.
+        if (!submitter) return;
 
         const decision = submitter.value;
         const messageContainer = form.querySelector(`#dispute-form-message-${carpoolId}`);
         
-        // --- Validation du formulaire ---
         const passagerContacte = form.querySelector('input[name="passagerContacte"]').checked;
         const chauffeurContacte = form.querySelector('input[name="chauffeurContacte"]').checked;
         const commentairePassager = form.querySelector('textarea[name="commentairePassager"]').value.trim();
         const commentaireChauffeur = form.querySelector('textarea[name="commentaireChauffeur"]').value.trim();
 
-        // La validation existante est correcte et couvre les exigences
         if (!passagerContacte || !chauffeurContacte || !commentairePassager || !commentaireChauffeur) {
             if (messageContainer) messageContainer.textContent = 'Veuillez cocher les deux cases et remplir tous les commentaires avant de clôturer.';
-            return; // Empêche la soumission si la validation échoue
+            return;
         }
-        if (messageContainer) messageContainer.textContent = ''; // Effacer les erreurs précédentes
+        if (messageContainer) messageContainer.textContent = '';
 
-        // --- Désactiver les boutons pour éviter les doubles clics ---
         const approveBtn = form.querySelector('button[value="approve"]');
         const rejectBtn = form.querySelector('button[value="reject"]');
-        const originalButtonText = submitter.innerHTML; // Utiliser submitter ici
+        const originalButtonText = submitter.innerHTML;
         if (approveBtn) approveBtn.disabled = true;
         if (rejectBtn) rejectBtn.disabled = true;
         submitter.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Clôture...';
@@ -329,46 +277,46 @@ function initializeEmployeeDashboard() {
             if (!response.ok) throw new Error(result.message || 'Erreur serveur lors de la résolution du litige.');
             
             document.getElementById(`dispute-${carpoolId}`)?.remove();
-            // Recharger toutes les sections après une action réussie
-            loadPendingReviews();
             loadDisputedCarpools();
-            loadRejectedReviews();
             loadResolvedDisputes();
         } catch (error) {
             console.error(`Erreur lors de la résolution du litige ${carpoolId}:`, error);
-            // En cas d'erreur, réactiver les boutons
             if (approveBtn) approveBtn.disabled = false;
             if (rejectBtn) rejectBtn.disabled = false;
-            submitter.innerHTML = originalButtonText; // Utiliser submitter ici
+            submitter.innerHTML = originalButtonText;
         }
     }
 
-    // --- Attacher les Event Listeners sur 'document' pour l'affectation d'événements ---
-    // Ces écouteurs sont attachés une seule fois et fonctionneront pour tous les éléments
-    // correspondants, même s'ils sont ajoutés dynamiquement par Turbo.
-    document.addEventListener('click', handleReviewActions);
-    // L'écouteur pour confirmRejectBtn peut rester direct s'il est hors du swap de body
-    // ou être délégué si le modal est aussi remplacé. Pour l'instant, on le garde direct
-    // mais on s'assure qu'il existe.
-    if (confirmRejectBtn) {
-        document.addEventListener('click', (e) => {
-            if (e.target === confirmRejectBtn) {
-                handleRejectConfirmation(e);
-            }
-        });
+    // --- Attacher les Event Listeners ---
+    // On vérifie le flag pour n'attacher les écouteurs qu'une seule fois.
+    if (!listenersAttached) {
+        document.addEventListener('click', handleReviewActions);
+        document.addEventListener('submit', handleDisputeResolution);
+        
+        // L'écouteur pour le bouton de confirmation du modal est direct car le modal est toujours dans le DOM.
+        if (confirmRejectBtn) {
+            confirmRejectBtn.addEventListener('click', handleRejectConfirmation);
+        }
+        
+        listenersAttached = true; // On met le flag à true pour ne pas les rattacher.
     }
-    document.addEventListener('submit', handleDisputeResolution);
-
 
     // --- Chargement initial des données ---
-    // Ces fonctions sont appelées à chaque fois que initializeEmployeeDashboard est exécutée,
-    // garantissant que les données sont toujours à jour.
     loadPendingReviews();
     loadDisputedCarpools();
     loadRejectedReviews();
     loadResolvedDisputes();
 }
 
-// Nous n'avons besoin que de l'écouteur turbo:load pour gérer les navigations Turbo
-// et le chargement initial de la page.
-document.addEventListener('turbo:load', initializeEmployeeDashboard);
+// --- POINT D'ENTRÉE ---
+// On écoute l'événement turbo:load qui se déclenche à chaque navigation.
+document.addEventListener('turbo:load', () => {
+    // On vérifie si on est bien sur la page du tableau de bord
+    // en cherchant un élément qui n'existe QUE sur cette page.
+    if (document.getElementById('pending-reviews-container')) {
+        // On utilise setTimeout avec un délai de 0.
+        // Cela pousse l'exécution de notre fonction à la fin de la file d'attente des événements,
+        // ce qui garantit que le DOM est complètement prêt et affiché.
+        setTimeout(initializeEmployeeDashboard, 0);
+    }
+});

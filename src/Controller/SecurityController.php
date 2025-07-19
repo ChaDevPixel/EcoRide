@@ -16,17 +16,20 @@ use DateTime;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use App\Repository\NotificationRepository; // Importation du NotificationRepository
+use App\Repository\NotificationRepository;
+use Symfony\Component\HttpFoundation\File\Exception\FileException; // NOUVEAU
+use Symfony\Component\String\Slugger\SluggerInterface; // NOUVEAU
 
 class SecurityController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
-    private NotificationRepository $notificationRepository; // Déclaration du NotificationRepository
+    private NotificationRepository $notificationRepository;
 
-    public function __construct(EntityManagerInterface $entityManager, NotificationRepository $notificationRepository) // Injection du NotificationRepository
+    // Le constructeur reste le même, les nouvelles dépendances seront injectées directement dans la méthode 'update'
+    public function __construct(EntityManagerInterface $entityManager, NotificationRepository $notificationRepository)
     {
         $this->entityManager = $entityManager;
-        $this->notificationRepository = $notificationRepository; // Initialisation
+        $this->notificationRepository = $notificationRepository;
     }
 
     #[Route('/connexion', name: 'app_login', methods: ['GET', 'POST'])]
@@ -51,12 +54,9 @@ class SecurityController extends AbstractController
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function account(): Response
     {
-        // ==================== MODIFICATION CI-DESSOUS ====================
-        // Si l'utilisateur est un employé, on le redirige vers son tableau de bord.
         if ($this->isGranted('ROLE_EMPLOYE')) {
             return $this->redirectToRoute('employee_dashboard');
         }
-        // ==================== FIN DE LA MODIFICATION ====================
 
         /** @var Utilisateur $utilisateur */
         $utilisateur = $this->getUser();
@@ -94,6 +94,7 @@ class SecurityController extends AbstractController
         ], $preferencesArray);
         // --- Fin de la préparation des données des préférences ---
 
+        // MODIFIÉ : Le nom du template est 'compte.html.twig'
         return $this->render('compte.html.twig', [
             'utilisateur' => $utilisateur,
             'utilisateur_voitures_json' => json_encode($voituresArray, JSON_PRETTY_PRINT),
@@ -102,28 +103,66 @@ class SecurityController extends AbstractController
     }
 
     /**
-     * NOUVELLE ACTION: Affiche une page dédiée pour toutes les notifications de l'utilisateur.
-     * Cette route sera appelée par le lien "Voir toutes les notifications" du dropdown desktop.
+     * NOUVEAU : Gère la mise à jour du profil (pseudo et photo)
      */
+    #[Route('/mon-compte/modifier', name: 'app_account_update', methods: ['POST'])]
+    public function updateProfile(Request $request, SluggerInterface $slugger): Response
+    {
+        /** @var \App\Entity\Utilisateur $user */
+        $user = $this->getUser();
+
+        // Mettre à jour le pseudo
+        $newPseudo = $request->request->get('pseudo');
+        if ($newPseudo && $newPseudo !== $user->getPseudo()) {
+            $user->setPseudo($newPseudo);
+            $this->addFlash('success', 'Votre pseudo a été mis à jour.');
+        }
+
+        // Gérer l'upload de la photo
+        /** @var \Symfony\Component\HttpFoundation\File\UploadedFile $photoFile */
+        $photoFile = $request->files->get('photo');
+
+        if ($photoFile) {
+            $originalFilename = pathinfo($photoFile->getClientOriginalName(), PATHINFO_FILENAME);
+            $safeFilename = $slugger->slug($originalFilename);
+            $newFilename = $safeFilename.'-'.uniqid().'.'.$photoFile->guessExtension();
+
+            try {
+                $photoFile->move(
+                    $this->getParameter('photos_directory'), // Ce paramètre doit être configuré dans services.yaml
+                    $newFilename
+                );
+                // Mettre à jour la propriété 'photo' pour stocker le nom du fichier
+                $user->setPhoto($newFilename);
+                $this->addFlash('success', 'Votre photo de profil a été mise à jour.');
+            } catch (FileException $e) {
+                $this->addFlash('error', 'Une erreur est survenue lors du téléchargement de votre photo.');
+            }
+        }
+
+        $this->entityManager->persist($user);
+        $this->entityManager->flush();
+
+        return $this->redirectToRoute('app_account');
+    }
+
+
     #[Route('/mon-compte/notifications', name: 'app_account_notifications', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function allNotifications(): Response
     {
+        // ... (le code de cette méthode reste inchangé)
         /** @var Utilisateur $user */
         $user = $this->getUser();
 
-        // Récupérer toutes les notifications de l'utilisateur, triées par date (les plus récentes en premier)
         $notifications = $this->notificationRepository->findBy(
             ['destinataire' => $user],
             ['creeLe' => 'DESC']
         );
 
-        // Vous pouvez choisir de marquer les notifications comme lues ici si vous le souhaitez.
-        // Ou laisser le JavaScript de la page le faire via l'API mark-all-as-read.
-
-        return $this->render('notification.html.twig', [ // Rendre le nouveau template
+        return $this->render('notification.html.twig', [
             'notifications' => $notifications,
-            'utilisateur' => $user, // Passer l'utilisateur pour la sidebar si nécessaire
+            'utilisateur' => $user,
         ]);
     }
 

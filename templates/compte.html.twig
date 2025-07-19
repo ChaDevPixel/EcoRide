@@ -341,122 +341,180 @@
                 </div>
             </div>
 
-{# Passer les rôles, véhicules et préférences de l'utilisateur à JavaScript #}
-{# Ces éléments sont essentiels pour so que le JavaScript puisse initialiser la page #}
-<div id="user-data" style="display: none;">
-    {# Assurez-vous que 'utilisateur.rolesCollection' est bien un tableau d'objets rôle avec un 'libelle' #}
-    <span id="user-roles-data">{{ utilisateur.rolesCollection|map(role => role.libelle)|json_encode()|raw }}</span>
-    {# Assurez-vous que 'utilisateur_voitures_json' est un JSON valide contenant un tableau de véhicules,
-        et que chaque véhicule a une propriété 'marque' avec une propriété 'nom' (ex: {id:1, marque: {nom: "Renault"}}) #}
-    <span id="user-vehicles-data">{{ utilisateur_voitures_json|raw }}</span>
-    {# Assurez-vous que 'utilisateur_preferences_json' est un JSON valide avec les clés attendues #}
-    <span id="user-preferences-data">{{ utilisateur_preferences_json|raw }}</span>
-</div>
-
-<div class="modal fade" id="cancelConfirmationModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="cancelModalLabel">Confirmer l'annulation</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <p>Êtes-vous sûr de vouloir annuler votre participation à ce voyage ?</p>
-        <!-- NOUVEAU: Le montant des crédits sera inséré ici par le JavaScript -->
-        <p><strong><span id="creditsToRefund"></span> crédits</strong> vous seront restitués.</p>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non, rester</button>
-        <button type="button" class="btn btn-danger" id="confirmCancelButton">Oui, annuler</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="cancelCarpoolModal" tabindex="-1" aria-labelledby="cancelCarpoolModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white">
-        <h5 class="modal-title" id="cancelCarpoolModalLabel">Confirmer l'annulation du covoiturage</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
-      </div>
-      <div class="modal-body">
-        Êtes-vous sûr de vouloir annuler ce covoiturage ? Cette action est irréversible et remboursera tous les participants.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non, annuler</button>
-        <button type="button" class="btn btn-danger" id="confirmCancelCarpoolBtn">Oui, annuler définitivement</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal fade" id="validateReviewModal" tabindex="-1" aria-labelledby="validateReviewModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <!-- La croix de fermeture a été retirée ici -->
-        <h5 class="modal-title" id="validateReviewModalLabel">Valider le covoiturage</h5>
-      </div>
-      <div class="modal-body">
-        {# AJOUT DE data-turbo="false" pour empêcher Turbo d'interférer avec la soumission du formulaire #}
-        <form id="validateReviewForm" data-turbo="false">
-          <div class="mb-3">
-            <p class="mb-2">Le voyage s'est-il bien déroulé ?</p>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="tripValidationStatus" id="tripStatusYes" value="yes" required>
-              <label class="form-check-label" for="tripStatusYes">Oui</label>
+            {# Passer les rôles, véhicules et préférences de l'utilisateur à JavaScript #}
+            {# Ces éléments sont essentiels pour so que le JavaScript puisse initialiser la page #}
+            <div id="user-data" style="display: none;">
+                {# Assurez-vous que 'utilisateur.rolesCollection' est bien un tableau d'objets rôle avec un 'libelle' #}
+                <span id="user-roles-data">{{ utilisateur.rolesCollection|map(role => role.libelle)|json_encode()|raw }}</span>
+                {# Assurez-vous que 'utilisateur_voitures_json' est un JSON valide contenant un tableau de véhicules,
+                    et que chaque véhicule a une propriété 'marque' avec une propriété 'nom' (ex: {id:1, marque: {nom: "Renault"}}) #}
+                <span id="user-vehicles-data">{{ utilisateur_voitures_json|raw }}</span>
+                {# Assurez-vous que 'utilisateur_preferences_json' est un JSON valide avec les clés attendues #}
+                <span id="user-preferences-data">{{ utilisateur_preferences_json|raw }}</span>
             </div>
-            <div class="form-check form-check-inline">
-              <input class="form-check-input" type="radio" name="tripValidationStatus" id="tripStatusNo" value="no">
-              <label class="form-check-label" for="tripStatusNo">Non</label>
+
+                <!-- Onglet Informations Personnelles -->
+                <div class="tab-pane fade" id="account" role="tabpanel">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <!-- Carte d'affichage des informations -->
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-4">Vos informations</h5>
+                                    <div class="row">
+                                        <div class="col-sm-3"><p class="mb-0">Nom complet</p></div>
+                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.prenom }} {{ utilisateur.nom }}</p></div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3"><p class="mb-0">Pseudo</p></div>
+                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.pseudo }}</p></div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3"><p class="mb-0">Email</p></div>
+                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.email }}</p></div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3"><p class="mb-0">Adresse</p></div>
+                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.adresse }}</p></div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-3"><p class="mb-0">Date de naissance</p></div>
+                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.dateNaissance ? utilisateur.dateNaissance|date('d/m/Y') : 'Non renseignée' }}</p></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Carte de modification du profil -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-4">Modifier mon profil</h5>
+                                    <form action="{{ path('app_account_update') }}" method="post" enctype="multipart/form-data">
+                                        <div class="mb-3">
+                                            <label for="profile_pseudo" class="form-label">Pseudo</label>
+                                            <input type="text" id="profile_pseudo" name="pseudo" class="form-control" value="{{ utilisateur.pseudo }}">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="profile_photo" class="form-label">Changer la photo de profil</label>
+                                            <input class="form-control" type="file" id="profile_photo" name="photo">
+                                            <div class="form-text">Laissez vide pour conserver la photo actuelle.</div>
+                                        </div>
+                                        {# MODIFIÉ : Ajout des classes pour les bords arrondis #}
+                                        <button type="submit" class="btn btn-primary rounded-pill px-4">Enregistrer les modifications</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+    
+            <div class="modal fade" id="cancelConfirmationModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="cancelModalLabel">Confirmer l'annulation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Êtes-vous sûr de vouloir annuler votre participation à ce voyage ?</p>
+                        <!-- NOUVEAU: Le montant des crédits sera inséré ici par le JavaScript -->
+                        <p><strong><span id="creditsToRefund"></span> crédits</strong> vous seront restitués.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non, rester</button>
+                        <button type="button" class="btn btn-danger" id="confirmCancelButton">Oui, annuler</button>
+                    </div>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div id="ratingSection" class="mb-3 d-none">
-            <label class="form-label">Notez votre expérience (1 à 5 étoiles) <span class="required-asterisk">*</span></label>
-            <div class="star-rating fs-3">
-              <span class="star" data-rating="1">&#9733;</span>
-              <span class="star" data-rating="2">&#9733;</span>
-              <span class="star" data-rating="3">&#9733;</span>
-              <span class="star" data-rating="4">&#9733;</span>
-              <span class="star" data-rating="5">&#9733;</span>
+            <div class="modal fade" id="cancelCarpoolModal" tabindex="-1" aria-labelledby="cancelCarpoolModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="cancelCarpoolModalLabel">Confirmer l'annulation du covoiturage</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                    </div>
+                    <div class="modal-body">
+                        Êtes-vous sûr de vouloir annuler ce covoiturage ? Cette action est irréversible et remboursera tous les participants.
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non, annuler</button>
+                        <button type="button" class="btn btn-danger" id="confirmCancelCarpoolBtn">Oui, annuler définitivement</button>
+                    </div>
+                    </div>
+                </div>
             </div>
-          </div>
 
-          <div id="commentSection" class="mb-3 d-none">
-            {# CHANGEMENT: Utilisation de 'reviewComment' pour le commentaire et la raison du litige #}
-            <label for="reviewComment" class="form-label" id="reviewCommentLabel">Commentaire (facultatif si "Oui", obligatoire si "Non")</label>
-            <textarea class="form-control" id="reviewComment" rows="3" placeholder="Laissez un commentaire sur votre expérience..."></textarea>
-            {# Le champ 'reasonLitige' est maintenant géré par le JS en interne via 'reviewCommentInput' #}
-            {# Il n'est plus nécessaire d'avoir un input hidden séparé pour 'reasonLitige' dans le HTML #}
-            {# <input type="hidden" id="reasonLitige" name="reasonLitige"> #}
-          </div>
+            <div class="modal fade" id="validateReviewModal" tabindex="-1" aria-labelledby="validateReviewModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header bg-primary text-white">
+                            <!-- La croix de fermeture a été retirée ici -->
+                            <h5 class="modal-title" id="validateReviewModalLabel">Valider le covoiturage</h5>
+                        </div>
+                    <div class="modal-body">
+                        {# AJOUT DE data-turbo="false" pour empêcher Turbo d'interférer avec la soumission du formulaire #}
+                        <form id="validateReviewForm" data-turbo="false">
+                            <div class="mb-3">
+                                <p class="mb-2">Le voyage s'est-il bien déroulé ?</p>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="tripValidationStatus" id="tripStatusYes" value="yes" required>
+                                    <label class="form-check-label" for="tripStatusYes">Oui</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="radio" name="tripValidationStatus" id="tripStatusNo" value="no">
+                                    <label class="form-check-label" for="tripStatusNo">Non</label>
+                                </div>
+                            </div>
 
-          {# NOUVEAU: Conteneur pour les messages d'erreur/succès du formulaire d'avis #}
-          <div id="validateReviewFormMessage" class="mt-2"></div> 
-        </form>
-      </div>
-      <div class="modal-footer">
-        <!-- Le bouton "Annuler" a été retiré ici -->
-        <button type="button" class="btn btn-primary" id="submitReviewBtn">Valider</button>
-      </div>
-    </div>
-  </div>
-</div>
+                            <div id="ratingSection" class="mb-3 d-none">
+                                <label class="form-label">Notez votre expérience (1 à 5 étoiles) <span class="required-asterisk">*</span></label>
+                                <div class="star-rating fs-3">
+                                    <span class="star" data-rating="1">&#9733;</span>
+                                    <span class="star" data-rating="2">&#9733;</span>
+                                    <span class="star" data-rating="3">&#9733;</span>
+                                    <span class="star" data-rating="4">&#9733;</span>
+                                    <span class="star" data-rating="5">&#9733;</span>
+                                </div>
+                            </div>
 
-{% endblock %}
+                            <div id="commentSection" class="mb-3 d-none">
+                                {# CHANGEMENT: Utilisation de 'reviewComment' pour le commentaire et la raison du litige #}
+                                <label for="reviewComment" class="form-label" id="reviewCommentLabel">Commentaire (facultatif si "Oui", obligatoire si "Non")</label>
+                                <textarea class="form-control" id="reviewComment" rows="3" placeholder="Laissez un commentaire sur votre expérience..."></textarea>
+                                {# Le champ 'reasonLitige' est maintenant géré par le JS en interne via 'reviewCommentInput' #}
+                                {# Il n'est plus nécessaire d'avoir un input hidden séparé pour 'reasonLitige' dans le HTML #}
+                                {# <input type="hidden" id="reasonLitige" name="reasonLitige"> #}
+                            </div>
 
-{% block javascripts %}
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+                            {# NOUVEAU: Conteneur pour les messages d'erreur/succès du formulaire d'avis #}
+                            <div id="validateReviewFormMessage" class="mt-2"></div> 
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <!-- Le bouton "Annuler" a été retiré ici -->
+                        <button type="button" class="btn btn-primary" id="submitReviewBtn">Valider</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-    
-    {# Ces scripts ne sont utiles que pour les utilisateurs normaux, pas pour les employés #}
-    {% if 'ROLE_EMPLOYE' not in app.user.roles %}
-        <script src="{{ asset('js/roles_vehicles.js') }}" defer></script>
-        <script src="{{ asset('js/add_carpool.js') }}" defer></script>
-        <script src="{{ asset('js/cancel_carpool.js') }}" defer></script>
-        <script src="{{ asset('js/display_trips.js') }}" defer></script>
-    {% endif %}
+        {% endblock %}
 
-{% endblock %}
+        {% block javascripts %}
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+            
+            {# Ces scripts ne sont utiles que pour les utilisateurs normaux, pas pour les employés #}
+            {% if 'ROLE_EMPLOYE' not in app.user.roles %}
+                <script src="{{ asset('js/roles_vehicles.js') }}" defer></script>
+                <script src="{{ asset('js/add_carpool.js') }}" defer></script>
+                <script src="{{ asset('js/cancel_carpool.js') }}" defer></script>
+                <script src="{{ asset('js/display_trips.js') }}" defer></script>
+            {% endif %}
+
+        {% endblock %}
