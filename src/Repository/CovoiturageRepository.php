@@ -17,31 +17,21 @@ class CovoiturageRepository extends ServiceEntityRepository
         parent::__construct($registry, Covoiturage::class);
     }
 
-    /**
-     * Calcule le nombre total de crédits gagnés par la plateforme.
-     * (2 crédits par participation sur les trajets terminés)
-     */
+
     public function getTotalPlatformCredits(): int
     {
-        // Supposons que le statut 'terminé' est le statut final pour le calcul des crédits
-        // Et que chaque participation rapporte 2 crédits à la plateforme.
-        // CORRECTION : Utilisation de c.participations (au pluriel)
+
         return $this->createQueryBuilder('c')
-            ->select('SUM(SIZE(c.participations) * 2)') // Multiplie le nombre de participants par 2 crédits
-            ->where('c.statut = :statutTermine') // Filtre par statut 'terminé'
+            ->select('SUM(SIZE(c.participations) * 2)')
+            ->where('c.statut = :statutTermine') 
             ->setParameter('statutTermine', 'terminé')
             ->getQuery()
-            ->getSingleScalarResult() ?? 0; // Retourne 0 si aucun résultat
+            ->getSingleScalarResult() ?? 0; 
     }
 
-    /**
-     * Compte le nombre de covoiturages par jour.
-     * Retourne un tableau associatif [date => count].
-     */
     public function countByDay(): array
     {
         $qb = $this->createQueryBuilder('c')
-            // CORRECTION : Utilisation de c.dateDepart au lieu de c.dateHeureDepart
             ->select('SUBSTRING(c.dateDepart, 1, 10) as tripDate, COUNT(c.id) as tripCount')
             ->groupBy('tripDate')
             ->orderBy('tripDate', 'ASC');
@@ -56,15 +46,9 @@ class CovoiturageRepository extends ServiceEntityRepository
         return $data;
     }
 
-    /**
-     * Calcule les crédits gagnés par la plateforme par jour.
-     * Retourne un tableau associatif [date => credits].
-     */
     public function getPlatformCreditsByDay(): array
     {
-        // Cette méthode doit refléter la logique de getTotalPlatformCredits mais par jour
-        // CORRECTION : Utilisation de c.participations (au pluriel)
-        // CORRECTION : Utilisation de c.dateDepart au lieu de c.dateHeureDepart
+
         $qb = $this->createQueryBuilder('c')
             ->select('SUBSTRING(c.dateDepart, 1, 10) as tripDate, SUM(SIZE(c.participations) * 2) as dailyCredits')
             ->where('c.statut = :statutTermine')
@@ -82,9 +66,6 @@ class CovoiturageRepository extends ServiceEntityRepository
         return $data;
     }
 
-    /**
-     * Compte le nombre total de covoiturages avec le statut 'terminé'.
-     */
     public function countFinishedCovoiturages(): int
     {
         return $this->createQueryBuilder('c')
@@ -96,7 +77,6 @@ class CovoiturageRepository extends ServiceEntityRepository
     }
 
     /**
-     * Trouve les covoiturages correspondant aux critères de recherche.
      * @param string $villeDepart
      * @param string $villeArrivee
      * @param \DateTimeInterface $startOfDay Le début de la journée de recherche
@@ -138,16 +118,13 @@ class CovoiturageRepository extends ServiceEntityRepository
         return $qb->getQuery()->getResult();
     }
 
-    /**
-     * Trouve le prochain covoiturage disponible si la recherche initiale est vide.
-     */
     public function findNextAvailable(string $villeDepart, string $villeArrivee, \DateTimeInterface $dateDepart): ?Covoiturage
     {
         $qb = $this->createQueryBuilder('c')
             ->select('c')
             ->where('c.villeDepart = :depart')
             ->andWhere('c.villeArrivee = :arrivee')
-            ->andWhere('c.dateDepart > :date_depart') // Cherche après la date de recherche
+            ->andWhere('c.dateDepart > :date_depart') 
             ->andWhere('c.placesDisponibles > 0')
             ->andWhere('c.statut IN (:statuts)')
             ->setParameter('depart', $villeDepart)
@@ -166,14 +143,13 @@ class CovoiturageRepository extends ServiceEntityRepository
     }
 
     /**
-     * NOUVEAU : Trouve les covoiturages qui étaient en litige mais sont maintenant terminés.
      * @return Covoiturage[]
      */
     public function findResolvedDisputes(): array
     {
         return $this->createQueryBuilder('c')
             ->where('c.statut = :statut')
-            ->andWhere('c.moderationDetails IS NOT NULL') // S'assure qu'il y a eu une modération
+            ->andWhere('c.moderationDetails IS NOT NULL') 
             ->setParameter('statut', 'termine')
             ->orderBy('c.dateDepart', 'DESC')
             ->getQuery()

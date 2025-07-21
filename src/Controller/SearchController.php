@@ -4,7 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Covoiturage;
 use App\Repository\CovoiturageRepository;
-use App\Repository\ParticipationRepository; // <-- AJOUTEZ CE USE
+use App\Repository\ParticipationRepository; 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -49,18 +49,15 @@ class SearchController extends AbstractController
         ]);
     }
 
-    /**
-     * MODIFIÉ : Affiche les détails d'un covoiturage et vérifie la participation.
-     */
+
     #[Route('/covoiturage/{id}', name: 'carpool_detail', methods: ['GET'])]
     public function detail(Covoiturage $covoiturage, ParticipationRepository $participationRepository): Response
     {
         /** @var \App\Entity\Utilisateur $user */
         $user = $this->getUser();
-        $isParticipant = false; // Par défaut, l'utilisateur n'est pas participant
+        $isParticipant = false; 
 
         if ($user) {
-            // On vérifie s'il existe une participation pour cet utilisateur et ce voyage
             $participation = $participationRepository->findOneBy([
                 'covoiturage' => $covoiturage,
                 'passager' => $user
@@ -72,7 +69,7 @@ class SearchController extends AbstractController
 
         return $this->render('details.html.twig', [
             'trip' => $covoiturage,
-            'is_participant' => $isParticipant, // On passe la variable au template
+            'is_participant' => $isParticipant, 
         ]);
     }
 }

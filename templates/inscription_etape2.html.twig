@@ -1,4 +1,4 @@
-{# templates/inscription_etape2.html.twig #}
+
 
 {% extends 'base.html.twig' %}
 
@@ -43,7 +43,6 @@
                 <input type="password" id="password" name="password" class="form-control" placeholder="Entrez votre mot de passe à nouveau" required>
             </div>
 
-            {# Champs de l'étape 2 - Vides au premier affichage, mais pré-remplis en cas d'erreur de soumission #}
             <div class="mb-3">
                 <label for="pseudo" class="form-label fw-bold">Pseudo</label>
                 <input type="text" id="pseudo" name="pseudo" class="form-control" value="{{ utilisateur.pseudo ?? '' }}" required>

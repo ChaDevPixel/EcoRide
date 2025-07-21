@@ -61,7 +61,6 @@
 
             <div class="tab-content mt-3" id="accountTabsContent">
 
-                {# Onglet Rôles & Véhicules #}
                 <div class="tab-pane fade show active" id="roles" role="tabpanel">
                     <form id="profileForm"> 
                         <div class="card mb-3 p-3 shadow-sm rounded">
@@ -108,13 +107,11 @@
                         </div>
                     </form>
 
-                    {# Afficher la section "Vos véhicules" uniquement si l'utilisateur est chauffeur #}
                     {% if 'ROLE_DRIVER' in app.user.roles %}
                         <div id="driverDetails" class="card p-3 shadow-sm rounded">
                             <h5 class="mt-0 fw-semibold card-title mb-3"><i class="bi bi-car-front-fill fs-5 text-primary"></i> Vos véhicules</h5>
                             <div id="vehicleMessageContainer"></div> 
                             <div id="vehiclesContainer"> 
-                                {# Les véhicules seront affichés ici par JavaScript #}
                             </div>
                             <button type="button" class="btn btn-secondary btn-sm d-inline-block btn-fit-content rounded-4 px-4" id="addVehicleBtn"> + Ajouter un véhicule</button>
 
@@ -207,7 +204,6 @@
                     {% endif %}
                 </div>
 
-                {# Onglet Voyages #}
                 <div class="tab-pane fade" id="trip" role="tabpanel"> 
                     <div id="tripMessageContainer" class="mt-3"></div>
                         
@@ -215,14 +211,12 @@
                         <div class="card mb-3 p-3 shadow-sm rounded">
                             <h5 class="fw-semibold card-title mb-3"><i class="bi bi-geo-fill text-primary"></i> Futurs voyages (Chauffeur)</h5>
                             
-                            {# CORRECTION : ID harmonisé avec le JS #}
                             <div id="driver-trips-container" class="mb-3"> 
                                 <p id="no-driver-trips-message" class="text-muted">Aucun voyage créé pour le moment.</p>
                             </div>
                             <button type="button" class="btn btn-secondary btn-sm d-inline-block btn-fit-content rounded-4 px-4 mb-3" id="addTripButton">+ Saisir un nouveau voyage</button>
                         </div>
 
-                        {# Formulaire de création de voyage (masqué par défaut) #}
                         <div id="tripFormContainer" class="card mt-3 p-3 shadow-sm rounded d-none">
                             <div class="row justify-content-center">
                                 <div class="col-12 col-lg-5"> 
@@ -242,7 +236,6 @@
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="departureTime" class="form-label">Heure de départ <span class="required-asterisk">*</span></label>
-                                                {# CORRECTION : ID unique pour l'heure de départ #}
                                                 <input id="departureTime" type="time" class="form-control mb-0" required>
                                             </div>
                                         </div>
@@ -304,17 +297,14 @@
                         </div>
                     {% endif %}
 
-                    {# Section pour les voyages en tant que passager #}
                     <div class="card mb-3 p-3 shadow-sm rounded">
                         <h5 class="fw-semibold card-title mb-3"><i class="bi bi-signpost-split-fill text-primary"></i> Futurs voyages (Passager)</h5>
-                        {# CORRECTION : ID harmonisé avec le JS #}
                         <div id="passenger-trips-container">
                             <p id="no-passenger-trips-message" class="text-muted">Vous ne participez à aucun voyage pour le moment.</p>
                         </div>
                     </div>
                 </div>
 
-                {# Onglet Historique #}
                 <div class="tab-pane fade" id="history" role="tabpanel">
                     <div id="historyMessageContainer" class="mt-3"></div>
 
@@ -336,7 +326,6 @@
                 </div>
             </div>
 
-            {# Passer les rôles, véhicules et préférences de l'utilisateur à JavaScript #}
             <div id="user-data" style="display: none;">
                 <span id="user-roles-data">{{ utilisateur.rolesCollection|map(role => role.libelle)|json_encode()|raw }}</span>
                 <span id="user-vehicles-data">{{ utilisateur_voitures_json|raw }}</span>
@@ -397,7 +386,6 @@
                 </div>
             </div>
 
-            {# Modale d'annulation de participation (gérée par add-carpool) #}
             <div id="cancelConfirmationModal" class="modal fade" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -417,7 +405,6 @@
                 </div>
             </div>
 
-            {# Modale d'annulation de covoiturage (du chauffeur - GÉRÉE PAR CANCEL-CARPOOL) #}
             <div id="cancelCarpoolModal" class="modal fade" tabindex="-1" aria-labelledby="cancelCarpoolModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -436,7 +423,6 @@
                 </div>
             </div>
 
-            {# Modale de validation d'avis (gérée par add-carpool) #}
             <div id="validateReviewModal" class="modal fade" tabindex="-1" aria-labelledby="validateReviewModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">

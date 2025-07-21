@@ -1,6 +1,3 @@
-{# templates/bigtitle.html.twig #}
-
-{# Ce div englobe le titre et la barre de recherche #}
 <div class="image-container position-relative">
     <img src="{{ asset('assets/img/image principale accueil.jpg') }}" alt="Paysage route" class="img-fluid w-100" />
     <div class="overlay-big-title position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-50"></div>
@@ -25,7 +22,6 @@
                     <span class="input-group-text bg-info border border-primary search-icons rounded-start">
                         <i class="bi bi-geo-alt-fill text-dark"></i>
                     </span>
-                    {# AJOUTÉ : data-search-carpool-target #}
                     <select id="search-depart" name="depart" class="form-select border border-primary search-input mb-0" required data-search-carpool-target="searchDepartSelect">
                         <option value="">Départ</option>
                     </select>
@@ -35,7 +31,6 @@
                     <span class="input-group-text bg-info border border-primary search-icons rounded-start">
                         <i class="bi bi-flag-fill text-dark"></i>
                     </span>
-                    {# AJOUTÉ : data-search-carpool-target #}
                     <select id="search-arrivee" name="arrivee" class="form-select border border-primary search-input mb-0" required data-search-carpool-target="searchArriveeSelect">
                         <option value="">Destination</option>
                     </select>
@@ -45,7 +40,6 @@
                     <span class="input-group-text bg-info border border-primary search-icons rounded-start">
                         <i class="bi bi-calendar-event-fill text-dark"></i>
                     </span>
-                    {# AJOUTÉ : data-search-carpool-target #}
                     <input id="search-date" name="date" type="date" class="form-control border border-primary search-input mb-0" required data-search-carpool-target="searchDateInput">
                 </div>
 

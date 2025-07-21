@@ -39,7 +39,6 @@ class EmployeeApiController extends AbstractController
     #[Route('/disputed-carpools', name: 'get_disputed_carpools', methods: ['GET'])]
     public function getDisputedCarpools(CovoiturageRepository $covoiturageRepository): JsonResponse
     {
-        // On ne récupère que les covoiturages qui sont actuellement en litige
         $carpools = $covoiturageRepository->findBy(['statut' => 'litige']);
         $jsonCarpools = $this->serializer->serialize($carpools, 'json', ['groups' => 'covoiturage:dispute_read']);
         return new JsonResponse($jsonCarpools, JsonResponse::HTTP_OK, [], true);
@@ -80,13 +79,12 @@ class EmployeeApiController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-        $decision = $data['decision'] ?? null; // 'approve' ou 'reject'
+        $decision = $data['decision'] ?? null;
 
         if (!in_array($decision, ['approve', 'reject'])) {
             return $this->json(['message' => 'Décision invalide.'], JsonResponse::HTTP_BAD_REQUEST);
         }
 
-        // 1. Sauvegarder les détails de la modération
         $moderationDetails = [
             'passagerContacte' => $data['passagerContacte'] ?? false,
             'commentairePassager' => $data['commentairePassager'] ?? '',
@@ -97,7 +95,6 @@ class EmployeeApiController extends AbstractController
         ];
         $covoiturage->setModerationDetails($moderationDetails);
 
-        // 2. Trouver l'avis à l'origine du litige et le mettre à jour
         $avisEnLitige = null;
         foreach ($covoiturage->getAvis() as $avis) {
             if ($avis->getRaisonLitige()) {
@@ -112,25 +109,21 @@ class EmployeeApiController extends AbstractController
 
         if ($decision === 'approve') {
             $avisEnLitige->setValideParEmploye(true);
-        } else { // 'reject'
+        } else { 
             $avisEnLitige->setRejete(true);
         }
 
-        // 3. Transférer les crédits au chauffeur
         $chauffeur = $covoiturage->getChauffeur();
         $prixVoyage = $covoiturage->getPrix();
         $commission = 2;
         $gainChauffeur = $prixVoyage - $commission;
         $chauffeur->setCredits($chauffeur->getCredits() + $gainChauffeur);
 
-        // 4. Mettre à jour le statut du covoiturage pour le clôturer
         $covoiturage->setStatut('termine');
 
-        // 5. Créer les notifications pour les utilisateurs
         $passager = $avisEnLitige->getAuteur();
         $decisionText = $decision === 'approve' ? 'validé' : 'rejeté';
 
-        // Notif pour le chauffeur
         $notifChauffeur = new Notification();
         $notifChauffeur->setDestinataire($chauffeur);
         $notifChauffeur->setMessage(
@@ -141,7 +134,6 @@ class EmployeeApiController extends AbstractController
         );
         $this->em->persist($notifChauffeur);
 
-        // Notif pour le passager
         $notifPassager = new Notification();
         $notifPassager->setDestinataire($passager);
         $notifPassager->setMessage(
@@ -152,7 +144,6 @@ class EmployeeApiController extends AbstractController
         );
         $this->em->persist($notifPassager);
 
-        // 6. Sauvegarder tous les changements
         $this->em->persist($covoiturage);
         $this->em->persist($avisEnLitige);
         $this->em->persist($chauffeur);
@@ -161,13 +152,11 @@ class EmployeeApiController extends AbstractController
         return $this->json(['message' => 'Le litige a été clôturé avec succès.']);
     }
     
-    /**
-     * NOUVEAU : Récupère l'historique des litiges clôturés.
-     */
+
     #[Route('/resolved-disputes', name: 'get_resolved_disputes', methods: ['GET'])]
     public function getResolvedDisputes(CovoiturageRepository $covoiturageRepository): JsonResponse
     {
-        $carpools = $covoiturageRepository->findResolvedDisputes(); // Vous devrez créer cette méthode dans votre Repository
+        $carpools = $covoiturageRepository->findResolvedDisputes(); 
         $jsonCarpools = $this->serializer->serialize($carpools, 'json', ['groups' => 'covoiturage:dispute_read']);
         return new JsonResponse($jsonCarpools, JsonResponse::HTTP_OK, [], true);
     }

@@ -4,7 +4,7 @@ namespace App\Entity;
 
 use App\Repository\NotificationRepository;
 use Doctrine\ORM\Mapping as ORM;
-use Symfony\Component\Serializer\Annotation\Groups; // AJOUTEZ CE USE
+use Symfony\Component\Serializer\Annotation\Groups; 
 
 #[ORM\Entity(repositoryClass: NotificationRepository::class)]
 class Notification
@@ -12,27 +12,27 @@ class Notification
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['notification:read'])] // AJOUTÉ
+    #[Groups(['notification:read'])] 
     private ?int $id = null;
 
     #[ORM\ManyToOne(inversedBy: 'notifications')]
     #[ORM\JoinColumn(nullable: false)]
-    private ?Utilisateur $destinataire = null; // On n'expose pas le destinataire pour éviter les boucles
+    private ?Utilisateur $destinataire = null; 
 
     #[ORM\Column(length: 255)]
-    #[Groups(['notification:read'])] // AJOUTÉ
+    #[Groups(['notification:read'])] 
     private ?string $message = null;
 
     #[ORM\Column]
-    #[Groups(['notification:read'])] // AJOUTÉ
+    #[Groups(['notification:read'])] 
     private ?bool $estLue = false;
 
     #[ORM\Column]
-    #[Groups(['notification:read'])] // AJOUTÉ
+    #[Groups(['notification:read'])] 
     private ?\DateTimeImmutable $creeLe = null;
 
     #[ORM\ManyToOne]
-    #[Groups(['notification:read'])] // AJOUTÉ
+    #[Groups(['notification:read'])] 
     private ?Covoiturage $covoiturageAssocie = null;
 
     public function __construct()

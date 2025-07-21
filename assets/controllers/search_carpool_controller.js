@@ -1,15 +1,11 @@
-// assets/controllers/search_carpool_controller.js
-
 import { Controller } from '@hotwired/stimulus';
 
 export default class extends Controller {
     static targets = [
-        // Champs de la barre de recherche principale
         'searchDepartSelect',
         'searchArriveeSelect',
         'searchDateInput',
 
-        // Éléments des filtres (si présents sur la page)
         'applyFiltersBtn',
         'resetFiltersBtn',
         'tripResultsList',
@@ -55,18 +51,16 @@ export default class extends Controller {
             }
         }
 
-        // Initialisation des valeurs de sortie des ranges et application des filtres au chargement
         if (this.hasPriceRangeInputTarget && this.hasPriceOutputSpanTarget) {
             this.priceOutputSpanTarget.textContent = this.priceRangeInputTarget.value;
         }
         if (this.hasDurationRangeInputTarget && this.hasDurationOutputSpanTarget) {
-            this.updateDurationOutput(); // Initialise l'affichage de la durée
+            this.updateDurationOutput(); 
         }
         if (this.hasRatingRangeInputTarget && this.hasRatingOutputSpanTarget) {
-            this.updateRatingOutput(); // Initialise l'affichage de la note
+            this.updateRatingOutput(); 
         }
         
-        // Appliquer les filtres au chargement initial si les éléments sont présents
         if (this.hasTripResultsListTarget) {
             this.filterTrips(); 
         }
@@ -90,7 +84,6 @@ export default class extends Controller {
         this.searchDateInputTarget.setAttribute('min', today);
     }
 
-    // Méthode pour appliquer les filtres (liée à data-action="click->search-carpool#filterTrips")
     filterTrips() {
         if (!this.hasTripResultsListTarget) return;
 
@@ -124,7 +117,7 @@ export default class extends Controller {
             if (isVisible) visibleCount++;
         });
         
-        const noFilterMatch = document.getElementById('no-filter-match-message'); // Pas une target
+        const noFilterMatch = document.getElementById('no-filter-match-message'); 
         if (noFilterMatch) {
             noFilterMatch.remove();
         }
@@ -135,7 +128,6 @@ export default class extends Controller {
         }
     }
     
-    // Méthode pour réinitialiser les filtres (liée à data-action="click->search-carpool#resetFilters")
     resetFilters() {
         if(this.hasEcoFilterCheckboxTarget) this.ecoFilterCheckboxTarget.checked = false;
         
@@ -151,14 +143,12 @@ export default class extends Controller {
         this.filterTrips();
     }
 
-    // Méthode pour mettre à jour l'affichage du prix (liée à data-action="input->search-carpool#updatePriceOutput")
     updatePriceOutput() {
         if(this.hasPriceOutputSpanTarget && this.hasPriceRangeInputTarget) {
             this.priceOutputSpanTarget.textContent = this.priceRangeInputTarget.value;
         }
     }
     
-    // Méthode pour mettre à jour l'affichage de la durée (liée à data-action="input->search-carpool#updateDurationOutput")
     updateDurationOutput() {
         if(this.hasDurationRangeInputTarget && this.hasDurationOutputSpanTarget) {
             const value = parseInt(this.durationRangeInputTarget.value, 10);
@@ -172,7 +162,6 @@ export default class extends Controller {
         }
     }
 
-    // Méthode pour mettre à jour l'affichage de la note (liée à data-action="input->search-carpool#updateRatingOutput")
     updateRatingOutput() {
         if(this.hasRatingRangeInputTarget && this.hasRatingOutputSpanTarget) {
             const value = parseInt(this.ratingRangeInputTarget.value, 10);

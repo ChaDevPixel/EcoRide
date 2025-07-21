@@ -1,5 +1,4 @@
 <?php
-// src/Controller/ContactController.php
 
 namespace App\Controller;
 
@@ -25,22 +24,21 @@ class ContactController extends AbstractController
             $firstname = trim($request->request->get('firstname'));
             $lastname = trim($request->request->get('lastname'));
             $emailUser = trim($request->request->get('email'));
-            $subject = trim($request->request->get('subject')); // NOUVEAU : Récupération de l'objet
+            $subject = trim($request->request->get('subject')); 
             $message = trim($request->request->get('message'));
 
-            // NOUVEAU : Ajout de l'objet à la validation
+
             if (!empty($firstname) && !empty($lastname) && !empty($emailUser) && !empty($subject) && !empty($message)) {
                 
                 $email = (new Email())
                     ->from($emailUser)
                     ->to('contact@ecoride.com')
-                    // NOUVEAU : Utilisation de l'objet dans le sujet de l'e-mail
                     ->subject('Contact Ecoride: ' . $subject) 
                     ->html($this->renderView('emails/contact_email.html.twig', [
                         'firstname' => $firstname,
                         'lastname' => $lastname,
                         'emailUser' => $emailUser,
-                        'subject' => $subject, // NOUVEAU : On passe l'objet au template
+                        'subject' => $subject, 
                         'message' => $message,
                     ]));
 

@@ -14,10 +14,7 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_USER')]
 class NotificationController extends AbstractController
 {
-    /**
-     * CORRIGÉ : Récupère les notifications de l'utilisateur et le nombre non lu.
-     * La méthode utilise maintenant un groupe de sérialisation spécifique pour éviter les boucles.
-     */
+
     #[Route('', name: 'get', methods: ['GET'])]
     public function getNotifications(NotificationRepository $notificationRepository): JsonResponse
     {
@@ -32,17 +29,12 @@ class NotificationController extends AbstractController
 
         $unreadCount = $notificationRepository->count(['destinataire' => $user, 'estLue' => false]);
 
-        // On utilise la méthode json() qui gère la sérialisation automatiquement
-        // en se basant sur les groupes que nous avons définis dans les entités.
         return $this->json([
             'notifications' => $notifications,
             'unreadCount' => $unreadCount,
         ], 200, [], ['groups' => ['notification:read', 'covoiturage_for_notification:read']]);
     }
 
-    /**
-     * Marque toutes les notifications de l'utilisateur comme lues.
-     */
     #[Route('/mark-as-read', name: 'mark_as_read', methods: ['POST'])]
     public function markAsRead(NotificationRepository $notificationRepository, EntityManagerInterface $entityManager): JsonResponse
     {

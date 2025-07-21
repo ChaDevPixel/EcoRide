@@ -22,13 +22,13 @@ class Voiture
     #[ORM\ManyToOne(inversedBy: 'voitures')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotBlank(message: 'La marque est obligatoire.')]
-    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'trip_info'])] // <-- AJOUT DU GROUPE
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'trip_info'])] 
     private ?Marque $marque = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: 'Le modèle est obligatoire.')]
     #[Assert\Length(min: 1, max: 255)]
-    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'trip_info'])] // <-- AJOUT DU GROUPE
+    #[Groups(['voiture:read', 'covoiturage:read', 'covoiturage:search_read', 'covoiturage:user_driven_read', 'trip_info'])]
     private ?string $modele = null;
 
     #[ORM\Column(length: 50)]
@@ -76,8 +76,6 @@ class Voiture
     {
         $this->covoiturages = new ArrayCollection();
     }
-    
-    // --- Getters and Setters ---
 
     public function getId(): ?int
     {
@@ -203,7 +201,6 @@ class Voiture
     public function removeCovoiturage(Covoiturage $covoiturage): static
     {
         if ($this->covoiturages->removeElement($covoiturage)) {
-            // set the owning side to null (unless already changed)
             if ($covoiturage->getVoiture() === $this) {
                 $covoiturage->setVoiture(null);
             }

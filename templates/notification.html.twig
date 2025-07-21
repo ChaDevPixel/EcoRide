@@ -1,4 +1,3 @@
-{# templates/notification.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Toutes mes Notifications - EcoRide{% endblock %}
@@ -27,7 +26,6 @@
                     {% endif %}
                 </div>
                 <div class="text-center mt-3">
-                    {# Ce bouton marquera toutes les notifications comme lues via une API #}
                     <button id="mark-all-read-page-btn" class="btn btn-primary btn-sm rounded-pill px-3 {% if notifications is empty or notifications|filter(n => not n.estLue)|length == 0 %}d-none{% endif %}">Marquer tout comme lu</button>
                 </div>
             </div>

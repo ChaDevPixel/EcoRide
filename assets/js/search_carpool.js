@@ -1,9 +1,5 @@
-// public/js/search_carpool.js
 
-// On utilise une déclaration de fonction classique, qui est plus flexible
-// avec les rechargements de script que `const`.
 function initializeSearchPage() {
-    // --- INITIALISATION DE LA BARRE DE RECHERCHE ---
     const departSelect = document.getElementById('search-depart');
     const arriveeSelect = document.getElementById('search-arrivee');
     const dateInput = document.getElementById('search-date');
@@ -43,6 +39,7 @@ function initializeSearchPage() {
     const searchArrivee = urlParams.get('arrivee');
     const searchDate = urlParams.get('date');
 
+
     populateCitySelect(departSelect, searchDepart);
     populateCitySelect(arriveeSelect, searchArrivee);
     initializeDateField();
@@ -51,7 +48,6 @@ function initializeSearchPage() {
         dateInput.value = searchDate;
     }
 
-    // --- GESTION DES FILTRES ---
     const applyBtn = document.getElementById('apply-filters-btn');
     const resetBtn = document.getElementById('reset-filters-btn');
     const tripList = document.getElementById('trip-results-list');
@@ -155,6 +151,5 @@ function initializeSearchPage() {
     }
 };
 
-// On exécute l'initialisation à chaque chargement de page (initial ou via Turbo)
 document.addEventListener('DOMContentLoaded', initializeSearchPage);
 document.addEventListener('turbo:load', initializeSearchPage);

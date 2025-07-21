@@ -1,45 +1,28 @@
 import { Controller } from '@hotwired/stimulus';
 
-// DEBUG: Ce message s'affichera si le navigateur analyse bien ce fichier.
 console.log("DEBUG: Fichier participation_controller.js en cours d'analyse.");
 
 export default class extends Controller {
-    // Les "targets" nous permettent de référencer facilement les éléments HTML importants.
     static targets = ["participateButton", "confirmButton", "modal", "messageContainer"];
 
-    /**
-     * Stimulus appelle cette méthode automatiquement quand le contrôleur est connecté au DOM.
-     * C'est le log le plus important.
-     */
     connect() {
         console.log("DEBUG: Le contrôleur Stimulus 'participation' s'est bien CONNECTÉ à l'élément:", this.element);
     }
 
-    /**
-     * Stimulus appelle cette méthode quand le contrôleur est déconnecté du DOM (ex: changement de page).
-     */
     disconnect() {
         console.log("DEBUG: Le contrôleur Stimulus 'participation' a été DÉCONNECTÉ.");
     }
 
-    /**
-     * Ouvre la modale de confirmation lorsque l'utilisateur clique sur "Participer".
-     */
     openConfirmationModal() {
-        // DEBUG: Ce message doit apparaître quand vous cliquez sur "Participer".
         console.log("DEBUG: Action openConfirmationModal() déclenchée.");
         const modal = new bootstrap.Modal(this.modalTarget);
         if (this.hasMessageContainerTarget) {
-            this.messageContainerTarget.innerHTML = ''; // Nettoie les anciens messages.
+            this.messageContainerTarget.innerHTML = ''; 
         }
         modal.show();
     }
 
-    /**
-     * Est appelée lorsque l'utilisateur clique sur "Confirmer" dans la modale.
-     */
     async submitParticipation() {
-        // DEBUG: Ce message doit apparaître quand vous cliquez sur "Confirmer ma participation".
         console.log("DEBUG: Action submitParticipation() déclenchée.");
         const covoiturageId = this.confirmButtonTarget.dataset.covoiturageId;
         if (!covoiturageId) {
@@ -81,9 +64,6 @@ export default class extends Controller {
         }
     }
 
-    /**
-     * Affiche un message d'erreur ou de succès sur la page.
-     */
     displayMessage(message, type) {
         if (this.hasMessageContainerTarget) {
             this.messageContainerTarget.innerHTML = `

@@ -1,10 +1,6 @@
-// public/js/employee_dashboard.js
-
-// Flag global pour s'assurer que les écouteurs ne sont attachés qu'une seule fois.
 let listenersAttached = false;
 
 function initializeEmployeeDashboard() {
-    // Déclaration des éléments DOM et des variables.
     const pendingReviewsContainer = document.getElementById('pending-reviews-container');
     const noPendingReviewsMessage = document.getElementById('no-pending-reviews');
     const disputedCarpoolsContainer = document.getElementById('disputed-carpools-container');
@@ -18,7 +14,6 @@ function initializeEmployeeDashboard() {
     const rejectModal = rejectModalElement ? new bootstrap.Modal(rejectModalElement) : null;
     const confirmRejectBtn = document.getElementById('confirm-reject-btn');
 
-    // --- Fonctions utilitaires pour charger les données depuis l'API ---
     async function loadData(url, container, noDataMessage) {
         if (!container || !noDataMessage) {
             console.warn(`Conteneur ou message manquant pour l'URL: ${url}. Chargement annulé.`);
@@ -49,7 +44,6 @@ function initializeEmployeeDashboard() {
         }
     }
 
-    // --- Fonctions pour charger et afficher les différents types de données ---
     async function loadPendingReviews() {
         if (!pendingReviewsContainer || !noPendingReviewsMessage) return; 
         const reviews = await loadData('/api/employee/pending-reviews', pendingReviewsContainer, noPendingReviewsMessage);
@@ -75,7 +69,6 @@ function initializeEmployeeDashboard() {
     }
 
     async function loadDisputedCarpools() {
-        // ... (Le code de cette fonction reste le même)
         if (!disputedCarpoolsContainer || !noDisputedCarpoolsMessage) return;
         const carpools = await loadData('/api/employee/disputed-carpools', disputedCarpoolsContainer, noDisputedCarpoolsMessage);
         if (!carpools) return;
@@ -139,7 +132,6 @@ function initializeEmployeeDashboard() {
     }
 
     async function loadRejectedReviews() {
-        // ... (Le code de cette fonction reste le même)
         if (!rejectedReviewsContainer || !noRejectedReviewsMessage) return;
         const reviews = await loadData('/api/employee/rejected-reviews', rejectedReviewsContainer, noRejectedReviewsMessage);
         if (!reviews) return;
@@ -166,7 +158,6 @@ function initializeEmployeeDashboard() {
     }
 
     async function loadResolvedDisputes() {
-        // ... (Le code de cette fonction reste le même)
         if (!resolvedDisputesContainer || !noResolvedDisputesMessage) return;
         const carpools = await loadData('/api/employee/resolved-disputes', resolvedDisputesContainer, noResolvedDisputesMessage);
         if (!carpools) return;
@@ -183,7 +174,6 @@ function initializeEmployeeDashboard() {
         });
     }
     
-    // --- Fonctions de gestion d'événements ---
     async function handleReviewActions(e) {
         const approveBtn = e.target.closest('.approve-review-btn');
         const rejectBtn = e.target.closest('.reject-review-btn');
@@ -287,36 +277,25 @@ function initializeEmployeeDashboard() {
         }
     }
 
-    // --- Attacher les Event Listeners ---
-    // On vérifie le flag pour n'attacher les écouteurs qu'une seule fois.
     if (!listenersAttached) {
         document.addEventListener('click', handleReviewActions);
         document.addEventListener('submit', handleDisputeResolution);
         
-        // L'écouteur pour le bouton de confirmation du modal est direct car le modal est toujours dans le DOM.
         if (confirmRejectBtn) {
             confirmRejectBtn.addEventListener('click', handleRejectConfirmation);
         }
         
-        listenersAttached = true; // On met le flag à true pour ne pas les rattacher.
+        listenersAttached = true; 
     }
 
-    // --- Chargement initial des données ---
     loadPendingReviews();
     loadDisputedCarpools();
     loadRejectedReviews();
     loadResolvedDisputes();
 }
 
-// --- POINT D'ENTRÉE ---
-// On écoute l'événement turbo:load qui se déclenche à chaque navigation.
 document.addEventListener('turbo:load', () => {
-    // On vérifie si on est bien sur la page du tableau de bord
-    // en cherchant un élément qui n'existe QUE sur cette page.
     if (document.getElementById('pending-reviews-container')) {
-        // On utilise setTimeout avec un délai de 0.
-        // Cela pousse l'exécution de notre fonction à la fin de la file d'attente des événements,
-        // ce qui garantit que le DOM est complètement prêt et affiché.
         setTimeout(initializeEmployeeDashboard, 0);
     }
 });

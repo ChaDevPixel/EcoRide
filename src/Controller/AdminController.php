@@ -15,10 +15,10 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
-use DateTime; // Assurez-vous que DateTime est importé
+use DateTime; 
 
 #[Route('/admin')]
-#[IsGranted('ROLE_ADMIN')] // Sécurise tout le contrôleur pour les admins uniquement
+#[IsGranted('ROLE_ADMIN')] 
 class AdminController extends AbstractController
 {
     private EntityManagerInterface $em;
@@ -33,16 +33,14 @@ class AdminController extends AbstractController
     {
         $users = $userRepository->findAll();
         
-        // Calcul du total des crédits gagnés (2 crédits par participation sur les trajets terminés)
         $totalCreditsGagnes = $covoiturageRepository->getTotalPlatformCredits();
         
-        // Compte le nombre total de covoiturages avec le statut 'terminé'
         $totalCovoituragesTermines = $covoiturageRepository->countFinishedCovoiturages();
 
         return $this->render('admin.html.twig', [
             'users' => $users,
             'totalCreditsGagnes' => $totalCreditsGagnes,
-            'totalCovoituragesTermines' => $totalCovoituragesTermines, // Passer la nouvelle variable au template
+            'totalCovoituragesTermines' => $totalCovoituragesTermines, 
         ]);
     }
 
@@ -53,17 +51,14 @@ class AdminController extends AbstractController
         $password = $request->request->get('password');
         $pseudo = $request->request->get('pseudo');
         
-        // NOUVEAU : Récupération du nom et prénom depuis le formulaire
         $nom = $request->request->get('nom');
         $prenom = $request->request->get('prenom');
 
-        // Validation simple (incluant nom et prénom)
         if (empty($email) || empty($password) || empty($pseudo) || empty($nom) || empty($prenom)) {
             $this->addFlash('error', 'Tous les champs (email, mot de passe, pseudo, nom, prénom) sont requis pour créer un employé.');
             return $this->redirectToRoute('admin_dashboard');
         }
 
-        // Vérifier si l'email existe déjà
         $existingUser = $this->em->getRepository(Utilisateur::class)->findOneBy(['email' => $email]);
         if ($existingUser) {
             $this->addFlash('error', 'Un utilisateur avec cet email existe déjà.');
@@ -73,27 +68,23 @@ class AdminController extends AbstractController
         $employee = new Utilisateur();
         $employee->setEmail($email);
         $employee->setPseudo($pseudo);
-        $employee->setNom($nom); // Définition du nom
-        $employee->setPrenom($prenom); // Définition du prénom
+        $employee->setNom($nom); 
+        $employee->setPrenom($prenom); 
         $employee->setPassword($passwordHasher->hashPassword($employee, $password));
         
-        // NOUVEAU : Définition des valeurs par défaut pour les employés
         $employee->setAdresse('123 rue de l\'Ecologie, 75000 Paris');
-        $employee->setDateNaissance(new DateTime('2025-01-01')); // Format YYYY-MM-DD
+        $employee->setDateNaissance(new DateTime('2025-01-01'));
         $employee->setTelephone('0123456789');
-        // FIN NOUVEAU
 
-        // Assigner le rôle employé
         $roleEmploye = $this->em->getRepository(Role::class)->findOneBy(['libelle' => 'ROLE_EMPLOYE']);
         if ($roleEmploye) {
             $employee->addRole($roleEmploye);
         } else {
-            // Gérer le cas où le rôle n'existe pas
             $this->addFlash('error', 'Le rôle "ROLE_EMPLOYE" est introuvable en base de données.');
             return $this->redirectToRoute('admin_dashboard');
         }
         
-        $employee->setCredits(0); // Les employés n'ont pas de crédits
+        $employee->setCredits(0); 
 
         $this->em->persist($employee);
         $this->em->flush();
@@ -105,13 +96,11 @@ class AdminController extends AbstractController
     #[Route('/user/{id}/suspend', name: 'admin_suspend_user', methods: ['POST'])]
     public function suspendUser(Utilisateur $user): Response
     {
-        // Empêcher un admin de se suspendre lui-même
         if ($user->getId() === $this->getUser()->getId()) {
             $this->addFlash('error', 'Vous ne pouvez pas suspendre votre propre compte.');
             return $this->redirectToRoute('admin_dashboard');
         }
 
-        // On utilise un statut pour la suspension. Assurez-vous d'avoir un champ 'statut' dans votre entité Utilisateur.
         $user->setStatut('suspendu');
         $this->em->flush();
 
@@ -129,7 +118,6 @@ class AdminController extends AbstractController
         $carpoolCounts = [];
         $earningsCounts = [];
 
-        // Fusionner les dates des deux ensembles de données
         $allDates = array_unique(array_merge(array_keys($carpoolsByDay), array_keys($earningsByDay)));
         sort($allDates);
 

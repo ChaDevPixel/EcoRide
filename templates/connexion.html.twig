@@ -1,5 +1,3 @@
-{# templates/security/login.html.twig #}
-
 {% extends 'base.html.twig' %}
 {% block title %}Connexion / Inscription - Ecoride{% endblock %}
 
@@ -35,7 +33,6 @@
 
         <div class="container-auth d-md-flex bg-light font-family-sans-serif" id="authContainer">
             
-            {# Section de connexion #}
             <div class="form-container sign-in-container">
                 <form method="post" action="{{ path('app_login') }}" data-turbo="false"> 
                     <h2 class="mb-4">Se connecter</h2>
@@ -46,7 +43,6 @@
                 </form>
             </div>
 
-            {# Section d'inscription #}
             <div class="form-container sign-up-container">
                 <form method="post" action="{{ path('app_register_prepare') }}" data-turbo="false">
                     <h2 class="mb-4">S'inscrire</h2>
@@ -58,7 +54,6 @@
                 </form>
             </div>
 
-            {# Section de l'overlay (pour la transition entre les formulaires) #}
             <div class="overlay-container">
                 <div class="overlay bg-primary text-light d-md-flex">
                     <div class="overlay-panel overlay-left d-flex flex-column align-items-center text-center justify-content-center">
@@ -90,7 +85,6 @@
             </div>
         </div>
 
-        {# JavaScript simple et inline pour l'animation #}
         <script>
             function initializeAuthAnimation() {
                 const container = document.getElementById('authContainer');

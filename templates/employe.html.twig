@@ -1,4 +1,3 @@
-{# templates/employe.html.twig #}
 {% extends 'base.html.twig' %}
 
 {% block title %}Tableau de Bord Employé - Ecoride{% endblock %}
@@ -84,16 +83,9 @@
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }} {# Ceci inclut les scripts du parent (base.html.twig) #}
+    {{ parent() }} 
 
-    {# CDN de Bootstrap JS - Le bundle complet inclut Offcanvas, Dropdown, Tab, etc. #}
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
-    {# Script principal de Turbo (Hotwire Turbo Drive) #}
-    {# Si déjà inclus dans base.html.twig via importmap('app'), vous n'aurez pas besoin de cette ligne. #}
-    {# Sinon, si vous utilisez AssetMapper sans importmap pour Turbo, vous l'incluriez ici. #}
-    {# <script src="{{ asset('path/to/@hotwired/turbo/dist/turbo.es2017-esm.js') }}" type="module" defer></script> #}
-    
-    {# Votre script spécifique pour le tableau de bord employé #}
     <script type="module" src="{{ asset('assets/js/employee_dashboard.js') }}" defer></script>
 {% endblock %}

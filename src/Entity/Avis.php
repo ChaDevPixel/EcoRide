@@ -55,7 +55,7 @@ class Avis
     #[Groups(['avis:read', 'user:avis_read', 'covoiturage:user_driven_read', 'covoiturage:dispute_read'])]
     private ?string $raisonLitige = null;
 
-    #[ORM\Column(options: ['default' => false])] // NOUVEAU CHAMP
+    #[ORM\Column(options: ['default' => false])] 
     #[Groups(['avis:read'])]
     private ?bool $rejete = false;
 
@@ -82,12 +82,12 @@ class Avis
     public function getRaisonLitige(): ?string { return $this->raisonLitige; }
     public function setRaisonLitige(?string $raisonLitige): static { $this->raisonLitige = $raisonLitige; return $this; }
 
-    public function isRejete(): ?bool // NOUVEAU GETTER
+    public function isRejete(): ?bool 
     {
         return $this->rejete;
     }
 
-    public function setRejete(bool $rejete): static // NOUVEAU SETTER
+    public function setRejete(bool $rejete): static 
     {
         $this->rejete = $rejete;
         return $this;

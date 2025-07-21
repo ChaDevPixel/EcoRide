@@ -3,9 +3,7 @@
 {% block title %}Tableau de Bord Administrateur - EcoRide{% endblock %}
 
 {% block body %}
-    {# La balise <main> est fournie par base.html.twig. Le contenu est directement ici. #}
-    <div class="container my-5"> {# Utilisation d'un div conteneur au lieu de <main> #}
-        {# Messages Flash Symfony #}
+    <div class="container my-5"> 
         {% for label, messages in app.flashes %}
             {% for message in messages %}
                 <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
@@ -37,14 +35,12 @@
         </ul>
 
         <!-- Contenu des onglets -->
-        {# L'attribut data-api-url est ici pour que le JS puisse le lire #}
         <div class="tab-content" id="adminTabContent" data-api-url="{{ path('admin_api_chart_data') }}"> 
             <!-- Onglet Vue d'ensemble (maintenant avec les deux graphiques et les totaux) -->
             <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
                 <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
                     <div class="card-body">
-                        <div class="row g-4 mb-1"> {# Augmentation de l'espacement avec mb-5 #}
-                            {# Carte Total Crédits Gagnés #}
+                        <div class="row g-4 mb-1"> 
                             <div class="col-md-6 col-lg-4">
                                 <div class="card h-100">
                                     <div class="card-body d-flex align-items-center justify-content-between">
@@ -59,7 +55,6 @@
                                 </div>
                             </div>
                             
-                            {# Carte Nombre Total de Voyages Terminés #}
                             <div class="col-md-6 col-lg-4">
                                 <div class="card h-100">
                                     <div class="card-body d-flex align-items-center justify-content-between">
@@ -75,8 +70,7 @@
                             </div>
                         </div>
 
-                        <div class="row g-4 mt-1"> {# Ajout de mt-5 pour espacement avec les cartes du haut #}
-                            {# Graphique Covoiturages par Jour #}
+                        <div class="row g-4 mt-1">
                             <div class="col-12 col-lg-6">
                                 <div class="card h-100">
                                     <div class="card-body">
@@ -86,7 +80,6 @@
                                 </div>
                             </div>
 
-                            {# Graphique Crédits Gagnés par Jour #}
                             <div class="col-12 col-lg-6">
                                 <div class="card h-100">
                                     <div class="card-body">
@@ -143,7 +136,6 @@
                 <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
                     <div class="card-body">
                         <h5 class="card-title">Gestion des Utilisateurs et Employés</h5>
-                        {# Le code de débogage a été retiré. #}
 
                         {% if users is empty %}
                             <p class="text-muted">Aucun utilisateur à afficher.</p>
@@ -162,14 +154,12 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {# Les données utilisateurs seront affichées ici par Twig #}
                                         {% for user in users %}
                                             <tr>
                                                 <td>{{ user.id }}</td>
                                                 <td>{{ user.email }}</td>
                                                 <td>{{ user.pseudo }}</td>
                                                 <td>
-                                                    {# MODIFICATION ICI : Affiche le rôle seulement s'il n'est PAS 'ROLE_USER' #}
                                                     {% for role in user.roles %}
                                                         {% if role != 'ROLE_USER' %}
                                                             <span class="badge 
@@ -192,7 +182,7 @@
                                                     </span>
                                                 </td>
                                                 <td class="text-center">
-                                                    {% if user.id != app.user.id %} {# Empêche un admin de se suspendre lui-même #}
+                                                    {% if user.id != app.user.id %} 
                                                         <form action="{{ path('admin_suspend_user', {'id': user.id}) }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir suspendre ce compte ?');" class="d-inline">
                                                             <input type="hidden" name="_token" value="{{ csrf_token('suspend' ~ user.id) }}">
                                                             <button type="submit" class="btn btn-danger rounded-pill btn-sm">
@@ -208,20 +198,18 @@
                                     </tbody>
                                 </table>
                             </div>
-                        {% endif %} {# Fin de la vérification if users is empty #}
+                        {% endif %} 
                     </div>
                 </div>
             </div>
         </div>
-    </div> {# Fin du div conteneur #}
+    </div> 
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }} {# Inclut les scripts de base.html.twig #}
+    {{ parent() }} 
     
-    {# Inclusion de Chart.js via CDN #}
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
-    {# Inclusion de admin_dashboard.js #}
+  
     <script src="{{ asset('js/admin_dashboard.js') }}" defer></script>
 {% endblock %}

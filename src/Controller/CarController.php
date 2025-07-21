@@ -23,20 +23,17 @@ class CarController extends AbstractController
     private EntityManagerInterface $entityManager;
     private VoitureRepository $voitureRepository;
     private Security $security;
-    private SerializerInterface $serializer; // Ajout du serializer dans les propriétés
+    private SerializerInterface $serializer; 
 
-    // Modifié pour injecter le SerializerInterface
     public function __construct(EntityManagerInterface $entityManager, VoitureRepository $voitureRepository, Security $security, SerializerInterface $serializer)
     {
         $this->entityManager = $entityManager;
         $this->voitureRepository = $voitureRepository;
         $this->security = $security;
-        $this->serializer = $serializer; // Initialisation du serializer
+        $this->serializer = $serializer; 
     }
 
-    /**
-     * Ajoute un nouveau véhicule pour l'utilisateur connecté.
-     */
+
     #[Route('/mon-compte/add-vehicle', name: 'app_add_vehicle', methods: ['POST'])]
     public function addVehicle(Request $request, ValidatorInterface $validator, MarqueRepository $marqueRepository): JsonResponse
     {
@@ -170,11 +167,8 @@ class CarController extends AbstractController
             return $this->json([], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
-        // Utilisation de la méthode standard findBy pour plus de simplicité et de fiabilité.
         $voitures = $this->voitureRepository->findBy(['utilisateur' => $utilisateur]);
 
-        // Utilisation du Serializer pour une réponse cohérente et robuste,
-        // en se basant sur les groupes que nous avons déjà définis dans les entités.
         $jsonVoitures = $this->serializer->serialize($voitures, 'json', [
             'groups' => ['voiture:read', 'marque:read']
         ]);

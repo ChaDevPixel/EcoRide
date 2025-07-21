@@ -17,17 +17,11 @@ class Participation
 
     #[ORM\ManyToOne(inversedBy: 'participations')]
     #[ORM\JoinColumn(nullable: false)]
-    // Le passager doit être exposé quand on lit une participation ('participation:read')
-    // ou quand on lit un covoiturage qui inclut ses participations ('covoiturage:user_driven_read').
-    // AJOUT: 'trip_info' pour exposer le passager dans notre API d'historique.
     #[Groups(['participation:read', 'covoiturage:user_driven_read', 'trip_info'])]
     private ?Utilisateur $passager = null;
 
     #[ORM\ManyToOne(inversedBy: 'participations')]
     #[ORM\JoinColumn(nullable: false)]
-    // Le covoiturage doit être exposé quand on lit une participation ('participation:read').
-    // Il est crucial de NE PAS inclure ici les groupes 'covoiturage:read' ou 'covoiturage:user_driven_read'
-    // pour éviter une référence circulaire avec la collection 'participations' de l'entité Covoiturage.
     #[Groups(['participation:read', 'trip_info'])]
     private ?Covoiturage $covoiturage = null;
 
@@ -85,7 +79,6 @@ class Participation
         return $this;
     }
 
-    // NOUVEAU : Getters et Setters pour valideParPassager
     public function isValideParPassager(): ?bool
     {
         return $this->valideParPassager;
@@ -97,7 +90,6 @@ class Participation
         return $this;
     }
 
-    // NOUVEAU : Getters et Setters pour avisSoumis
     public function isAvisSoumis(): ?bool
     {
         return $this->avisSoumis;

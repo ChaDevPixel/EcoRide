@@ -9,7 +9,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
-use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Constraints as Assert; // <-- This line is CRUCIAL for Assertions
 use Doctrine\ORM\Mapping\UniqueConstraint;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -39,6 +39,18 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le mot de passe est obligatoire.")]
+    // --- START OF SECURE PASSWORD POLICY ADDITIONS ---
+    #[Assert\Length(
+        min: 8,
+        max: 4096, // Max length for hashed password, Doctrine's default TEXT limit
+        minMessage: 'Votre mot de passe doit contenir au moins {{ limit }} caractères.'
+    )]
+    #[Assert\Regex(
+        // This regex requires at least one uppercase letter, one lowercase, one number, one special character, and a minimum of 8 characters.
+        pattern: '/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/',
+        message: 'Le mot de passe doit contenir au moins une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&).'
+    )]
+    // --- END OF SECURE PASSWORD POLICY ADDITIONS ---
     private ?string $password = null;
 
     #[ORM\Column(length: 50, nullable: true)]
@@ -59,7 +71,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'chauffeur:read', 'passager:read', 'participation:read', 'notification:read', 'avis:read', 'covoiturage:dispute_read', 'trip_info'])]
     private ?string $pseudo = null;
     
-    // NOUVEAU : Ajout de la propriété 'statut'
     #[ORM\Column(length: 20, options: ['default' => 'actif'])]
     private ?string $statut = 'actif';
 
@@ -127,7 +138,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
 
         return round($total / $count, 1);
     }
-
 
     // --- GETTERS AND SETTERS ---
     public function getId(): ?int { return $this->id; }
@@ -236,7 +246,6 @@ class Utilisateur implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    // NOUVEAU : Getter et Setter pour la propriété 'statut'
     public function getStatut(): ?string
     {
         return $this->statut;

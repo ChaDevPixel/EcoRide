@@ -3,8 +3,6 @@
 {% block title %}Accueil - Ecoride{% endblock %}
 
 {% block bigtitle %}
-    {# MODIFIÉ: On ajoute la balise form ici pour que la page d'accueil puisse lancer la recherche #}
-    {# L'action redirige vers la page de résultats #}
     <form id="search-form" action="{{ path('carpool_show') }}" method="GET" data-controller="search-carpool">
         {% include 'bigtitle.html.twig' %}
     </form>

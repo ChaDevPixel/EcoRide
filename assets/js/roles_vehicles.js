@@ -1,25 +1,16 @@
-// assets/js/roles_vehicles.js
 
-// On encapsule toute la logique dans une fonction pour la rendre compatible avec Turbo
 const initializeRolesAndVehicles = () => {
-    // Flag pour éviter les écouteurs multiples si initializeRolesAndVehicles est appelé plusieurs fois
-    // par DOMContentLoaded et turbo:load sur la même page sans rechargement complet.
-    // Cette variable est locale à initializeRolesAndVehicles.
     let isInitialized = false; 
 
-    // Vérifie si le script a déjà été initialisé pour cette instance de page
     if (document.getElementById('roles-tab') && document.getElementById('roles-tab')._rolesVehiclesInitialized) {
-        return; // Déjà initialisé
+        return; 
     }
     if (document.getElementById('roles-tab')) {
-        document.getElementById('roles-tab')._rolesVehiclesInitialized = true; // Marque comme initialisé
+        document.getElementById('roles-tab')._rolesVehiclesInitialized = true; 
     }
 
     console.log("roles_vehicles.js: Initialisation du script pour les rôles et véhicules...");
 
-    // =====================================================================
-    // SÉLECTEURS DOM ET VARIABLES
-    // =====================================================================
     const rolesMessageContainer = document.getElementById('rolesMessageContainer');
     const rolePassenger = document.getElementById('rolePassenger');
     const roleDriver = document.getElementById('roleDriver');
@@ -64,9 +55,6 @@ const initializeRolesAndVehicles = () => {
     };
     const energieMap = { 'electric': 'Électrique', 'hybrid': 'Hybride', 'thermal': 'Thermique' };
 
-    // =====================================================================
-    // FONCTIONS UTILITAIRES (Définies ici pour être dans la portée)
-    // =====================================================================
 
     function displayMessage(container, message, type) {
         const targetContainer = typeof container === 'string' ? document.getElementById(container) : container;
@@ -78,7 +66,7 @@ const initializeRolesAndVehicles = () => {
         alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
         targetContainer.appendChild(alertDiv);
         setTimeout(() => {
-            if (alertDiv && alertDiv.parentNode) { // Vérification ajoutée
+            if (alertDiv && alertDiv.parentNode) {
                 alertDiv.classList.remove('show');
                 alertDiv.classList.add('fade');
                 alertDiv.addEventListener('transitionend', () => alertDiv.remove());
@@ -111,7 +99,6 @@ const initializeRolesAndVehicles = () => {
             plateInput.placeholder = mask;
             plateInput.dataset.mask = mask;
             
-            // Supprime l'ancien écouteur si existant
             if (plateInput._maskListener) {
                 plateInput.removeEventListener('input', plateInput._maskListener);
             }
@@ -160,7 +147,6 @@ const initializeRolesAndVehicles = () => {
             <span>${text}</span>
             <button type="button" class="btn-close btn-close-white btn-sm" aria-label="Supprimer la préférence"></button>
         `;
-        // Attache l'écouteur de suppression directement ici
         const deleteButton = tag.querySelector('.btn-close');
         if (deleteButton) {
             deleteButton.addEventListener('click', () => {
@@ -218,11 +204,6 @@ const initializeRolesAndVehicles = () => {
         }
     }
 
-    // =====================================================================
-    // LOGIQUE D'INITIALISATION PRINCIPALE
-    // =====================================================================
-
-    // Récupération des données initiales depuis les SPAN HTML
     const userRolesDataElement = document.getElementById('user-roles-data');
     if (userRolesDataElement) {
         const rawData = userRolesDataElement.textContent.trim();
@@ -270,10 +251,6 @@ const initializeRolesAndVehicles = () => {
             userPreferences = { fumeurs_acceptes: false, animaux_acceptes: false, personnalisees: [] };
         }
     }
-
-    // =====================================================================
-    // GESTION DES RÔLES (Passager / Chauffeur)
-    // =====================================================================
 
     const isDriver = userRoles.includes('ROLE_DRIVER');
     const isPassenger = userRoles.includes('ROLE_PASSENGER');
@@ -325,11 +302,6 @@ const initializeRolesAndVehicles = () => {
         });
     }
 
-    // =====================================================================
-    // GESTION DES VÉHICULES
-    // =====================================================================
-
-    // Initialisation de la date maximale (aujourd'hui) pour le champ de date d'immatriculation
     if (firstRegDateInput) {
         const today = new Date();
         const year = today.getFullYear();
@@ -339,7 +311,6 @@ const initializeRolesAndVehicles = () => {
         firstRegDateInput.setAttribute('max', todayString);
     }
 
-    // Écouteur pour la validation en temps réel de la date
     if (firstRegDateInput) {
         firstRegDateInput.addEventListener('change', () => {
             const errorMessage = validateFirstRegDate(firstRegDateInput.value);
@@ -351,7 +322,6 @@ const initializeRolesAndVehicles = () => {
         });
     }
 
-    // Initialisation du sélecteur de pays au chargement
     if (countryDropdownMenu) {
         countryDropdownMenu.querySelectorAll('.dropdown-item').forEach(item => {
             item.addEventListener('click', (e) => {
@@ -361,12 +331,10 @@ const initializeRolesAndVehicles = () => {
                 updateCountrySelection(countryCode, flagSrc);
             });
         });
-        updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png'); // Initialiser avec la France par défaut
+        updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png'); 
     }
 
-    // Appel initial pour afficher les véhicules existants
     displayVehicles(userVehiclesData);
-    // Appel pour charger et peupler les marques dans le formulaire d'ajout
     loadAndPopulateBrands();
 
     if (addVehicleBtn) {
@@ -374,7 +342,7 @@ const initializeRolesAndVehicles = () => {
             if (vehicleFormContainer) vehicleFormContainer.classList.remove('d-none');
             if (addVehicleBtn) addVehicleBtn.classList.add('d-none');
             if (vehicleForm) vehicleForm.reset();
-            updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png'); // Réinitialiser à FR
+            updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png'); 
             if (firstRegDateInput) firstRegDateInput.value = '';
             if (vehicleMessageContainer) vehicleMessageContainer.innerHTML = '';
         });
@@ -457,16 +425,9 @@ const initializeRolesAndVehicles = () => {
         });
     }
 
-    // =====================================================================
-    // GESTION DES PRÉFÉRENCES
-    // =====================================================================
-    
-    // userPreferences est initialisé via le span dans initializeRolesAndVehicles
-
     if (prefSmoker) prefSmoker.checked = userPreferences.fumeurs_acceptes;
     if (prefAnimal) prefAnimal.checked = userPreferences.animaux_acceptes;
 
-    // Affiche les préférences personnalisées initiales
     if (customPrefList && userPreferences.personnalisees && Array.isArray(userPreferences.personnalisees)) {
         userPreferences.personnalisees.forEach(prefText => {
             const newTag = createPrefTag(prefText);
@@ -481,7 +442,6 @@ const initializeRolesAndVehicles = () => {
                 displayMessage(preferencesMessageContainer, 'Veuillez saisir une préférence.', 'warning');
                 return;
             }
-            // Vérifie si la préférence existe déjà (case-insensitive)
             const existing = Array.from(customPrefList.children).some(
                 (child) => child.firstChild && child.firstChild.textContent.toLowerCase() === value.toLowerCase()
             );
@@ -491,7 +451,7 @@ const initializeRolesAndVehicles = () => {
             }
             const newTag = createPrefTag(value);
             customPrefList.appendChild(newTag);
-            customPrefInput.value = ''; // Vide l'input après ajout
+            customPrefInput.value = ''; 
             displayMessage(preferencesMessageContainer, 'Préférence ajoutée, n\'oubliez pas d\'enregistrer !', 'info');
         });
     }
@@ -499,14 +459,12 @@ const initializeRolesAndVehicles = () => {
     if (profileForm) {
         profileForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            // S'assure que l'événement est déclenché par le bouton "Enregistrer les préférences"
             if (e.submitter && e.submitter.id === 'savePreferencesBtn') {
                 const preferencesToSave = {
                     fumeursAcceptes: prefSmoker ? prefSmoker.checked : false,
                     animauxAcceptes: prefAnimal ? prefAnimal.checked : false,
                     preferencesPersonnalisees: []
                 };
-                // Récupère toutes les préférences personnalisées affichées
                 if (customPrefList) {
                     Array.from(customPrefList.children).forEach(tag => {
                         const textSpan = tag.querySelector('span');
@@ -540,6 +498,5 @@ const initializeRolesAndVehicles = () => {
     }
 };
 
-// On écoute à la fois le chargement initial (pour la première visite) et les navigations Turbo (pour les navigations SPA)
 document.addEventListener('DOMContentLoaded', initializeRolesAndVehicles);
 document.addEventListener('turbo:load', initializeRolesAndVehicles);

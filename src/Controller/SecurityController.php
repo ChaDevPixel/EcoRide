@@ -53,12 +53,10 @@ class SecurityController extends AbstractController
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function account(): Response
     {
-        // NOUVEAU : Redirige l'administrateur vers son tableau de bord
         if ($this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('admin_dashboard');
         }
 
-        // Logique existante pour les employés
         if ($this->isGranted('ROLE_EMPLOYE')) {
             return $this->redirectToRoute('employee_dashboard');
         }
@@ -70,7 +68,6 @@ class SecurityController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        // --- Préparation des données des véhicules pour le JSON ---
         $voituresArray = [];
         foreach ($utilisateur->getVoitures() as $voiture) {
             $voituresArray[] = [
@@ -88,18 +85,14 @@ class SecurityController extends AbstractController
                 'paysImmatriculation' => $voiture->getPaysImmatriculation(),
             ];
         }
-        // --- Fin de la préparation des données des véhicules ---
 
-        // --- Préparation des données des préférences pour le JSON ---
         $preferencesArray = $utilisateur->getPreferences() ?? [];
         $preferencesArray = array_merge([
             'fumeurs_acceptes' => false,
             'animaux_acceptes' => false,
             'personnalisees' => [],
         ], $preferencesArray);
-        // --- Fin de la préparation des données des préférences ---
 
-        // MODIFIÉ : Le nom du template est 'compte.html.twig'
         return $this->render('compte.html.twig', [
             'utilisateur' => $utilisateur,
             'utilisateur_voitures_json' => json_encode($voituresArray, JSON_PRETTY_PRINT),
@@ -107,23 +100,18 @@ class SecurityController extends AbstractController
         ]);
     }
 
-    /**
-     * Gère la mise à jour du profil (pseudo et photo)
-     */
     #[Route('/mon-compte/modifier', name: 'app_account_update', methods: ['POST'])]
     public function updateProfile(Request $request, SluggerInterface $slugger): Response
     {
         /** @var \App\Entity\Utilisateur $user */
         $user = $this->getUser();
 
-        // Mettre à jour le pseudo
         $newPseudo = $request->request->get('pseudo');
         if ($newPseudo && $newPseudo !== $user->getPseudo()) {
             $user->setPseudo($newPseudo);
             $this->addFlash('success', 'Votre pseudo a été mis à jour.');
         }
 
-        // Gérer l'upload de la photo
         /** @var \Symfony\Component\HttpFoundation\File\UploadedFile $photoFile */
         $photoFile = $request->files->get('photo');
 
@@ -134,10 +122,9 @@ class SecurityController extends AbstractController
 
             try {
                 $photoFile->move(
-                    $this->getParameter('photos_directory'), // Ce paramètre doit être configuré dans services.yaml
+                    $this->getParameter('photos_directory'), 
                     $newFilename
                 );
-                // Mettre à jour la propriété 'photo' pour stocker le nom du fichier
                 $user->setPhoto($newFilename);
                 $this->addFlash('success', 'Votre photo de profil a été mise à jour.');
             } catch (FileException $e) {
@@ -156,7 +143,6 @@ class SecurityController extends AbstractController
     #[IsGranted('ROLE_USER')]
     public function allNotifications(): Response
     {
-        // ... (le code de cette méthode reste inchangé)
         /** @var Utilisateur $user */
         $user = $this->getUser();
 

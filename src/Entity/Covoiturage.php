@@ -86,7 +86,7 @@ class Covoiturage
     #[Groups(['covoiturage:read', 'covoiturage:user_driven_read', 'covoiturage:dispute_read'])]
     private Collection $avis;
 
-    #[ORM\Column(type: Types::JSON, nullable: true)] // NOUVEAU CHAMP
+    #[ORM\Column(type: Types::JSON, nullable: true)] 
     #[Groups(['covoiturage:dispute_read'])]
     private ?array $moderationDetails = [];
 
@@ -95,8 +95,6 @@ class Covoiturage
         $this->participations = new ArrayCollection();
         $this->avis = new ArrayCollection();
     }
-
-    // ... (Getters et Setters existants) ...
 
     public function getId(): ?int { return $this->id; }
     public function getVilleDepart(): ?string { return $this->villeDepart; }
@@ -132,12 +130,12 @@ class Covoiturage
     public function addAvi(Avis $avi): static { if (!$this->avis->contains($avi)) { $this->avis->add($avi); $avi->setCovoiturage($this); } return $this; }
     public function removeAvi(Avis $avi): static { if ($this->avis->removeElement($avi)) { if ($avi->getCovoiturage() === $this) { $avi->setCovoiturage(null); } } return $this; }
 
-    public function getModerationDetails(): ?array // NOUVEAU GETTER
+    public function getModerationDetails(): ?array 
     {
         return $this->moderationDetails;
     }
 
-    public function setModerationDetails(?array $moderationDetails): static // NOUVEAU SETTER
+    public function setModerationDetails(?array $moderationDetails): static 
     {
         $this->moderationDetails = $moderationDetails;
         return $this;

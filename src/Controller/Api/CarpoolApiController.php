@@ -20,28 +20,28 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[Route('/api', name: 'api_')] // Ce préfixe s'applique à toutes les routes du contrôleur
+#[Route('/api', name: 'api_')]
 class CarpoolApiController extends AbstractController
 {
     private EntityManagerInterface $entityManager;
     private Security $security;
     private SerializerInterface $serializer;
     private ValidatorInterface $validator;
-    private MailerInterface $mailer; // NOUVEAU : Propriété pour le Mailer
+    private MailerInterface $mailer; 
 
     public function __construct(
         EntityManagerInterface $entityManager, 
         Security $security, 
         SerializerInterface $serializer, 
         ValidatorInterface $validator,
-        MailerInterface $mailer // NOUVEAU : Injection du Mailer
+        MailerInterface $mailer 
     )
     {
         $this->entityManager = $entityManager;
         $this->security = $security;
         $this->validator = $validator;
         $this->serializer = $serializer;
-        $this->mailer = $mailer; // NOUVEAU : Assignation du Mailer
+        $this->mailer = $mailer; 
     }
 
     /**
@@ -175,20 +175,16 @@ class CarpoolApiController extends AbstractController
 
         $this->entityManager->beginTransaction();
         try {
-            // Débiter le passager
             $passager->setCredits($passager->getCredits() - $prix);
             
-            // Décrémenter les places disponibles
             $covoiturage->setPlacesDisponibles($covoiturage->getPlacesDisponibles() - 1);
 
-            // Créer la participation
             $participation = new Participation();
             $participation->setPassager($passager);
             $participation->setCovoiturage($covoiturage);
-            $participation->setValideParPassager(false); // Initialiser à false
-            $participation->setAvisSoumis(false); // Initialiser à false
+            $participation->setValideParPassager(false); 
+            $participation->setAvisSoumis(false); 
 
-            // Créer la notification pour le chauffeur
             $chauffeur = $covoiturage->getChauffeur();
             $notification = new Notification();
             $notification->setDestinataire($chauffeur);
@@ -204,7 +200,6 @@ class CarpoolApiController extends AbstractController
             );
             $notification->setCovoiturageAssocie($covoiturage);
 
-            // Persister toutes les entités modifiées ou créées
             $this->entityManager->persist($participation);
             $this->entityManager->persist($passager);
             $this->entityManager->persist($covoiturage);
@@ -266,11 +261,9 @@ class CarpoolApiController extends AbstractController
             $covoiturage->setStatut('en_attente_validation');
             $this->entityManager->persist($covoiturage);
 
-            // Envoyer des notifications (in-app et email) à chaque participant
             foreach ($covoiturage->getParticipations() as $participation) {
                 $passager = $participation->getPassager();
                 
-                // 1. Créer une notification in-app
                 $notification = new Notification();
                 $notification->setDestinataire($passager);
                 $notification->setMessage(
@@ -285,7 +278,6 @@ class CarpoolApiController extends AbstractController
                 $notification->setCovoiturageAssocie($covoiturage);
                 $this->entityManager->persist($notification);
 
-                // 2. MODIFIÉ : Envoyer un vrai e-mail
                 try {
                     $email = (new Email())
                         ->from('no-reply@ecoride.com')
@@ -297,7 +289,6 @@ class CarpoolApiController extends AbstractController
                         ]));
                     $this->mailer->send($email);
                 } catch (\Exception $e) {
-                    // On log l'erreur d'envoi d'email mais on ne bloque pas la transaction
                     error_log('Erreur lors de l\'envoi de l\'email de fin de trajet: ' . $e->getMessage());
                 }
             }
@@ -368,7 +359,7 @@ class CarpoolApiController extends AbstractController
             $avis->setCovoiturage($covoiturage);
             $avis->setCommentaire($commentaire);
 
-            if ($validationStatus) { // Le voyage s'est bien déroulé (Oui)
+            if ($validationStatus) {
                 if ($note === null || $note < 1 || $note > 5) {
                     throw new \Exception('La note est obligatoire et doit être entre 1 et 5 pour une validation positive.');
                 }
@@ -404,7 +395,7 @@ class CarpoolApiController extends AbstractController
                     $this->entityManager->persist($notificationChauffeur);
                 }
 
-            } else { // Le voyage s'est mal déroulé (Non)
+            } else { 
                 if (!$raisonLitige) {
                     throw new \Exception('La raison du problème est obligatoire si le voyage s\'est mal déroulé.');
                 }
@@ -444,8 +435,6 @@ class CarpoolApiController extends AbstractController
     #[Route('/covoiturage/{id}/validate-payment', name: 'covoiturage_validate_payment', methods: ['POST'])]
     public function validatePayment(Covoiturage $covoiturage): JsonResponse
     {
-        // $this->denyAccessUnlessGranted('ROLE_EMPLOYE');
-
         if ($covoiturage->getStatut() !== 'en_attente_validation') {
             return $this->json(['message' => 'Ce paiement ne peut pas être validé (statut incorrect).'], JsonResponse::HTTP_BAD_REQUEST);
         }
@@ -493,11 +482,9 @@ class CarpoolApiController extends AbstractController
                 $passager = $participation->getPassager();
                 $prixVoyage = $covoiturage->getPrix();
 
-                // Rembourser les crédits au passager
                 $passager->setCredits($passager->getCredits() + $prixVoyage);
                 $this->entityManager->persist($passager);
 
-                // Créer une notification in-app pour le passager
                 $notification = new Notification();
                 $notification->setDestinataire($passager);
                 $notification->setMessage(
@@ -513,7 +500,6 @@ class CarpoolApiController extends AbstractController
                 $notification->setCovoiturageAssocie($covoiturage);
                 $this->entityManager->persist($notification);
 
-                // MODIFIÉ : Envoyer un vrai e-mail d'annulation
                 try {
                     $email = (new Email())
                         ->from('no-reply@ecoride.com')
@@ -567,13 +553,10 @@ class CarpoolApiController extends AbstractController
 
         $this->entityManager->beginTransaction();
         try {
-            // 1. Rembourser les crédits au passager
             $passager->setCredits($passager->getCredits() + $prixVoyage);
 
-            // 2. Mettre à jour le nombre de places disponibles
             $covoiturage->setPlacesDisponibles($covoiturage->getPlacesDisponibles() + 1);
 
-            // 3. Créer une notification pour le chauffeur
             $chauffeur = $covoiturage->getChauffeur();
             $notification = new Notification();
             $notification->setDestinataire($chauffeur);
@@ -589,7 +572,6 @@ class CarpoolApiController extends AbstractController
             );
             $notification->setCovoiturageAssocie($covoiturage);
 
-            // 4. Persister les changements et supprimer la participation
             $this->entityManager->persist($passager);
             $this->entityManager->persist($covoiturage);
             $this->entityManager->persist($notification);
