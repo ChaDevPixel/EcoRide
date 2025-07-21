@@ -239,10 +239,6 @@ class CarpoolApiController extends AbstractController
         return $this->json(['message' => 'Covoiturage démarré !', 'newStatus' => 'en_cours']);
     }
 
-    /**
-     * Termine un covoiturage et le met en attente de validation par les participants.
-     * MODIFIÉ : Envoie un vrai email aux participants.
-     */
     #[Route('/covoiturage/{id}/end', name: 'covoiturage_end', methods: ['POST'])]
     public function endCovoiturage(Covoiturage $covoiturage): JsonResponse
     {
@@ -454,11 +450,6 @@ class CarpoolApiController extends AbstractController
         return $this->json(['message' => 'Paiement validé et crédits transférés au chauffeur.']);
     }
 
-    /**
-     * Annule un covoiturage initié par le chauffeur.
-     * Rembourse les participants et envoie des notifications (in-app et email).
-     * MODIFIÉ : Envoie un vrai email aux participants.
-     */
     #[Route('/covoiturage/{id}/cancel', name: 'covoiturage_cancel', methods: ['POST'])]
     public function cancelCovoiturage(Covoiturage $covoiturage): JsonResponse
     {

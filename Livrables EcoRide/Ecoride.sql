@@ -1,0 +1,157 @@
+INSERT INTO `role` (`id`, `libelle`) VALUES
+(1, 'ROLE_ADMIN'),
+(2, 'ROLE_DRIVER'),
+(3, 'ROLE_PASSENGER'),
+(4, 'ROLE_EMPLOYEE');
+
+INSERT INTO `utilisateur` (`id`, `nom`, `prenom`, `email`, `password`, `telephone`, `adresse`, `date_naissance`, `photo`, `pseudo`, `statut`, `credits`, `preferences`) VALUES
+(1, 'Admin', 'Jose', 'admin@ecoride.com', '$2y$13$X1zY2aB3c4d5e6f7g8h9i.jKlMnOpQrStUvWxYzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P.', '0600000000', '1 Rue de l''Admin, 75000 Paris', '1990-01-01', NULL, 'AdminEco', 'actif', 1000, '{}'), -- Admin sans préférences spécifiques
+(2, 'Dubois', 'Marc', 'chauffeur1@ecoride.com', '$2y$13$Q4rS5tU6v7w8x9y0z1a2b3c4d5e6f7g8h9i.jKlMnOpQrStUvWxYzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P.', '0611223344', '15 Av. du Pont, 69000 Lyon', '1985-03-10', NULL, 'MarcChauffeur', 'actif', 200, '{"animaux_acceptes": true, "personnalisees": ["Musique douce", "Pas de conversation"]}'),
+(3, 'Leroy', 'Sophie', 'chauffeur2@ecoride.com', '$2y$13$A2bC3d4E5F6G7H8I9J0K1L2M3N4O5P6qRsTuVwXyZabCdeFghIjKlMnO.pQrStUvWxYzA1B2C3.', '0655667788', '2 Bd. de la Plage, 13000 Marseille', '1988-07-22', NULL, 'SophieDrive', 'actif', 250, '{"animaux_acceptes": false}'), -- Pas d'animaux, pas de personnalisées
+(4, 'Bernard', 'Alice', 'r1@ecoride.com', '$2y$13$H9J0K1L2M3N4O5P6qRsTuVwXyZabCdeFghIjKlMnO.pQrStUvWxYzA1B2C3d4E5F6G78I9J.', '0711223344', '30 Rue du Commerce, 31000 Toulouse', '1992-04-05', NULL, 'AlicePass', 'actif', 50, '{}'),
+(5, 'Durand', 'Thomas', 'r2@ecoride.com', '$2y$13$XyZabCdeFghIjKlMnO.pQrStUvWxYzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qRsTuVw.X.', '0799887766', '5 Place de la Gare, 44000 Nantes', '1995-11-30', NULL, 'ThomasVoyage', 'actif', 30, '{"personnalisees": ["Converse uniquement si nécessaire"]}'),
+(6, 'Garcia', 'Léa', 'lea.garcia@ecoride.com', '$2y$13$M.nOpQrStUvWxYzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I.', '0601020304', '12 Rue des Lilas, 75010 Paris', '1998-02-14', NULL, 'LeaG', 'actif', 80, '{}'),
+(7, 'Moreau', 'Alexandre', 'alex.moreau@ecoride.com', '$2y$13$Z.aB2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P.', '0705060708', '22 Rue des Glycines, 33000 Bordeaux', '1991-07-07', NULL, 'AlexM', 'actif', 150, '{"animaux_acceptes": true}'),
+(8, 'Dupuis', 'Chloé', 'chloe.dupuis@ecoride.com', '$2y$13$N.o5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H.', '0609101112', '8 Avenue des Ormes, 59000 Lille', '1993-11-20', NULL, 'ChloeD', 'actif', 120, '{"personnalisees": ["Ambiance calme", "Chargement de téléphone disponible"]}'),
+(9, 'Bertrand', 'Hugo', 'hugo.bertrand@ecoride.com', '$2y$13$T.uVw.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L.', '0713141516', '3 Rue de la Forêt, 67000 Strasbourg', '1987-03-01', NULL, 'HugoB', 'actif', 90, '{}'),
+(10, 'Roux', 'Emma', 'emma.roux@ecoride.com', '$2y$13$G.7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.Y.', '0617181920', '5 Boulevard du Soleil, 06000 Nice', '1996-09-10', NULL, 'EmmaR', 'actif', 75, '{"animaux_acceptes": false, "personnalisees": ["Arrêt café rapide"]}'),
+(11, 'Fournier', 'Théo', 'theo.fournier@ecoride.com', '$2y$13$J.0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C.', '0721222324', '18 Place de la Victoire, 44000 Nantes', '1989-04-25', NULL, 'TheoF', 'actif', 110, '{}'),
+(12, 'Lambert', 'Manon', 'manon.lambert@ecoride.com', '$2y$13$C.3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.', '0625262728', '7 Rue du Moulin, 34000 Montpellier', '1994-08-12', NULL, 'ManonL', 'actif', 60, '{"personnalisees": ["Musique forte acceptée"]}'),
+(13, 'Petit', 'Valentin', 'valentin.petit@ecoride.com', '$2y$13$W.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3.', '0729303132', '45 Avenue de la Gare, 67000 Strasbourg', '1990-12-03', NULL, 'ValentinP', 'actif', 130, '{}'),
+(14, 'Dubois', 'Clara', 'clara.dubois@ecoride.com', '$2y$13$Z.a1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4.', '0633343536', '1 Impasse du Parc, 75015 Paris', '1997-06-19', NULL, 'ClaraD', 'actif', 40, '{"animaux_acceptes": true, "personnalisees": ["Voyage silencieux"]}'),
+(15, 'Lefevre', 'Antoine', 'antoine.lef@ecoride.com', '$2y$13$O.5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7.', '0737383940', '9 Rue de la Fontaine, 31000 Toulouse', '1986-01-28', NULL, 'AntoineL', 'actif', 180, '{}'),
+(16, 'Richard', 'Margaux', 'margaux.richard@ecoride.com', '$2y$13$XyZabCdeFghIjKlMnO.pQrStUvWxYzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qRsTuVw.Y.', '0641424344', '11 Quai des Fleurs, 69000 Lyon', '1994-10-10', NULL, 'MargauxR', 'actif', 95, '{"animaux_acceptes": false, "personnalisees": ["Pas de nourriture dans la voiture"]}'),
+(17, 'Simon', 'Julien', 'julien.simon@ecoride.com', '$2y$13$L.2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4.', '0745464748', '2 Rue du Château, 13000 Marseille', '1982-05-18', NULL, 'JulienS', 'actif', 220, '{}'),
+(18, 'Michel', 'Camille', 'camille.michel@ecoride.com', '$2y$13$R.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K.', '0649505152', '6 Avenue des Artistes, 59000 Lille', '1999-01-01', NULL, 'CamilleM', 'actif', 65, '{"personnalisees": ["Préfère les discussions"]}'),
+(19, 'Leroy', 'Gabriel', 'gabriel.leroy@ecoride.com', '$2y$13$P.6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I.', '0753545556', '20 Rue du Marché, 67000 Strasbourg', '1980-07-29', NULL, 'GabrielL', 'actif', 170, '{}'),
+(20, 'Moreau', 'Sarah', 'sarah.moreau@ecoride.com', '$2y$13$D.4E5F6G7H8I9J0K1L2M3N4O5P6qR.tUvW.YzA1B2C3d4E5F6G7H8I9J0K1L2M3N4O5P6qR.t.', '0657585960', '14 Boulevard de la Plage, 06000 Nice', '1993-04-12', NULL, 'SarahM', 'actif', 105, '{"animaux_acceptes": false}');
+
+INSERT INTO `marque` (`id`, `libelle`) VALUES
+(1, 'Renault'),
+(2, 'Peugeot'),
+(3, 'Citroën'),
+(4, 'Volkswagen'),
+(5, 'Audi'),
+(6, 'BMW'),
+(7, 'Mercedes-Benz'),
+(8, 'Opel'),
+(9, 'Ford'),
+(10, 'Toyota'),
+(11, 'Honda'),
+(12, 'Nissan'),
+(13, 'Mazda'),
+(14, 'Hyundai'),
+(15, 'Kia'),
+(16, 'Fiat'),
+(17, 'Alfa Romeo'),
+(18, 'Volvo'),
+(19, 'Skoda'),
+(20, 'Seat'),
+(21, 'Porsche'),
+(22, 'Ferrari'),
+(23, 'Lamborghini'),
+(24, 'McLaren'),
+(25, 'Aston Martin'),
+(26, 'Land Rover'),
+(27, 'Jaguar'),
+(28, 'Mitsubishi'),
+(29, 'Subaru'),
+(30, 'Suzuki'),
+(31, 'Dacia'),
+(32, 'Chevrolet'),
+(33, 'Tesla'),
+(34, 'Lexus'),
+(35, 'Infiniti'),
+(36, 'Acura'),
+(37, 'Chrysler'),
+(38, 'Dodge'),
+(39, 'Jeep'),
+(40, 'Ram'),
+(41, 'Cadillac'),
+(42, 'GMC'),
+(43, 'Buick'),
+(44, 'Mini'),
+(45, 'Smart'),
+(46, 'SsangYong'),
+(47, 'Polestar'),
+(48, 'Lucid'),
+(49, 'Rivian'),
+(50, 'BYD');
+
+INSERT INTO `utilisateur_role` (`utilisateur_id`, `role_id`) VALUES
+(1, 1), 
+(2, 2), 
+(3, 2), 
+(4, 3),
+(5, 3),
+(6, 4), 
+(7, 2),  
+(8, 3),  
+(9, 3),  
+(10, 2),
+(11, 3), 
+(12, 3), 
+(13, 2), 
+(14, 3), 
+(15, 2), 
+(16, 3), 
+(17, 2), 
+(18, 3), 
+(19, 2), 
+(20, 3); 
+
+INSERT INTO `voiture` (`id`, `marque_id`, `utilisateur_id`, `modele`, `immatriculation`, `pays_immatriculation`, `date_premiere_immatriculation`, `energie`, `couleur`, `nombre_de_places`) VALUES
+(1, 1, 2, 'Clio', 'AB-123-CD', 'FR', '2020-01-15', 'thermique', 'Bleu', 4),
+(2, 4, 2, 'Golf', 'EF-456-GH', 'FR', '2018-03-22', 'thermique', 'Gris', 5), 
+(3, 2, 3, '308', 'IJ-789-KL', 'FR', '2021-06-20', 'hybride', 'Blanc', 5), 
+(4, 5, 3, 'A3', 'MN-012-OP', 'FR', '2023-09-01', 'electrique', 'Noir', 4), 
+(5, 10, 7, 'Yaris', 'QR-345-ST', 'FR', '2019-11-11', 'hybride', 'Rouge', 4), 
+(6, 6, 10, 'Série 1', 'UV-678-WX', 'FR', '2022-04-01', 'thermique', 'Bleu Marine', 5), 
+(7, 31, 13, 'Sandero', 'YZ-901-AB', 'FR', '2020-08-05', 'thermique', 'Gris Clair', 5),
+(8, 15, 15, 'Ceed', 'CD-234-EF', 'FR', '2022-02-14', 'hybride', 'Vert', 5), 
+(9, 17, 17, 'Giulia', 'GH-567-IJ', 'FR', '2017-07-07', 'thermique', 'Noir', 4), 
+(10, 33, 19, 'Model Y', 'KL-890-MN', 'FR', '2023-01-01', 'electrique', 'Bleu', 5); 
+
+-- Vider la table covoiturage et réinitialiser l'auto-incrément pour une insertion propre
+TRUNCATE TABLE `covoiturage`;
+ALTER TABLE `covoiturage` AUTO_INCREMENT = 1;
+
+INSERT INTO `covoiturage` (`id`, `chauffeur_id`, `voiture_id`, `ville_depart`, `date_depart`, `heure_depart`, `ville_arrivee`, `date_arrivee`, `heure_arrivee`, `prix`, `est_accompagne`, `nombre_accompagnateurs`, `places_disponibles`, `statut`, `moderation_details`) VALUES
+(1, 2, 1, 'Paris', '2025-08-10 08:00:00', '08:00', 'Lyon', '2025-08-10 12:00:00', '12:00', 30, 0, NULL, 3, 'initialise', '{}'),
+(2, 2, 2, 'Lyon', '2025-08-12 14:00:00', '14:00', 'Marseille', '2025-08-12 17:00:00', '17:00', 25, 1, 1, 2, 'initialise', '{}'),
+(3, 2, 1, 'Toulouse', '2025-08-15 09:00:00', '09:00', 'Bordeaux', '2025-08-15 11:00:00', '11:00', 20, 0, NULL, 3, 'initialise', '{}'),
+(4, 2, 2, 'Bordeaux', '2025-07-05 10:00:00', '10:00', 'Nantes', '2025-07-05 13:00:00', '13:00', 22, 0, NULL, 4, 'termine', '{}'), 
+(5, 2, 1, 'Lille', '2025-07-01 07:00:00', '07:00', 'Paris', '2025-07-01 10:00:00', '10:00', 35, 1, 2, 1, 'termine', '{}'), 
+(6, 2, 2, 'Strasbourg', '2025-07-10 16:00:00', '16:00', 'Nancy', '2025-07-10 17:30:00', '17:30', 10, 0, NULL, 2, 'annule', '{}'), 
+(7, 2, 1, 'Nice', '2025-07-12 11:00:00', '11:00', 'Marseille', '2025-07-12 13:00:00', '13:00', 18, 0, NULL, 3, 'initialise', '{}'),
+(8, 3, 3, 'Nantes', '2025-08-22 09:30:00', '09:30', 'Rennes', '2025-08-22 10:30:00', '10:30', 12, 0, NULL, 3, 'initialise', '{}'),
+(9, 3, 4, 'Rennes', '2025-08-25 13:00:00', '13:00', 'Brest', '2025-08-25 15:00:00', '15:00', 15, 0, NULL, 4, 'initialise', '{}'),
+(10, 3, 3, 'Grenoble', '2025-07-08 08:00:00', '08:00', 'Lyon', '2025-07-08 10:00:00', '10:00', 18, 1, 1, 2, 'termine', '{}'), 
+(11, 3, 4, 'Toulon', '2025-07-15 14:00:00', '14:00', 'Marseille', '2025-07-15 15:30:00', '15:30', 10, 0, NULL, 3, 'annule', '{}'), 
+(12, 7, 5, 'Bordeaux', '2025-09-01 18:00:00', '18:00', 'Toulouse', '2025-09-01 20:00:00', '20:00', 20, 0, NULL, 2, 'initialise', '{}'),
+(13, 7, 5, 'Toulouse', '2025-07-03 07:00:00', '07:00', 'Montpellier', '2025-07-03 10:00:00', '10:00', 25, 1, 1, 3, 'termine', '{}'), 
+(14, 10, 6, 'Paris', '2025-09-05 10:00:00', '10:00', 'Strasbourg', '2025-09-05 14:00:00', '14:00', 40, 0, NULL, 2, 'initialise', '{}'),
+(15, 10, 6, 'Strasbourg', '2025-07-20 16:00:00', '16:00', 'Nancy', '2025-07-20 17:30:00', '17:30', 10, 0, NULL, 3, 'termine', '{}'), 
+(16, 13, 7, 'Marseille', '2025-09-10 11:00:00', '11:00', 'Nice', '2025-09-10 13:00:00', '13:00', 15, 0, NULL, 4, 'initialise', '{}'),
+(17, 15, 8, 'Lyon', '2025-09-12 08:00:00', '08:00', 'Grenoble', '2025-09-12 10:00:00', '10:00', 18, 0, NULL, 3, 'initialise', '{}'),
+(18, 17, 9, 'Nantes', '2025-09-15 14:00:00', '14:00', 'La Rochelle', '2025-09-15 16:00:00', '16:00', 12, 0, NULL, 2, 'initialise', '{}'),
+(19, 19, 10, 'Paris', '2025-09-18 10:00:00', '10:00', 'Lille', '2025-09-18 13:00:00', '13:00', 30, 1, 1, 1, 'initialise', '{}'),
+(20, 19, 10, 'Lille', '2025-07-02 09:00:00', '09:00', 'Bruxelles', '2025-07-02 11:00:00', '11:00', 25, 0, NULL, 2, 'termine', '{}'); -- 
+
+INSERT INTO `participation` (`id`, `passager_id`, `covoiturage_id`, `date_inscription`, `valide_par_passager`, `avis_soumis`) VALUES
+(1, 4, 1, '2025-07-21 18:00:00', 0, 0), --
+(2, 5, 1, '2025-07-21 18:05:00', 0, 0), 
+(3, 8, 3, '2025-07-21 18:15:00', 0, 0), 
+(4, 14, 12, '2025-07-21 18:30:00', 0, 0), 
+(5, 16, 19, '2025-07-21 18:40:00', 0, 0), 
+(6, 9, 4, '2025-07-01 10:00:00', 1, 0), 
+(7, 11, 13, '2025-07-03 06:00:00', 1, 1), 
+(8, 18, 20, '2025-07-02 08:30:00', 1, 0);
+
+INSERT INTO `avis` (`id`, `utilisateur_id`, `auteur_id`, `covoiturage_id`, `note`, `commentaire`, `cree_le`, `valide_par_employe`, `raison_litige`, `rejete`) VALUES
+(1, 2, 9, 4, 5, 'Chauffeur très sympathique et conduite agréable. Le trajet s''est passé parfaitement.', '2025-07-06 10:00:00', 1, NULL, 0),
+(2, 7, 11, 13, 3, 'Trajet correct, mais le chauffeur avait quelques minutes de retard au départ.', '2025-07-04 09:00:00', 1, NULL, 0), 
+(3, 19, 18, 20, 2, 'Le chauffeur a écouté de la musique trop fort tout le long du trajet malgré ma demande.', '2025-07-03 14:00:00', 0, NULL, 0), 
+(4, 2, 4, 5, 1, 'Le chauffeur a annulé le covoiturage à la dernière minute sans avertissement préalable.', '2025-07-02 11:00:00', 0, 'Annulation abusive', 0), 
+(5, 3, 10, 10, 4, 'Voyage agréable et ponctuel. Véhicule propre.', '2025-07-09 12:00:00', 1, NULL, 0), 
+(6, 15, 16, 15, 1, 'Je n''ai pas du tout aimé ce trajet, chauffeur pas sympa.', '2025-07-21 10:00:00', 0, 'Langage inapproprié', 1);
