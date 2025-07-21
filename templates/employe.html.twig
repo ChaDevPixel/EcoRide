@@ -4,11 +4,10 @@
 {% block title %}Tableau de Bord Employé - Ecoride{% endblock %}
 
 {% block body %}
-<div class="container my-5">
+<div class="container my-5" id="employee-dashboard-main-container">
     <h1 class="mb-4">Tableau de Bord Employé</h1>
     <p>Bienvenue dans votre espace de gestion. Vous pouvez ici modérer les avis et consulter les litiges.</p>
 
-    <!-- Navigation par onglets mise à jour -->
     <ul class="nav nav-tabs" id="employeeTab" role="tablist">
         <li class="nav-item" role="presentation">
             <button class="nav-link active" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab" aria-controls="pending" aria-selected="true">
@@ -32,43 +31,69 @@
         </li>
     </ul>
 
-    <!-- Contenu des onglets -->
     <div class="tab-content" id="employeeTabContent">
-        <!-- Onglet des Avis en Attente -->
         <div class="tab-pane fade show active" id="pending" role="tabpanel" aria-labelledby="pending-tab">
-            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom"><div class="card-body" id="pending-reviews-container"><p id="no-pending-reviews" class="text-muted">Aucun nouvel avis à valider.</p></div></div>
+            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+                <div class="card-body" id="pending-reviews-container">
+                    <p id="no-pending-reviews-message" class="text-muted">Aucun nouvel avis à valider.</p>
+                </div>
+            </div>
         </div>
 
-        <!-- Onglet des Litiges -->
         <div class="tab-pane fade" id="disputes" role="tabpanel" aria-labelledby="disputes-tab">
-            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom"><div class="card-body" id="disputed-carpools-container"><p id="no-disputed-carpools" class="text-muted">Aucun litige en cours.</p></div></div>
+            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+                <div class="card-body" id="disputed-carpools-container">
+                    <p id="no-disputed-carpools-message" class="text-muted">Aucun litige en cours.</p>
+                </div>
+            </div>
         </div>
 
-        <!-- Onglet de l'Historique des Rejets -->
         <div class="tab-pane fade" id="rejected" role="tabpanel" aria-labelledby="rejected-tab">
-            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom"><div class="card-body" id="rejected-reviews-container"><p id="no-rejected-reviews" class="text-muted">Aucun avis n'a été rejeté.</p></div></div>
+            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+                <div class="card-body" id="rejected-reviews-container">
+                    <p id="no-rejected-reviews-message" class="text-muted">Aucun avis n'a été rejeté.</p>
+                </div>
+            </div>
         </div>
         
-        <!-- NOUVEL Onglet de l'Historique des Litiges -->
         <div class="tab-pane fade" id="resolved-disputes" role="tabpanel" aria-labelledby="resolved-disputes-tab">
-            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom"><div class="card-body" id="resolved-disputes-container"><p id="no-resolved-disputes" class="text-muted">Aucun litige clôturé.</p></div></div>
+            <div class="card shadow-sm border-top-0 rounded-0 rounded-bottom">
+                <div class="card-body" id="resolved-disputes-container">
+                    <p id="no-resolved-disputes-message" class="text-muted">Aucun litige clôturé.</p>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modale de confirmation pour le rejet d'avis -->
 <div class="modal fade" id="rejectConfirmModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-danger text-white"><h5 class="modal-title" id="rejectModalLabel">Confirmer le rejet</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button></div>
-      <div class="modal-body">Êtes-vous sûr de vouloir rejeter cet avis ? Il sera déplacé dans l'historique et ne sera pas visible publiquement.</div>
-      <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button><button type="button" class="btn btn-danger" id="confirm-reject-btn">Oui, rejeter l'avis</button></div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectModalLabel">Confirmer le rejet</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">Êtes-vous sûr de vouloir rejeter cet avis ? Il sera déplacé dans l'historique et ne sera pas visible publiquement.</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirmRejectButton">Oui, rejeter l'avis</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}
 
 {% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('js/employee_dashboard.js') }}" defer></script>
+    {{ parent() }} {# Ceci inclut les scripts du parent (base.html.twig) #}
+
+    {# CDN de Bootstrap JS - Le bundle complet inclut Offcanvas, Dropdown, Tab, etc. #}
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
+    {# Script principal de Turbo (Hotwire Turbo Drive) #}
+    {# Si déjà inclus dans base.html.twig via importmap('app'), vous n'aurez pas besoin de cette ligne. #}
+    {# Sinon, si vous utilisez AssetMapper sans importmap pour Turbo, vous l'incluriez ici. #}
+    {# <script src="{{ asset('path/to/@hotwired/turbo/dist/turbo.es2017-esm.js') }}" type="module" defer></script> #}
+    
+    {# Votre script spécifique pour le tableau de bord employé #}
+    <script type="module" src="{{ asset('assets/js/employee_dashboard.js') }}" defer></script>
 {% endblock %}

@@ -1,6 +1,11 @@
-{% extends 'base.html.twig' %} 
+{# templates/security/login.html.twig #}
 
-{% block title %}Connexion - Ecoride{% endblock %}
+{% extends 'base.html.twig' %}
+{% block title %}Connexion / Inscription - Ecoride{% endblock %}
+
+{% block head %}
+    {{ parent() }}
+{% endblock %}
 
 {% block body %}
 
@@ -29,9 +34,10 @@
         </div>
 
         <div class="container-auth d-md-flex bg-light font-family-sans-serif" id="authContainer">
+            
+            {# Section de connexion #}
             <div class="form-container sign-in-container">
-                
-                <form method="post" action="{{ path('app_login') }}"> 
+                <form method="post" action="{{ path('app_login') }}" data-turbo="false"> 
                     <h2 class="mb-4">Se connecter</h2>
                     <input type="email" class="form-control mb-2" placeholder="Email" name="email" value="{{ last_username }}" required> 
                     <input type="password" class="form-control mb-2" placeholder="Mot de passe" name="password" required> 
@@ -40,9 +46,9 @@
                 </form>
             </div>
 
+            {# Section d'inscription #}
             <div class="form-container sign-up-container">
-             
-                <form method="post" action="{{ path('app_register_prepare') }}">
+                <form method="post" action="{{ path('app_register_prepare') }}" data-turbo="false">
                     <h2 class="mb-4">S'inscrire</h2>
                     <input type="text" name="nom" class="form-control mb-2" placeholder="Nom" required>
                     <input type="text" name="prenom" class="form-control mb-2" placeholder="Prénom" required>
@@ -52,6 +58,7 @@
                 </form>
             </div>
 
+            {# Section de l'overlay (pour la transition entre les formulaires) #}
             <div class="overlay-container">
                 <div class="overlay bg-primary text-light d-md-flex">
                     <div class="overlay-panel overlay-left d-flex flex-column align-items-center text-center justify-content-center">
@@ -83,18 +90,35 @@
             </div>
         </div>
 
+        {# JavaScript simple et inline pour l'animation #}
         <script>
-            const container = document.getElementById('authContainer');
-            const signUpButton = document.getElementById('signUp');
-            const signInButton = document.getElementById('signIn');
+            function initializeAuthAnimation() {
+                const container = document.getElementById('authContainer');
+                const signUpButton = document.getElementById('signUp');
+                const signInButton = document.getElementById('signIn');
 
-            signUpButton.addEventListener('click', () => {
-                container.classList.add('right-panel-active');
-            });
+                if (container && signUpButton && signInButton) {
+                    if (!signUpButton._hasAuthListener) {
+                        signUpButton.addEventListener('click', () => {
+                            container.classList.add('right-panel-active');
+                        });
+                        signUpButton._hasAuthListener = true; 
+                    }
 
-            signInButton.addEventListener('click', () => {
-                container.classList.remove('right-panel-active');
-            });
+                    if (!signInButton._hasAuthListener) {
+                        signInButton.addEventListener('click', () => {
+                            container.classList.remove('right-panel-active');
+                        });
+                        signInButton._hasAuthListener = true; 
+                    }
+
+                } else {
+                    console.error("Éléments de la page d'authentification introuvables. La dynamique ne peut pas être initialisée.");
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', initializeAuthAnimation);
+            document.addEventListener('turbo:load', initializeAuthAnimation);
         </script>
 
     </main>

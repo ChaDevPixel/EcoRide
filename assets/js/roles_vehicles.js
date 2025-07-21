@@ -1,71 +1,284 @@
+// assets/js/roles_vehicles.js
+
 // On encapsule toute la logique dans une fonction pour la rendre compatible avec Turbo
 const initializeRolesAndVehicles = () => {
+    // Flag pour éviter les écouteurs multiples si initializeRolesAndVehicles est appelé plusieurs fois
+    // par DOMContentLoaded et turbo:load sur la même page sans rechargement complet.
+    // Cette variable est locale à initializeRolesAndVehicles.
+    let isInitialized = false; 
+
+    // Vérifie si le script a déjà été initialisé pour cette instance de page
+    if (document.getElementById('roles-tab') && document.getElementById('roles-tab')._rolesVehiclesInitialized) {
+        return; // Déjà initialisé
+    }
+    if (document.getElementById('roles-tab')) {
+        document.getElementById('roles-tab')._rolesVehiclesInitialized = true; // Marque comme initialisé
+    }
+
     console.log("roles_vehicles.js: Initialisation du script pour les rôles et véhicules...");
 
     // =====================================================================
-    // FONCTIONS UTILITAIRES
+    // SÉLECTEURS DOM ET VARIABLES
     // =====================================================================
-    /**
-     * Affiche un message temporaire dans un conteneur spécifié.
-     * @param {string|HTMLElement} container L'ID du conteneur ou l'élément HTML lui-même.
-     * @param {string} message Le message à afficher.
-     * @param {'success'|'danger'|'warning'|'info'} type Le type d'alerte Bootstrap.
-     */
+    const rolesMessageContainer = document.getElementById('rolesMessageContainer');
+    const rolePassenger = document.getElementById('rolePassenger');
+    const roleDriver = document.getElementById('roleDriver');
+    const driverDetails = document.getElementById('driverDetails');
+    const editRolesBtn = document.getElementById('editRolesBtn');
+
+    const addVehicleBtn = document.getElementById('addVehicleBtn');
+    const vehicleFormContainer = document.getElementById('vehicleFormContainer');
+    const vehicleForm = document.getElementById('vehicleForm');
+    const cancelVehicleBtn = document.getElementById('cancelVehicleBtn');
+    const vehiclesContainer = document.getElementById('vehiclesContainer');
+    const vehicleMessageContainer = document.getElementById('vehicleMessageContainer');
+    const brandSelect = document.getElementById('brandSelect');
+
+    const countryDropdownButton = document.getElementById('countryDropdownButton');
+    const countryDropdownMenu = document.getElementById('countryDropdownMenu');
+    const selectedFlag = document.getElementById('selectedFlag');
+    const selectedCountryCodeSpan = document.getElementById('selectedCountryCode');
+    const plateInput = document.getElementById('plateInput');
+    const hiddenCountryCode = document.getElementById('hiddenCountryCode');
+    const firstRegDateInput = document.getElementById('firstRegDate');
+
+    const customPrefInput = document.getElementById('customPrefInput');
+    const addCustomPrefBtn = document.getElementById('addCustomPrefBtn');
+    const customPrefList = document.getElementById('customPrefList');
+    const prefSmoker = document.getElementById('prefSmoker');
+    const prefAnimal = document.getElementById('prefAnimal');
+    const profileForm = document.getElementById('profileForm');
+    const preferencesMessageContainer = document.getElementById('preferencesMessageContainer');
+
+    let userRoles = [];
+    let userVehiclesData = [];
+    let userPreferences = {
+        fumeurs_acceptes: false,
+        animaux_acceptes: false,
+        personnalisees: []
+    };
+
+    const countryPlateMasks = {
+        'FR': 'AA-999-AA', 'DE': 'A-9999-AA', 'BE': '9-AAA-999',
+        'LU': 'AA-9999', 'CH': 'AA-999999', 'IT': 'AA999AA', 'ES': '9999-AAA',
+    };
+    const energieMap = { 'electric': 'Électrique', 'hybrid': 'Hybride', 'thermal': 'Thermique' };
+
+    // =====================================================================
+    // FONCTIONS UTILITAIRES (Définies ici pour être dans la portée)
+    // =====================================================================
+
     function displayMessage(container, message, type) {
         const targetContainer = typeof container === 'string' ? document.getElementById(container) : container;
-        if (!targetContainer) {
-            console.error(`roles_vehicles.js: Conteneur de message "${container}" introuvable.`);
-            return;
-        }
-        // Nettoie les messages précédents pour éviter l'accumulation
+        if (!targetContainer) return;
         targetContainer.innerHTML = ''; 
         const alertDiv = document.createElement('div');
         alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
         alertDiv.setAttribute('role', 'alert');
         alertDiv.innerHTML = `${message}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>`;
         targetContainer.appendChild(alertDiv);
-        // Disparition automatique après 5 secondes
         setTimeout(() => {
-            if (alertDiv) {
+            if (alertDiv && alertDiv.parentNode) { // Vérification ajoutée
                 alertDiv.classList.remove('show');
                 alertDiv.classList.add('fade');
-                // Supprime l'élément après la transition de fade-out
                 alertDiv.addEventListener('transitionend', () => alertDiv.remove());
             }
         }, 5000);
     }
 
-    // =====================================================================
-    // GESTION DES RÔLES (Passager / Chauffeur)
-    // =====================================================================
-    const rolePassenger = document.getElementById('rolePassenger');
-    const roleDriver = document.getElementById('roleDriver');
-    const driverDetails = document.getElementById('driverDetails');
-    const editRolesBtn = document.getElementById('editRolesBtn');
-    const rolesMessageContainer = document.getElementById('rolesMessageContainer');
+    function validateFirstRegDate(dateString) {
+        if (!dateString) return "La date de première immatriculation est requise.";
+        const selectedDate = new Date(dateString);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); 
+        const minDate = new Date();
+        minDate.setFullYear(today.getFullYear() - 100);
+        minDate.setHours(0, 0, 0, 0);
 
-    let userRoles = [];
+        if (selectedDate > today) return "La date de première immatriculation ne peut pas être dans le futur.";
+        if (selectedDate < minDate) return "La date de première immatriculation ne peut pas être antérieure à 100 ans.";
+        return null;
+    }
+
+    function updateCountrySelection(countryCode, flagSrc) {
+        if (selectedFlag) selectedFlag.src = flagSrc;
+        if (selectedCountryCodeSpan) selectedCountryCodeSpan.textContent = countryCode;
+        if (hiddenCountryCode) hiddenCountryCode.value = countryCode;
+        
+        if (plateInput) {
+            plateInput.value = '';
+            const mask = countryPlateMasks[countryCode] || '';
+            plateInput.placeholder = mask;
+            plateInput.dataset.mask = mask;
+            
+            // Supprime l'ancien écouteur si existant
+            if (plateInput._maskListener) {
+                plateInput.removeEventListener('input', plateInput._maskListener);
+            }
+
+            const applyMask = (event) => {
+                let value = event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                let maskedValue = '';
+                let maskIndex = 0;
+                let valueIndex = 0;
+
+                while (maskIndex < mask.length && valueIndex < value.length) {
+                    if (mask[maskIndex] === 'A') {
+                        if (/[A-Z]/.test(value[valueIndex])) {
+                            maskedValue += value[valueIndex];
+                            valueIndex++;
+                        }
+                        maskIndex++;
+                    } else if (mask[maskIndex] === '9') {
+                        if (/[0-9]/.test(value[valueIndex])) {
+                            maskedValue += value[valueIndex];
+                            valueIndex++;
+                        }
+                        maskIndex++;
+                    } else if (mask[maskIndex] === '-') {
+                        maskedValue += '-';
+                        maskIndex++;
+                        if (value[valueIndex] === '-') {
+                            valueIndex++;
+                        }
+                    } else {
+                        maskedValue += mask[maskIndex];
+                        maskIndex++;
+                    }
+                }
+                event.target.value = maskedValue;
+            };
+            plateInput.addEventListener('input', applyMask);
+            plateInput._maskListener = applyMask;
+        }
+    }
+
+    function createPrefTag(text) {
+        const tag = document.createElement('div');
+        tag.className = 'badge bg-dark d-flex align-items-center gap-2';
+        tag.innerHTML = `
+            <span>${text}</span>
+            <button type="button" class="btn-close btn-close-white btn-sm" aria-label="Supprimer la préférence"></button>
+        `;
+        // Attache l'écouteur de suppression directement ici
+        const deleteButton = tag.querySelector('.btn-close');
+        if (deleteButton) {
+            deleteButton.addEventListener('click', () => {
+                if (customPrefList) customPrefList.removeChild(tag);
+                displayMessage(preferencesMessageContainer, 'Préférence supprimée, n\'oubliez pas d\'enregistrer !', 'info');
+            });
+        }
+        return tag;
+    }
+
+    function displayVehicles(vehicles) {
+        if (!vehiclesContainer) return;
+        vehiclesContainer.innerHTML = '';
+        if (!vehicles || vehicles.length === 0) {
+            vehiclesContainer.innerHTML = '<p class="text-muted">Aucun véhicule enregistré.</p>';
+            return;
+        }
+        vehicles.forEach(vehicle => {
+            const countryCodeForFlag = vehicle.paysImmatriculation ? vehicle.paysImmatriculation.toLowerCase() : '';
+            const countryFlag = countryCodeForFlag ? `<img src="https://flagcdn.com/w20/${countryCodeForFlag}.png" alt="${vehicle.paysImmatriculation}" class="flag-icon me-1">` : '';
+            const leafIconHtml = (vehicle.energie === 'electric' || vehicle.energie === 'hybrid') ? `<i class="bi bi-tree-fill text-primary me-1"></i>` : '';
+            
+            const vehicleHtml = `
+                <div class="col-12 mb-3">
+                    <div class="d-flex align-items-center px-3 py-2 rounded border h-100">
+                        <i class="bi bi-car-front-fill fs-5 me-2" style="color: ${vehicle.couleur || 'currentColor'};"></i>
+                        <span class="mb-0 flex-grow-1 text-sm">
+                            ${countryFlag}
+                            ${energieMap[vehicle.energie] || vehicle.energie} -
+                            ${vehicle.immatriculation || 'N/A'} -
+                            ${vehicle.marque && vehicle.marque.libelle ? vehicle.marque.libelle : 'N/A'} ${vehicle.modele || 'N/A'}
+                        </span>
+                        <span class="fw-bold ms-auto text-sm">
+                            ${leafIconHtml}${vehicle.nombreDePlaces} places
+                        </span>
+                    </div>
+                </div>`;
+            vehiclesContainer.insertAdjacentHTML('beforeend', vehicleHtml);
+        });
+    }
+
+    async function loadAndPopulateBrands() {
+        if (!brandSelect) return;
+        try {
+            const response = await fetch('/api/marques');
+            if (!response.ok) throw new Error('Network response was not ok.');
+            const marques = await response.json();
+            brandSelect.innerHTML = '<option selected disabled value="">Choisir une marque</option>';
+            marques.forEach(marque => {
+                brandSelect.insertAdjacentHTML('beforeend', `<option value="${marque.id}">${marque.nom}</option>`);
+            });
+        } catch (error) {
+            brandSelect.innerHTML = '<option selected disabled value="">Erreur</option>';
+            displayMessage(vehicleMessageContainer, 'Impossible de charger la liste des marques.', 'danger');
+        }
+    }
+
+    // =====================================================================
+    // LOGIQUE D'INITIALISATION PRINCIPALE
+    // =====================================================================
+
+    // Récupération des données initiales depuis les SPAN HTML
     const userRolesDataElement = document.getElementById('user-roles-data');
     if (userRolesDataElement) {
         const rawData = userRolesDataElement.textContent.trim();
-        console.log("roles_vehicles.js: Rôles bruts (user-roles-data):", rawData);
         if (rawData !== '') {
             try {
                 userRoles = JSON.parse(rawData);
-                console.log("roles_vehicles.js: Rôles parsés:", userRoles);
             } catch (e) {
-                console.error("roles_vehicles.js: Erreur parsing des rôles:", e);
-                if (rolesMessageContainer) displayMessage(rolesMessageContainer, "Erreur au chargement des rôles.", 'danger');
+                displayMessage(rolesMessageContainer, "Erreur au chargement des rôles.", 'danger');
+                userRoles = [];
             }
         } else {
-            console.log("roles_vehicles.js: user-roles-data est vide.");
+            userRoles = [];
         }
-    } else {
-        console.warn("roles_vehicles.js: Élément 'user-roles-data' non trouvé.");
     }
 
+    const userVehiclesDataElement = document.getElementById('user-vehicles-data');
+    if (userVehiclesDataElement) {
+        const rawData = userVehiclesDataElement.textContent.trim();
+        if (rawData !== '') {
+            try {
+                userVehiclesData = JSON.parse(rawData);
+            } catch (e) {
+                displayMessage(vehicleMessageContainer, "Erreur au chargement des véhicules.", 'danger');
+                userVehiclesData = [];
+            }
+        } else {
+            userVehiclesData = [];
+            if (vehiclesContainer) vehiclesContainer.innerHTML = '<p class="text-muted">Aucun véhicule enregistré.</p>';
+        }
+    } else {
+        if (vehiclesContainer) vehiclesContainer.innerHTML = '<p class="text-muted">Problème de chargement des données des véhicules.</p>';
+    }
+
+    const userPreferencesDataElement = document.getElementById('user-preferences-data');
+    if (userPreferencesDataElement) {
+        const rawData = userPreferencesDataElement.textContent.trim();
+        if (rawData !== '') {
+            try {
+                const parsedData = JSON.parse(rawData);
+                userPreferences = Object.assign(userPreferences, parsedData); 
+            } catch (e) {
+                displayMessage(preferencesMessageContainer, "Erreur au chargement des préférences.", 'danger');
+            }
+        } else {
+            userPreferences = { fumeurs_acceptes: false, animaux_acceptes: false, personnalisees: [] };
+        }
+    }
+
+    // =====================================================================
+    // GESTION DES RÔLES (Passager / Chauffeur)
+    // =====================================================================
+
     const isDriver = userRoles.includes('ROLE_DRIVER');
-    if (rolePassenger) rolePassenger.checked = userRoles.includes('ROLE_PASSENGER');
+    const isPassenger = userRoles.includes('ROLE_PASSENGER');
+
+    if (rolePassenger) rolePassenger.checked = isPassenger;
     if (roleDriver) roleDriver.checked = isDriver;
     if (rolePassenger) rolePassenger.disabled = true;
     if (roleDriver) roleDriver.disabled = true;
@@ -96,7 +309,11 @@ const initializeRolesAndVehicles = () => {
                     const result = await response.json();
                     if (result.success) {
                         displayMessage(rolesMessageContainer, result.message, 'success');
-                        setTimeout(() => location.reload(), 1500); 
+                        if (result.redirectUrl) {
+                            window.location.href = result.redirectUrl; 
+                        } else {
+                            window.location.reload(); 
+                        }
                     } else {
                         displayMessage(rolesMessageContainer, result.message, 'danger');
                     }
@@ -111,22 +328,6 @@ const initializeRolesAndVehicles = () => {
     // =====================================================================
     // GESTION DES VÉHICULES
     // =====================================================================
-    const addVehicleBtn = document.getElementById('addVehicleBtn');
-    const vehicleFormContainer = document.getElementById('vehicleFormContainer');
-    const vehicleForm = document.getElementById('vehicleForm');
-    const cancelVehicleBtn = document.getElementById('cancelVehicleBtn');
-    const vehiclesContainer = document.getElementById('vehiclesContainer');
-    const vehicleMessageContainer = document.getElementById('vehicleMessageContainer');
-    const brandSelect = document.getElementById('brandSelect');
-
-    // NOUVEAU: Éléments pour le sélecteur de pays et la plaque
-    const countryDropdownButton = document.getElementById('countryDropdownButton');
-    const countryDropdownMenu = document.getElementById('countryDropdownMenu');
-    const selectedFlag = document.getElementById('selectedFlag');
-    const selectedCountryCodeSpan = document.getElementById('selectedCountryCode');
-    const plateInput = document.getElementById('plateInput');
-    const hiddenCountryCode = document.getElementById('hiddenCountryCode');
-    const firstRegDateInput = document.getElementById('firstRegDate'); // Pour la validation de date
 
     // Initialisation de la date maximale (aujourd'hui) pour le champ de date d'immatriculation
     if (firstRegDateInput) {
@@ -138,28 +339,6 @@ const initializeRolesAndVehicles = () => {
         firstRegDateInput.setAttribute('max', todayString);
     }
 
-    // Fonction de validation de la date de première immatriculation
-    function validateFirstRegDate(dateString) {
-        if (!dateString) {
-            return "La date de première immatriculation est requise.";
-        }
-        const selectedDate = new Date(dateString);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Comparer juste la date, pas l'heure
-        
-        const minDate = new Date();
-        minDate.setFullYear(today.getFullYear() - 100); // 100 ans avant aujourd'hui
-        minDate.setHours(0, 0, 0, 0);
-
-        if (selectedDate > today) {
-            return "La date de première immatriculation ne peut pas être dans le futur.";
-        }
-        if (selectedDate < minDate) {
-            return "La date de première immatriculation ne peut pas être antérieure à 100 ans.";
-        }
-        return null; // Date valide
-    }
-
     // Écouteur pour la validation en temps réel de la date
     if (firstRegDateInput) {
         firstRegDateInput.addEventListener('change', () => {
@@ -167,189 +346,9 @@ const initializeRolesAndVehicles = () => {
             if (errorMessage) {
                 displayMessage(vehicleMessageContainer, errorMessage, 'danger');
             } else {
-                // Effacer le message d'erreur si la date devient valide
                 if (vehicleMessageContainer) vehicleMessageContainer.innerHTML = ''; 
             }
         });
-    }
-
-    let userVehiclesData = [];
-    const userVehiclesDataElementVehicles = document.getElementById('user-vehicles-data');
-    if (userVehiclesDataElementVehicles) {
-        const rawData = userVehiclesDataElementVehicles.textContent.trim();
-        console.log("roles_vehicles.js: Véhicules bruts (user-vehicles-data):", rawData);
-        if (rawData !== '') {
-            try {
-                userVehiclesData = JSON.parse(rawData);
-                console.log("roles_vehicles.js: Véhicules parsés:", userVehiclesData);
-            } catch (e) {
-                console.error("roles_vehicles.js: Erreur parsing des véhicules:", e);
-                if (vehicleMessageContainer) displayMessage(vehicleMessageContainer, "Erreur au chargement des véhicules.", 'danger');
-            }
-        } else {
-            console.log("roles_vehicles.js: user-vehicles-data est vide.");
-            if (vehiclesContainer) vehiclesContainer.innerHTML = '<p class="text-muted">Aucun véhicule enregistré.</p>';
-        }
-    } else {
-        console.warn("roles_vehicles.js: Élément 'user-vehicles-data' non trouvé.");
-        if (vehiclesContainer) vehiclesContainer.innerHTML = '<p class="text-muted">Problème de chargement des données des véhicules.</p>';
-    }
-
-    /**
-     * Affiche les véhicules dans le conteneur.
-     * @param {Array} vehicles Tableau d'objets véhicule.
-     */
-    function displayVehicles(vehicles) {
-        console.log("roles_vehicles.js: Affichage des véhicules. Nombre:", vehicles ? vehicles.length : 0);
-        if (!vehiclesContainer) return;
-        vehiclesContainer.innerHTML = ''; // Vide le conteneur avant d'ajouter les véhicules
-        if (!vehicles || vehicles.length === 0) {
-            vehiclesContainer.innerHTML = '<p class="text-muted">Aucun véhicule enregistré.</p>';
-            return;
-        }
-        const energieMap = { 'electric': 'Électrique', 'hybrid': 'Hybride', 'thermal': 'Thermique' };
-        vehicles.forEach(vehicle => {
-            const colDiv = document.createElement('div');
-            colDiv.className = 'col-12 mb-3'; // Chaque véhicule prend toute la largeur
-            const vehicleDiv = document.createElement('div');
-            vehicleDiv.className = 'd-flex align-items-center px-3 py-2 rounded border h-100';
-            
-            const carIcon = document.createElement('i');
-            carIcon.className = `bi bi-car-front-fill fs-5 me-2`;
-            carIcon.style.color = vehicle.couleur || 'currentColor'; // Utilise la couleur du véhicule
-
-            const mainInfoSpan = document.createElement('span');
-            mainInfoSpan.className = 'mb-0 flex-grow-1 text-sm';
-            
-            const energieText = energieMap[vehicle.energie] || vehicle.energie;
-            // CORRECTION ICI : Utilise vehicle.marque.libelle au lieu de vehicle.marque.nom
-            const marqueLibelle = vehicle.marque && vehicle.marque.libelle ? vehicle.marque.libelle : 'N/A';
-            const modeleText = vehicle.modele || 'N/A';
-            
-            const countryCodeForFlag = vehicle.paysImmatriculation ? vehicle.paysImmatriculation.toLowerCase() : '';
-            const countryFlag = countryCodeForFlag ? `<img src="https://flagcdn.com/w20/${countryCodeForFlag}.png" alt="${vehicle.paysImmatriculation}" class="flag-icon me-1">` : '';
-            const immatriculationText = vehicle.immatriculation || 'N/A';
-
-            // NOUVEAU LOG POUR DÉBOGUER LE "N/A"
-            console.log(`roles_vehicles.js: Véhicule ${vehicle.id} - Marque affichée: "${marqueLibelle}" (Modele: "${modeleText}")`);
-
-            mainInfoSpan.innerHTML = `${countryFlag} ${energieText} - ${immatriculationText} - ${marqueLibelle} ${modeleText}`;
-            
-            const seatsSpan = document.createElement('span');
-            seatsSpan.className = 'fw-bold ms-auto text-sm';
-            let leafIconHtml = '';
-            if (vehicle.energie === 'electric' || vehicle.energie === 'hybrid') {
-                leafIconHtml = `<i class="bi bi-leaf-fill text-primary me-1"></i>`;
-            }
-            seatsSpan.innerHTML = `${leafIconHtml}${vehicle.nombreDePlaces} places`;
-
-            vehicleDiv.append(carIcon, mainInfoSpan, seatsSpan);
-            colDiv.appendChild(vehicleDiv);
-            vehiclesContainer.appendChild(colDiv);
-        });
-    }
-    
-    /**
-     * Charge les marques depuis l'API et remplit le sélecteur.
-     */
-    async function loadAndPopulateBrands() {
-        console.log("roles_vehicles.js: Chargement et peuplement des marques...");
-        if (!brandSelect) {
-            console.warn("roles_vehicles.js: Élément 'brandSelect' non trouvé pour charger les marques.");
-            return;
-        }
-        try {
-            const response = await fetch('/api/marques');
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP ${response.status}`);
-            }
-            const marques = await response.json();
-            console.log("roles_vehicles.js: Marques chargées:", marques);
-            brandSelect.innerHTML = '<option selected disabled value="">Choisir une marque</option>';
-            marques.forEach(marque => {
-                const option = document.createElement('option');
-                option.value = marque.id;
-                option.textContent = marque.nom; // 'nom' est la clé pour le libellé de la marque
-                brandSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error("roles_vehicles.js: Échec du chargement des marques:", error);
-            brandSelect.innerHTML = '<option selected disabled value="">Erreur de chargement</option>';
-            if (vehicleMessageContainer) displayMessage(vehicleMessageContainer, 'Impossible de charger la liste des marques.', 'danger');
-        }
-    }
-
-    // NOUVEAU: Logique pour le sélecteur de pays et le masque de plaque
-    const countryPlateMasks = {
-        'FR': 'AA-999-AA',
-        'DE': 'A-9999-AA', 
-        'BE': '9-AAA-999',
-        'LU': 'AA-9999',
-        'CH': 'AA-999999',
-        'IT': 'AA999AA',
-        'ES': '9999-AAA',
-        // Ajoutez d'autres pays et masques si nécessaire
-    };
-
-    /**
-     * Met à jour le drapeau et le masque de la plaque d'immatriculation.
-     * @param {string} countryCode Le code pays (ex: 'FR').
-     * @param {string} flagSrc L'URL de l'image du drapeau.
-     */
-    function updateCountrySelection(countryCode, flagSrc) {
-        console.log(`roles_vehicles.js: Mise à jour du pays sélectionné: ${countryCode}`);
-        if (selectedFlag) selectedFlag.src = flagSrc;
-        if (selectedCountryCodeSpan) selectedCountryCodeSpan.textContent = countryCode;
-        if (hiddenCountryCode) hiddenCountryCode.value = countryCode; // Met à jour l'input caché
-        
-        // Applique le masque de la plaque d'immatriculation
-        if (plateInput) {
-            plateInput.value = ''; // Réinitialise la plaque
-            const mask = countryPlateMasks[countryCode] || ''; // Récupère le masque
-            plateInput.placeholder = mask; // Affiche le masque comme placeholder
-            plateInput.dataset.mask = mask; // Stocke le masque dans un data attribute
-            
-            // Supprime l'ancien écouteur si existant
-            if (plateInput._maskListener) {
-                plateInput.removeEventListener('input', plateInput._maskListener);
-            }
-
-            // Ajoute un nouvel écouteur pour le masquage
-            const applyMask = (event) => {
-                let value = event.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''); // Nettoie l'entrée
-                let maskedValue = '';
-                let maskIndex = 0;
-                let valueIndex = 0;
-
-                while (maskIndex < mask.length && valueIndex < value.length) {
-                    if (mask[maskIndex] === 'A') { // Lettre
-                        if (/[A-Z]/.test(value[valueIndex])) {
-                            maskedValue += value[valueIndex];
-                            valueIndex++;
-                        }
-                        maskIndex++;
-                    } else if (mask[maskIndex] === '9') { // Chiffre
-                        if (/[0-9]/.test(value[valueIndex])) {
-                            maskedValue += value[valueIndex];
-                            valueIndex++;
-                        }
-                        maskIndex++;
-                    } else if (mask[maskIndex] === '-') { // Trait d'union
-                        maskedValue += '-';
-                        maskIndex++;
-                        if (value[valueIndex] === '-') { // Si l'utilisateur tape le trait d'union
-                            valueIndex++;
-                        }
-                    } else { // Caractère fixe dans le masque (ex: espace)
-                        maskedValue += mask[maskIndex];
-                        maskIndex++;
-                    }
-                }
-                event.target.value = maskedValue;
-            };
-            plateInput.addEventListener('input', applyMask);
-            plateInput._maskListener = applyMask; // Stocke la référence de l'écouteur
-        }
     }
 
     // Initialisation du sélecteur de pays au chargement
@@ -362,8 +361,7 @@ const initializeRolesAndVehicles = () => {
                 updateCountrySelection(countryCode, flagSrc);
             });
         });
-        // Initialiser avec la France par défaut si rien n'est sélectionné
-        updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png');
+        updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png'); // Initialiser avec la France par défaut
     }
 
     // Appel initial pour afficher les véhicules existants
@@ -374,12 +372,10 @@ const initializeRolesAndVehicles = () => {
     if (addVehicleBtn) {
         addVehicleBtn.addEventListener('click', () => {
             if (vehicleFormContainer) vehicleFormContainer.classList.remove('d-none');
-            addVehicleBtn.classList.add('d-none');
+            if (addVehicleBtn) addVehicleBtn.classList.add('d-none');
             if (vehicleForm) vehicleForm.reset();
-            // Réinitialiser la sélection de pays et la date lors de l'ouverture du formulaire
-            updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png');
+            updateCountrySelection('FR', 'https://flagcdn.com/w20/fr.png'); // Réinitialiser à FR
             if (firstRegDateInput) firstRegDateInput.value = '';
-            // Effacer les messages d'erreur précédents
             if (vehicleMessageContainer) vehicleMessageContainer.innerHTML = '';
         });
     }
@@ -388,7 +384,6 @@ const initializeRolesAndVehicles = () => {
         cancelVehicleBtn.addEventListener('click', () => {
             if (vehicleFormContainer) vehicleFormContainer.classList.add('d-none');
             if (addVehicleBtn) addVehicleBtn.classList.remove('d-none');
-            // Effacer les messages d'erreur lors de l'annulation
             if (vehicleMessageContainer) vehicleMessageContainer.innerHTML = '';
         });
     }
@@ -465,38 +460,8 @@ const initializeRolesAndVehicles = () => {
     // =====================================================================
     // GESTION DES PRÉFÉRENCES
     // =====================================================================
-    const customPrefInput = document.getElementById('customPrefInput');
-    const addCustomPrefBtn = document.getElementById('addCustomPrefBtn');
-    const customPrefList = document.getElementById('customPrefList');
-    const prefSmoker = document.getElementById('prefSmoker');
-    const prefAnimal = document.getElementById('prefAnimal');
-    const profileForm = document.getElementById('profileForm');
-    const preferencesMessageContainer = document.getElementById('preferencesMessageContainer');
-
-    let userPreferences = {
-        fumeurs_acceptes: false,
-        animaux_acceptes: false,
-        personnalisees: []
-    };
-    const userPreferencesDataElement = document.getElementById('user-preferences-data');
-    if (userPreferencesDataElement) {
-        const rawData = userPreferencesDataElement.textContent.trim();
-        console.log("roles_vehicles.js: Préférences brutes (user-preferences-data):", rawData);
-        if (rawData !== '') {
-            try {
-                const parsedData = JSON.parse(rawData);
-                userPreferences = Object.assign(userPreferences, parsedData); 
-                console.log("roles_vehicles.js: Préférences parsées:", userPreferences);
-            } catch (e) {
-                console.error("roles_vehicles.js: Erreur lors du parsing des préférences de l'utilisateur:", e);
-                if(preferencesMessageContainer) displayMessage(preferencesMessageContainer, "Erreur au chargement des préférences.", 'danger');
-            }
-        } else {
-            console.log("roles_vehicles.js: user-preferences-data est vide.");
-        }
-    } else {
-        console.warn("roles_vehicles.js: Élément 'user-preferences-data' non trouvé.");
-    }
+    
+    // userPreferences est initialisé via le span dans initializeRolesAndVehicles
 
     if (prefSmoker) prefSmoker.checked = userPreferences.fumeurs_acceptes;
     if (prefAnimal) prefAnimal.checked = userPreferences.animaux_acceptes;
@@ -507,29 +472,6 @@ const initializeRolesAndVehicles = () => {
             const newTag = createPrefTag(prefText);
             customPrefList.appendChild(newTag);
         });
-    }
-
-    /**
-     * Crée un tag de préférence personnalisée.
-     * @param {string} text Le texte de la préférence.
-     * @returns {HTMLElement} L'élément div du tag.
-     */
-    function createPrefTag(text) {
-        const tag = document.createElement('div');
-        tag.className = 'badge bg-dark d-flex align-items-center gap-2';
-        const span = document.createElement('span');
-        span.textContent = text;
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'btn-close btn-close-white btn-sm';
-        btn.setAttribute('aria-label', 'Supprimer la préférence');
-        btn.addEventListener('click', () => {
-            if (customPrefList) customPrefList.removeChild(tag);
-            displayMessage(preferencesMessageContainer, 'Préférence supprimée, n\'oubliez pas d\'enregistrer !', 'info');
-        });
-        tag.appendChild(span);
-        tag.appendChild(btn);
-        return tag;
     }
 
     if (addCustomPrefBtn) {
@@ -599,9 +541,5 @@ const initializeRolesAndVehicles = () => {
 };
 
 // On écoute à la fois le chargement initial (pour la première visite) et les navigations Turbo (pour les navigations SPA)
-// Si Turbo n'est pas utilisé, seul DOMContentLoaded est nécessaire.
 document.addEventListener('DOMContentLoaded', initializeRolesAndVehicles);
 document.addEventListener('turbo:load', initializeRolesAndVehicles);
-
-// Message d'exécution immédiate pour le débogage initial
-console.log("roles_vehicles.js: Fichier JavaScript chargé et exécuté au niveau racine.");

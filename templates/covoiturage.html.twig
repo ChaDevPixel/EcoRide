@@ -3,7 +3,10 @@
 {% block title %}Rechercher un covoiturage - Ecoride{% endblock %}
 
 {% block bigtitle %}
-    <form id="search-form" action="{{ path('carpool_show') }}" method="GET" class="w-100">
+    {# Le contrôleur search-carpool doit être sur la balise form ici aussi, pour lier la barre de recherche #}
+    <form id="search-form" action="{{ path('carpool_show') }}" method="GET" class="w-100" data-controller="search-carpool">
+        {# Le contenu de bigtitle.html.twig (la barre de recherche) #}
+        {# Assurez-vous que bigtitle.html.twig contient les IDs 'search-depart', 'search-arrivee', 'search-date' #}
         {% include 'bigtitle.html.twig' %}
     </form>
 {% endblock %}
@@ -35,36 +38,39 @@
                                     <div class="row g-4">
                                         <div class="col-md-6 col-lg-3 text-center">
                                             <label for="price-range" class="form-label fw-bold d-block mb-2"><i class="bi bi-coin me-2 text-primary fs-5"></i>Prix max.</label>
-                                            <div class="d-flex align-items-center justify-content-center">
-                                                <input type="range" class="form-range w-50" min="0" max="50" step="1" id="price-range" value="50">
-                                                <span id="price-output" class="badge bg-primary ms-3" style="width: 50px;">50</span>
-                                            </div>
+                                            {# AJOUTÉ : data-search-carpool-target et data-action #}
+                                            <input type="range" class="form-range w-50" min="0" max="50" step="1" id="price-range" value="50" data-search-carpool-target="priceRangeInput" data-action="input->search-carpool#updatePriceOutput">
+                                            {# AJOUTÉ : data-search-carpool-target #}
+                                            <span id="price-output" class="badge bg-primary ms-3" style="width: 50px;" data-search-carpool-target="priceOutputSpan">50</span>
                                         </div>
                                         <div class="col-md-6 col-lg-3 text-center">
                                             <label for="rating-range" class="form-label fw-bold d-block mb-2"><i class="bi bi-star-half me-2 text-success fs-5"></i>Note min.</label>
-                                            <div class="d-flex align-items-center justify-content-center">
-                                                <input type="range" class="form-range w-50" min="0" max="5" step="1" id="rating-range" value="0">
-                                                <span id="rating-output" class="badge bg-success text-dark ms-3" style="width: 80px;">Toutes</span>
-                                            </div>
+                                            {# AJOUTÉ : data-search-carpool-target et data-action #}
+                                            <input type="range" class="form-range w-50" min="0" max="5" step="1" id="rating-range" value="0" data-search-carpool-target="ratingRangeInput" data-action="input->search-carpool#updateRatingOutput">
+                                            {# AJOUTÉ : data-search-carpool-target #}
+                                            <span id="rating-output" class="badge bg-success text-dark ms-3" style="width: 80px;" data-search-carpool-target="ratingOutputSpan">Toutes</span>
                                         </div>
                                         <div class="col-md-6 col-lg-3 text-center">
                                             <label for="duration-range" class="form-label fw-bold d-block mb-2"><i class="bi bi-clock-history me-2 text-dark fs-5"></i>Durée max.</label>
-                                            <div class="d-flex align-items-center justify-content-center">
-                                                <input type="range" class="form-range w-50" min="0" max="1440" step="30" id="duration-range" value="1440">
-                                                <span id="duration-output" class="badge bg-dark ms-3" style="width: 80px;">Illimitée</span>
-                                            </div>
+                                            {# AJOUTÉ : data-search-carpool-target et data-action #}
+                                            <input type="range" class="form-range w-50" min="0" max="1440" step="30" id="duration-range" value="1440" data-search-carpool-target="durationRangeInput" data-action="input->search-carpool#updateDurationOutput">
+                                            {# AJOUTÉ : data-search-carpool-target #}
+                                            <span id="duration-output" class="badge bg-dark ms-3" style="width: 80px;" data-search-carpool-target="durationOutputSpan">Illimitée</span>
                                         </div>
                                         <div class="col-md-6 col-lg-3 text-center">
                                             <label class="form-check-label fw-bold mb-0" for="eco-filter"><i class="bi bi-leaf-fill fs-5 text-primary me-2"></i>Écologique</label>
                                             <div class="form-check form-switch d-flex justify-content-center mt-1">
-                                                <input class="form-check-input" type="checkbox" id="eco-filter" style="height: 1.5rem; width: 3rem;">
+                                                {# AJOUTÉ : data-search-carpool-target et data-action #}
+                                                <input class="form-check-input" type="checkbox" id="eco-filter" style="height: 1.5rem; width: 3rem;" data-search-carpool-target="ecoFilterCheckbox" data-action="change->search-carpool#filterTrips">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-lg-3 text-center mt-3 mt-lg-0">
-                                    <button id="apply-filters-btn" class="btn btn-primary rounded-pill">Appliquer</button>
-                                    <button id="reset-filters-btn" class="btn btn-outline-dark ms-2 rounded-pill">Réinitialiser</button>
+                                    {# AJOUTÉ : data-search-carpool-target et data-action #}
+                                    <button id="apply-filters-btn" class="btn btn-primary rounded-pill" data-search-carpool-target="applyFiltersBtn" data-action="click->search-carpool#filterTrips">Appliquer</button>
+                                    {# AJOUTÉ : data-search-carpool-target et data-action #}
+                                    <button id="reset-filters-btn" class="btn btn-outline-dark ms-2 rounded-pill" data-search-carpool-target="resetFiltersBtn" data-action="click->search-carpool#resetFilters">Réinitialiser</button>
                                 </div>
                             </div>
                         </div>
@@ -72,7 +78,7 @@
                 </div>
             {% endif %}
 
-            <div class="row mt-3" id="trip-results-list">
+            <div class="row mt-3" id="trip-results-list" data-search-carpool-target="tripResultsList"> {# AJOUTÉ : data-search-carpool-target #}
                 {% if covoiturages is not empty %}
                     {% for trip in covoiturages %}
                         {# Calcul de la durée en minutes et ajout de l'attribut data-duration #}
@@ -92,7 +98,6 @@
                                     <div>
                                         <h6 class="card-title mb-0 fw-bold">{{ trip.chauffeur.pseudo }}</h6>
                                         
-                                        <!-- MODIFICATION ICI : La note et le lien sont séparés -->
                                         <div>
                                             <span class="text-warning small"><i class="bi bi-star-fill"></i> {{ trip.chauffeur.noteMoyenne|number_format(1, ',')|default('N/A') }}</span>
                                             <a href="{{ path('app_avis_show', {'id': trip.chauffeur.id}) }}" class="small text-white text-decoration-underline ms-1">(voir les avis)</a>
@@ -188,5 +193,4 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="{{ asset('js/search_carpool.js') }}" defer></script>
 {% endblock %}

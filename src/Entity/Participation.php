@@ -28,7 +28,7 @@ class Participation
     // Le covoiturage doit être exposé quand on lit une participation ('participation:read').
     // Il est crucial de NE PAS inclure ici les groupes 'covoiturage:read' ou 'covoiturage:user_driven_read'
     // pour éviter une référence circulaire avec la collection 'participations' de l'entité Covoiturage.
-    #[Groups(['participation:read'])]
+    #[Groups(['participation:read', 'trip_info'])]
     private ?Covoiturage $covoiturage = null;
 
     #[ORM\Column]
@@ -37,12 +37,11 @@ class Participation
 
     #[ORM\Column]
     #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
-    private ?bool $valideParPassager = false; // NOUVEAU : Indique si le passager a validé le trajet
+    private ?bool $valideParPassager = false; 
 
     #[ORM\Column]
     #[Groups(['participation:read', 'covoiturage:user_driven_read'])]
-    private ?bool $avisSoumis = false; // NOUVEAU : Indique si le passager a soumis un avis
-
+    private ?bool $avisSoumis = false; 
     public function __construct()
     {
         $this->dateInscription = new \DateTimeImmutable();

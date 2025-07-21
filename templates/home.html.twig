@@ -5,17 +5,12 @@
 {% block bigtitle %}
     {# MODIFIÉ: On ajoute la balise form ici pour que la page d'accueil puisse lancer la recherche #}
     {# L'action redirige vers la page de résultats #}
-    <form id="search-form" action="{{ path('carpool_show') }}" method="GET">
+    <form id="search-form" action="{{ path('carpool_show') }}" method="GET" data-controller="search-carpool">
         {% include 'bigtitle.html.twig' %}
     </form>
 {% endblock %}
 
 {% block body %}
-    {# NOUVEAU : Ajout du style pour écarter les flèches du carrousel #}
-    <style>
-
-    </style>
-
     <section class="container my-5">
         
         <h2 class="text-center mb-3 display-5 text-primary">EcoRide, le covoiturage en toute confiance</h2>

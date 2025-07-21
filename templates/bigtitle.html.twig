@@ -1,4 +1,6 @@
-<!-- gros titre -->
+{# templates/bigtitle.html.twig #}
+
+{# Ce div englobe le titre et la barre de recherche #}
 <div class="image-container position-relative">
     <img src="{{ asset('assets/img/image principale accueil.jpg') }}" alt="Paysage route" class="img-fluid w-100" />
     <div class="overlay-big-title position-absolute top-0 start-0 w-100 h-100 bg-dark opacity-50"></div>
@@ -11,7 +13,6 @@
     </div>
 </div>
 
-<!-- Barre de recherche -->
 <div class="card rounded-0 search-bar bg-secondary shadow py-3">
     <div class="container text-center mb-3">
         <p class="search-title text-dark m-0">Trouvez votre covoiturage</p>
@@ -20,37 +21,36 @@
         <div class="d-flex flex-column align-items-center">
             <div class="d-flex flex-wrap justify-content-center gap-2">
 
-                <!-- Champ Départ -->
-                <div class="d-flex">
-                    <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text bg-info border border-primary search-icons rounded-start">
                         <i class="bi bi-geo-alt-fill text-dark"></i>
-                    </div>
-                    <select id="search-depart" name="depart" class="form-select border rounded-end border-primary search-input mb-0" required>
+                    </span>
+                    {# AJOUTÉ : data-search-carpool-target #}
+                    <select id="search-depart" name="depart" class="form-select border border-primary search-input mb-0" required data-search-carpool-target="searchDepartSelect">
                         <option value="">Départ</option>
                     </select>
                 </div>
 
-                <!-- Champ Destination -->
-                <div class="d-flex">
-                    <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text bg-info border border-primary search-icons rounded-start">
                         <i class="bi bi-flag-fill text-dark"></i>
-                    </div>
-                    <select id="search-arrivee" name="arrivee" class="form-select border rounded-end border-primary search-input mb-0" required>
+                    </span>
+                    {# AJOUTÉ : data-search-carpool-target #}
+                    <select id="search-arrivee" name="arrivee" class="form-select border border-primary search-input mb-0" required data-search-carpool-target="searchArriveeSelect">
                         <option value="">Destination</option>
                     </select>
                 </div>
 
-                <!-- Champ Date -->
-                <div class="d-flex">
-                    <div class="d-flex align-items-center justify-content-center bg-info border border-end-0 rounded-start border-primary search-icons">
+                <div class="input-group search-input-group">
+                    <span class="input-group-text bg-info border border-primary search-icons rounded-start">
                         <i class="bi bi-calendar-event-fill text-dark"></i>
-                    </div>
-                    <input id="search-date" name="date" type="date" class="form-control border rounded-end border-primary search-input mb-0" required>
+                    </span>
+                    {# AJOUTÉ : data-search-carpool-target #}
+                    <input id="search-date" name="date" type="date" class="form-control border border-primary search-input mb-0" required data-search-carpool-target="searchDateInput">
                 </div>
 
             </div>
 
-            <!-- Bouton -->
             <button type="submit" class="btn btn-success search-button shadow-sm rounded-4 mt-3">Rechercher</button>
         </div>
     </div>

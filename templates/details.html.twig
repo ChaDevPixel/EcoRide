@@ -41,7 +41,7 @@
                         </p>
                         <p>
                             {% set isEco = trip.voiture.energie|lower == 'electric' or trip.voiture.energie|lower == 'hybrid' %}
-                            <i class="bi {{ isEco ? 'bi-leaf-fill text-primary' : 'bi-fuel-pump-fill text-secondary' }} me-2"></i>
+                            <i class="bi {{ isEco ? 'bi-tree-fill text-primary' : 'bi-fuel-pump-fill text-secondary' }} me-2"></i>
                             Énergie : {{ trip.voiture.energie|capitalize }}
                         </p>
                     </div>
@@ -72,18 +72,18 @@
                     <div class="card-body">
                         <h6>Préférences du conducteur</h6>
                         <ul class="list-unstyled">
-                            {% if trip.chauffeur.preferences.fumeurs_acceptes is defined %}
-                                <li><i class="bi {{ trip.chauffeur.preferences.fumeurs_acceptes ? 'bi-check-circle-fill text-secondary' : 'bi-x-circle-fill text-danger' }} me-2"></i> {{ trip.chauffeur.preferences.fumeurs_acceptes ? 'Fumeurs acceptés' : 'Non fumeur' }}</li>
-                            {% endif %}
-                            
                             {% if trip.chauffeur.preferences.animaux_acceptes is defined %}
                                 <li><i class="bi {{ trip.chauffeur.preferences.animaux_acceptes ? 'bi-check-circle-fill text-secondary' : 'bi-x-circle-fill text-danger' }} me-2"></i> {{ trip.chauffeur.preferences.animaux_acceptes ? 'Animaux acceptés' : 'Pas d\'animaux' }}</li>
                             {% endif %}
 
-                            {% if trip.chauffeur.preferences.personnalisees is not empty %}
+                            {% if trip.chauffeur.preferences.personnalisees is defined and trip.chauffeur.preferences.personnalisees is not empty %}
                                 {% for pref in trip.chauffeur.preferences.personnalisees %}
                                     <li><i class="bi bi-heart-fill text-dark me-2"></i> {{ pref }}</li>
                                 {% endfor %}
+                            {% elif (trip.chauffeur.preferences.animaux_acceptes is not defined) or (trip.chauffeur.preferences.animaux_acceptes is defined and not trip.chauffeur.preferences.animaux_acceptes) %}
+                                {% if trip.chauffeur.preferences.personnalisees is not defined or trip.chauffeur.preferences.personnalisees is empty %}
+                                    <li><i class="bi bi-info-circle-fill text-info me-2"></i> Aucune préférence spécifique.</li>
+                                {% endif %}
                             {% endif %}
                         </ul>
                         <hr>

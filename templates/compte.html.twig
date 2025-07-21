@@ -7,14 +7,11 @@
 <div class="container-fluid">
     <div class="row min-vh-100">
         
-        <!-- Sidebar Profil -->
         <div class="col-md-2 bg-secondary text-dark p-4 rounded-start">
             <div class="text-center">
-                {# Affichage de la photo de profil, ou une image par défaut si non définie #}
                 <img src="{{ asset('uploads/photos/' ~ (utilisateur.photo ? utilisateur.photo : 'default.png')) }}" alt="Photo de profil" class="rounded-circle img-thumbnail mb-2 profile-picture">
-                <h4 id="userPseudo">{{ utilisateur.pseudo }}</h4> {# Affichage du pseudo de l'utilisateur #}
+                <h4 id="userPseudo">{{ utilisateur.pseudo }}</h4> 
                 
-                <!-- La note et le lien sont maintenant dynamiques -->
                 <p>
                     {% set noteMoyenne = utilisateur.noteMoyenne|default(0) %}
                     <span class="text-warning fs-5">
@@ -46,8 +43,7 @@
             </ul>
         </div>
 
-        <!-- Onglets -->
-        <div class="col-md-10 bg-light p-4 rounded-end">
+        <div class="col-md-10 bg-light p-4 rounded-end"> 
             <ul class="nav nav-tabs" id="accountTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="roles-tab" data-bs-toggle="tab" data-bs-target="#roles" type="button" role="tab">Rôles & Véhicules</button>
@@ -65,9 +61,9 @@
 
             <div class="tab-content mt-3" id="accountTabsContent">
 
-                <!-- Onglet Rôles & Véhicules -->
+                {# Onglet Rôles & Véhicules #}
                 <div class="tab-pane fade show active" id="roles" role="tabpanel">
-                    <form id="profileForm">
+                    <form id="profileForm"> 
                         <div class="card mb-3 p-3 shadow-sm rounded">
                             <h5 class="fw-semibold card-title mb-3"><i class="bi bi-person-fill fs-4 text-primary"></i> Rôle(s)</h5>
 
@@ -112,15 +108,15 @@
                         </div>
                     </form>
 
-                    {# NOUVEAU : Afficher la section "Vos véhicules" uniquement si l'utilisateur est chauffeur #}
+                    {# Afficher la section "Vos véhicules" uniquement si l'utilisateur est chauffeur #}
                     {% if 'ROLE_DRIVER' in app.user.roles %}
                         <div id="driverDetails" class="card p-3 shadow-sm rounded">
                             <h5 class="mt-0 fw-semibold card-title mb-3"><i class="bi bi-car-front-fill fs-5 text-primary"></i> Vos véhicules</h5>
-                            <div id="vehicleMessageContainer" class="mt-3"></div>
-                            <div id="vehiclesContainer" class="mb-3 ms-3 row">
+                            <div id="vehicleMessageContainer"></div> 
+                            <div id="vehiclesContainer"> 
                                 {# Les véhicules seront affichés ici par JavaScript #}
                             </div>
-                            <button type="button" class="btn btn-secondary btn-sm d-inline-block btn-fit-content rounded-4 px-4" id="addVehicleBtn">+ Ajouter un véhicule</button>
+                            <button type="button" class="btn btn-secondary btn-sm d-inline-block btn-fit-content rounded-4 px-4" id="addVehicleBtn"> + Ajouter un véhicule</button>
 
                             <!-- Formulaire d'ajout (masqué par défaut) -->
                             <div id="vehicleFormContainer" class="container mt-3 d-none">
@@ -135,21 +131,21 @@
                                                         <span id="selectedCountryCode" class="d-none">FR</span>
                                                     </button>
                                                     <ul class="dropdown-menu" id="countryDropdownMenu">
-                                                        <li><a class="dropdown-item" href="#" data-country-code="FR" data-flag-src="https://flagcdn.com/w20/fr.png"><img src="https://flagcdn.com/w20/fr.png" alt="France" class="flag-icon me-2">France</a></li>
-                                                        <li><a class="dropdown-item" href="#" data-country-code="DE" data-flag-src="https://flagcdn.com/w20/de.png"><img src="https://flagcdn.com/w20/de.png" alt="Allemagne" class="flag-icon me-2">Allemagne</a></li>
-                                                        <li><a class="dropdown-item" href="#" data-country-code="BE" data-flag-src="https://flagcdn.com/w20/be.png"><img src="https://flagcdn.com/w20/be.png" alt="Belgique" class="flag-icon me-2">Belgique</a></li>
-                                                        <li><a class="dropdown-item" href="#" data-country-code="LU" data-flag-src="https://flagcdn.com/w20/lu.png"><img src="https://flagcdn.com/w20/lu.png" alt="Luxembourg" class="flag-icon me-2">Luxembourg</a></li>
-                                                        <li><a class="dropdown-item" href="#" data-country-code="CH" data-flag-src="https://flagcdn.com/w20/ch.png"><img src="https://flagcdn.com/w20/ch.png" alt="Suisse" class="flag-icon me-2">Suisse</a></li>
-                                                        <li><a class="dropdown-item" href="#" data-country-code="IT" data-flag-src="https://flagcdn.com/w20/it.png"><img src="https://flagcdn.com/w20/it.png" alt="Italie" class="flag-icon me-2">Italie</a></li>
-                                                        <li><a class="dropdown-item" href="#" data-country-code="ES" data-flag-src="https://flagcdn.com/w20/es.png"><img src="https://flagcdn.com/w20/es.png" alt="Espagne" class="flag-icon me-2">Espagne</a></li>
+                                                        <li><a class="dropdown-item" href="#" data-country-code="FR" data-flag-src="https://flagcdn.com/w20/fr.png">France</a></li>
+                                                        <li><a class="dropdown-item" href="#" data-country-code="DE" data-flag-src="https://flagcdn.com/w20/de.png">Allemagne</a></li>
+                                                        <li><a class="dropdown-item" href="#" data-country-code="BE" data-flag-src="https://flagcdn.com/w20/be.png">Belgique</a></li>
+                                                        <li><a class="dropdown-item" href="#" data-country-code="LU" data-flag-src="https://flagcdn.com/w20/lu.png">Luxembourg</a></li>
+                                                        <li><a class="dropdown-item" href="#" data-country-code="CH" data-flag-src="https://flagcdn.com/w20/ch.png">Suisse</a></li>
+                                                        <li><a class="dropdown-item" href="#" data-country-code="IT" data-flag-src="https://flagcdn.com/w20/it.png">Italie</a></li>
+                                                        <li><a class="dropdown-item" href="#" data-country-code="ES" data-flag-src="https://flagcdn.com/w20/es.png">Espagne</a></li>
                                                     </ul>
-                                                    <input type="text" id="plateInput" class="form-control mb-0 rounded-end" required placeholder="Sélectionnez un pays pour le format">
-                                                    <input type="hidden" id="hiddenCountryCode" name="paysImmatriculation" value="FR">
+                                                    <input id="plateInput" type="text" class="form-control mb-0 rounded-end" required placeholder="Sélectionnez un pays pour le format">
+                                                    <input id="hiddenCountryCode" type="hidden" name="paysImmatriculation" value="FR">
                                                 </div>
                                             </div>
                                             <div class="mb-3">
                                                 <label for="firstRegDate" class="form-label">Date de première immatriculation <span class="required-asterisk">*</span></label>
-                                                <input type="date" id="firstRegDate" class="form-control" required>
+                                                <input id="firstRegDate" type="date" class="form-control" required>
                                             </div>
                                             <div class="mb-3">
                                                 <label for="brandSelect" class="form-label">Marque <span class="required-asterisk">*</span></label>
@@ -159,7 +155,7 @@
                                             </div>
                                             <div class="mb-3">
                                                 <label for="model" class="form-label">Modèle <span class="required-asterisk">*</span></label>
-                                                <input type="text" id="model" class="form-control" required>
+                                                <input id="model" type="text" class="form-control" required>
                                             </div>
                                             <div class="mb-3">
                                                 <label for="color" class="form-label">Couleur <span class="required-asterisk">*</span></label>
@@ -181,17 +177,17 @@
                                             </div>
                                             <div class="mb-3">
                                                 <label for="seats" class="form-label">Nombre de places disponibles <span class="required-asterisk">*</span></label>
-                                                <input type="number" id="seats" class="form-control" min="1" max="9" required>
+                                                <input id="seats" type="number" class="form-control" min="1" max="9" required>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label">Type de moteur <span class="required-asterisk">*</span></label><br>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="radio" name="engineType" id="engineElectric" value="electric" required>
-                                                    <label class="form-check-label" for="engineElectric"><i class="bi bi-leaf-fill text-primary"></i> Électrique</label>
+                                                    <label class="form-check-label" for="engineElectric"><i class="bi bi-tree-fill text-primary"></i> Électrique</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="radio" name="engineType" id="engineHybrid" value="hybrid">
-                                                    <label class="form-check-label" for="engineHybrid"><i class="bi bi-leaf-fill text-primary"></i> Hybride</label>
+                                                    <label class="form-check-label" for="engineHybrid"><i class="bi bi-tree-fill text-primary"></i> Hybride</label>
                                                 </div>
                                                 <div class="form-check form-check-inline">
                                                     <input class="form-check-input" type="radio" name="engineType" id="engineThermal" value="thermal">
@@ -211,24 +207,25 @@
                     {% endif %}
                 </div>
 
-                <!-- Onglet Voyage-->
-                <div class="tab-pane fade" id="trip" role="tabpanel">
+                {# Onglet Voyages #}
+                <div class="tab-pane fade" id="trip" role="tabpanel"> 
                     <div id="tripMessageContainer" class="mt-3"></div>
-                    
-                    {# NOUVEAU : Afficher la section "Futurs voyages (Chauffeur)" et le bouton d'ajout uniquement si l'utilisateur est chauffeur #}
+                        
                     {% if 'ROLE_DRIVER' in app.user.roles %}
                         <div class="card mb-3 p-3 shadow-sm rounded">
                             <h5 class="fw-semibold card-title mb-3"><i class="bi bi-geo-fill text-primary"></i> Futurs voyages (Chauffeur)</h5>
-                            <div id="driver-trips-container" class="mb-3">
+                            
+                            {# CORRECTION : ID harmonisé avec le JS #}
+                            <div id="driver-trips-container" class="mb-3"> 
                                 <p id="no-driver-trips-message" class="text-muted">Aucun voyage créé pour le moment.</p>
                             </div>
                             <button type="button" class="btn btn-secondary btn-sm d-inline-block btn-fit-content rounded-4 px-4 mb-3" id="addTripButton">+ Saisir un nouveau voyage</button>
                         </div>
 
-                        <!-- Formulaire de création de voyage (masqué par défaut) -->
+                        {# Formulaire de création de voyage (masqué par défaut) #}
                         <div id="tripFormContainer" class="card mt-3 p-3 shadow-sm rounded d-none">
                             <div class="row justify-content-center">
-                                <div class="col-12 col-lg-5"> {# Rendu plus étroit #}
+                                <div class="col-12 col-lg-5"> 
                                     <form id="tripForm">
                                         <h5 class="fw-semibold card-title mb-3"><i class="bi bi-pencil-square fs-5 text-primary"></i> Saisir un covoiturage</h5>
                                         
@@ -241,11 +238,12 @@
                                         <div class="row mb-3">
                                             <div class="col-md-6">
                                                 <label for="departureDate" class="form-label">Date de départ <span class="required-asterisk">*</span></label>
-                                                <input type="date" id="departureDate" class="form-control mb-0" required>
+                                                <input id="departureDate" type="date" class="form-control mb-0" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="departureTime" class="form-label">Heure de départ <span class="required-asterisk">*</span></label>
-                                                <input type="time" id="departureTime" class="form-control mb-0" required>
+                                                {# CORRECTION : ID unique pour l'heure de départ #}
+                                                <input id="departureTime" type="time" class="form-control mb-0" required>
                                             </div>
                                         </div>
 
@@ -258,17 +256,17 @@
                                         <div class="row mb-3">
                                             <div class="col-md-6">
                                                 <label for="arrivalDate" class="form-label">Date d'arrivée <span class="required-asterisk">*</span></label>
-                                                <input type="date" id="arrivalDate" class="form-control mb-0" required>
+                                                <input id="arrivalDate" type="date" class="form-control mb-0" required>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="arrivalTime" class="form-label">Heure d'arrivée <span class="required-asterisk">*</span></label>
-                                                <input type="time" id="arrivalTime" class="form-control mb-0" required>
+                                                <input id="arrivalTime" type="time" class="form-control mb-0" required>
                                             </div>
                                         </div>
 
                                         <div class="mb-3">
                                             <label for="tripPrice" class="form-label">Prix par passager (crédits) <span class="required-asterisk">*</span></label>
-                                            <input type="number" id="tripPrice" class="form-control mb-0" min="1" required>
+                                            <input id="tripPrice" type="number" class="form-control mb-0" min="1" required>
                                             <div class="form-text">2 crédits seront prélevés par la plateforme.</div>
                                         </div>
 
@@ -277,25 +275,23 @@
                                             <select id="tripVehicleSelect" class="form-select" required>
                                                 <option value="">Sélectionnez un véhicule</option>
                                             </select>
-                                            {# Le bouton "+ Ajouter un véhicule" est déjà dans l'onglet Rôles & Véhicules #}
                                         </div>
 
-                                        <div class="d-flex align-items-center mb-3"> {# Utilisation de flexbox pour aligner l'interrupteur et l'input #}
-                                            <div class="form-check form-switch me-3"> {# Ajout de marge à droite #}
+                                        <div class="d-flex align-items-center mb-3"> 
+                                            <div class="form-check form-switch me-3"> 
                                                 <input class="form-check-input mb-0" type="checkbox" role="switch" id="isAccompanied">
-                                                <label class="form-check-label mb-0" for="isAccompanied">Je voyage avec des accompagnateurs</label>
+                                                <label class="form-check-label" for="isAccompanied">Je voyage avec des accompagnateurs</label>
                                             </div>
 
                                             <div id="companionsInputGroup" class="d-flex align-items-center gap-2 d-none">
-                                                {# CHANGEMENT: Utilisation de span pour un meilleur alignement vertical #}
                                                 <span class="form-label fw-bold mb-0">Nombre :</span> 
-                                                <input type="number" id="numberOfCompanions" class="form-control mb-0 w-auto" min="0" value="0" style="max-width: 80px;"> {# Largeur auto et max-width #}
+                                                <input type="number" id="numberOfCompanions" class="form-control mb-0 w-auto" min="0" value="0" style="max-width: 80px;"> 
                                             </div>
                                         </div>
 
                                         <div class="mb-3">
-                                            <label for="availableSeats" class="form-label">Place(s) disponible(s)</label> {# CHANGEMENT DE LIBELLÉ #}
-                                            <input type="number" id="availableSeats" class="form-control" readonly> {# AJOUT DE READONLY #}
+                                            <label for="availableSeats" class="form-label">Place(s) disponible(s)</label> 
+                                            <input id="availableSeats" type="number" class="form-control" readonly> 
                                         </div>
                                         <p class="form-text"><span class="required-asterisk">*</span> Champs obligatoires</p>
                                         <div class="d-flex gap-2 mb-3">
@@ -308,112 +304,101 @@
                         </div>
                     {% endif %}
 
-                    {# CORRECTION : Nouvelle section pour les voyages en tant que passager #}
+                    {# Section pour les voyages en tant que passager #}
                     <div class="card mb-3 p-3 shadow-sm rounded">
                         <h5 class="fw-semibold card-title mb-3"><i class="bi bi-signpost-split-fill text-primary"></i> Futurs voyages (Passager)</h5>
+                        {# CORRECTION : ID harmonisé avec le JS #}
                         <div id="passenger-trips-container">
                             <p id="no-passenger-trips-message" class="text-muted">Vous ne participez à aucun voyage pour le moment.</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Onglet Historique -->
+                {# Onglet Historique #}
                 <div class="tab-pane fade" id="history" role="tabpanel">
                     <div id="historyMessageContainer" class="mt-3"></div>
 
-                    {# Section pour l'historique en tant que chauffeur, visible uniquement si l'utilisateur a le rôle #}
                     {% if 'ROLE_DRIVER' in app.user.roles %}
                     <div class="card mb-3 p-3 shadow-sm rounded">
                         <h5 class="fw-semibold card-title mb-3"><i class="bi bi-clock-history text-primary"></i> Historique des voyages (Chauffeur)</h5>
-                        <div id="driver-history-container">
-                            <p id="no-driver-history-message" class="text-muted">Aucun voyage terminé pour le moment.</p>
+                        <div id="driverHistoryContainer">
+                            <p id="noDriverHistoryMessage" class="text-muted">Aucun voyage terminé pour le moment.</p>
                         </div>
                     </div>
                     {% endif %}
 
-                    {# Section pour l'historique en tant que passager, toujours visible #}
                     <div class="card mb-3 p-3 shadow-sm rounded">
                         <h5 class="fw-semibold card-title mb-3"><i class="bi bi-clock-history text-primary"></i> Historique des voyages (Passager)</h5>
-                        <div id="passenger-history-container">
-                            <p id="no-passenger-history-message" class="text-muted">Vous n'avez aucun voyage terminé pour le moment.</p>
+                        <div id="passengerHistoryContainer">
+                            <p id="noPassengerHistoryMessage" class="text-muted">Vous n'avez aucun voyage terminé pour le moment.</p>
                         </div>
                     </div>
                 </div>
             </div>
 
             {# Passer les rôles, véhicules et préférences de l'utilisateur à JavaScript #}
-            {# Ces éléments sont essentiels pour so que le JavaScript puisse initialiser la page #}
             <div id="user-data" style="display: none;">
-                {# Assurez-vous que 'utilisateur.rolesCollection' est bien un tableau d'objets rôle avec un 'libelle' #}
                 <span id="user-roles-data">{{ utilisateur.rolesCollection|map(role => role.libelle)|json_encode()|raw }}</span>
-                {# Assurez-vous que 'utilisateur_voitures_json' est un JSON valide contenant un tableau de véhicules,
-                    et que chaque véhicule a une propriété 'marque' avec une propriété 'nom' (ex: {id:1, marque: {nom: "Renault"}}) #}
                 <span id="user-vehicles-data">{{ utilisateur_voitures_json|raw }}</span>
-                {# Assurez-vous que 'utilisateur_preferences_json' est un JSON valide avec les clés attendues #}
                 <span id="user-preferences-data">{{ utilisateur_preferences_json|raw }}</span>
             </div>
 
-                <!-- Onglet Informations Personnelles -->
-                <div class="tab-pane fade" id="account" role="tabpanel">
-                    <div class="row">
-                        <div class="col-lg-8">
-                            <!-- Carte d'affichage des informations -->
-                            <div class="card mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title mb-4">Vos informations</h5>
-                                    <div class="row">
-                                        <div class="col-sm-3"><p class="mb-0">Nom complet</p></div>
-                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.prenom }} {{ utilisateur.nom }}</p></div>
-                                    </div>
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-sm-3"><p class="mb-0">Pseudo</p></div>
-                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.pseudo }}</p></div>
-                                    </div>
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-sm-3"><p class="mb-0">Email</p></div>
-                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.email }}</p></div>
-                                    </div>
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-sm-3"><p class="mb-0">Adresse</p></div>
-                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.adresse }}</p></div>
-                                    </div>
-                                    <hr>
-                                    <div class="row">
-                                        <div class="col-sm-3"><p class="mb-0">Date de naissance</p></div>
-                                        <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.dateNaissance ? utilisateur.dateNaissance|date('d/m/Y') : 'Non renseignée' }}</p></div>
-                                    </div>
+            <div class="tab-pane fade" id="account" role="tabpanel">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <h5 class="card-title mb-4">Vos informations</h5>
+                                <div class="row">
+                                    <div class="col-sm-3"><p class="mb-0">Nom complet</p></div>
+                                    <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.prenom }} {{ utilisateur.nom }}</p></div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-3"><p class="mb-0">Pseudo</p></div>
+                                    <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.pseudo }}</p></div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-3"><p class="mb-0">Email</p></div>
+                                    <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.email }}</p></div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-3"><p class="mb-0">Adresse</p></div>
+                                    <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.adresse }}</p></div>
+                                </div>
+                                <hr>
+                                <div class="row">
+                                    <div class="col-sm-3"><p class="mb-0">Date de naissance</p></div>
+                                    <div class="col-sm-9"><p class="text-muted mb-0">{{ utilisateur.dateNaissance ? utilisateur.dateNaissance|date('d/m/Y') : 'N/A' }}</p></div>
                                 </div>
                             </div>
+                        </div>
 
-                            <!-- Carte de modification du profil -->
-                            <div class="card">
-                                <div class="card-body">
-                                    <h5 class="card-title mb-4">Modifier mon profil</h5>
-                                    <form action="{{ path('app_account_update') }}" method="post" enctype="multipart/form-data">
-                                        <div class="mb-3">
-                                            <label for="profile_pseudo" class="form-label">Pseudo</label>
-                                            <input type="text" id="profile_pseudo" name="pseudo" class="form-control" value="{{ utilisateur.pseudo }}">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="profile_photo" class="form-label">Changer la photo de profil</label>
-                                            <input class="form-control" type="file" id="profile_photo" name="photo">
-                                            <div class="form-text">Laissez vide pour conserver la photo actuelle.</div>
-                                        </div>
-                                        {# MODIFIÉ : Ajout des classes pour les bords arrondis #}
-                                        <button type="submit" class="btn btn-primary rounded-pill px-4">Enregistrer les modifications</button>
-                                    </form>
-                                </div>
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title mb-4">Modifier mon profil</h5>
+                                <form action="{{ path('app_account_update') }}" method="post" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label for="profile_pseudo" class="form-label">Pseudo</label>
+                                        <input type="text" id="profile_pseudo" name="pseudo" class="form-control" value="{{ utilisateur.pseudo }}">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="profile_photo" class="form-label">Changer la photo de profil</label>
+                                        <input class="form-control" type="file" id="profile_photo" name="photo">
+                                        <div class="form-text">Laissez vide pour conserver la photo actuelle.</div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary rounded-pill px-4">Enregistrer les modifications</button>
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-        
-
-            <div class="modal fade" id="cancelConfirmationModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+            {# Modale d'annulation de participation (gérée par add-carpool) #}
+            <div id="cancelConfirmationModal" class="modal fade" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                     <div class="modal-header">
@@ -422,18 +407,18 @@
                     </div>
                     <div class="modal-body">
                         <p>Êtes-vous sûr de vouloir annuler votre participation à ce voyage ?</p>
-                        <!-- NOUVEAU: Le montant des crédits sera inséré ici par le JavaScript -->
                         <p><strong><span id="creditsToRefund"></span> crédits</strong> vous seront restitués.</p>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Non, rester</button>
-                        <button type="button" class="btn btn-danger" id="confirmCancelButton">Oui, annuler</button>
+                        <button type="button" class="btn btn-danger" id="confirmCancelParticipationButton">Oui, annuler</button>
                     </div>
                     </div>
                 </div>
             </div>
 
-            <div class="modal fade" id="cancelCarpoolModal" tabindex="-1" aria-labelledby="cancelCarpoolModalLabel" aria-hidden="true">
+            {# Modale d'annulation de covoiturage (du chauffeur - GÉRÉE PAR CANCEL-CARPOOL) #}
+            <div id="cancelCarpoolModal" class="modal fade" tabindex="-1" aria-labelledby="cancelCarpoolModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                     <div class="modal-header bg-danger text-white">
@@ -451,15 +436,14 @@
                 </div>
             </div>
 
-            <div class="modal fade" id="validateReviewModal" tabindex="-1" aria-labelledby="validateReviewModalLabel" aria-hidden="true">
+            {# Modale de validation d'avis (gérée par add-carpool) #}
+            <div id="validateReviewModal" class="modal fade" tabindex="-1" aria-labelledby="validateReviewModalLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <div class="modal-header bg-primary text-white">
-                            <!-- La croix de fermeture a été retirée ici -->
-                            <h5 class="modal-title" id="validateReviewModalLabel">Valider le covoiturage</h5>
-                        </div>
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title" id="validateReviewModalLabel">Valider le covoiturage</h5>
+                    </div>
                     <div class="modal-body">
-                        {# AJOUT DE data-turbo="false" pour empêcher Turbo d'interférer avec la soumission du formulaire #}
                         <form id="validateReviewForm" data-turbo="false">
                             <div class="mb-3">
                                 <p class="mb-2">Le voyage s'est-il bien déroulé ?</p>
@@ -485,38 +469,21 @@
                             </div>
 
                             <div id="commentSection" class="mb-3 d-none">
-                                {# CHANGEMENT: Utilisation de 'reviewComment' pour le commentaire et la raison du litige #}
                                 <label for="reviewComment" class="form-label" id="reviewCommentLabel">Commentaire (facultatif si "Oui", obligatoire si "Non")</label>
                                 <textarea class="form-control" id="reviewComment" rows="3" placeholder="Laissez un commentaire sur votre expérience..."></textarea>
-                                {# Le champ 'reasonLitige' est maintenant géré par le JS en interne via 'reviewCommentInput' #}
-                                {# Il n'est plus nécessaire d'avoir un input hidden séparé pour 'reasonLitige' dans le HTML #}
-                                {# <input type="hidden" id="reasonLitige" name="reasonLitige"> #}
                             </div>
 
-                            {# NOUVEAU: Conteneur pour les messages d'erreur/succès du formulaire d'avis #}
-                            <div id="validateReviewFormMessage" class="mt-2"></div> 
+                            <div id="validateReviewFormMessageContainer" class="mt-2"></div> 
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <!-- Le bouton "Annuler" a été retiré ici -->
                         <button type="button" class="btn btn-primary" id="submitReviewBtn">Valider</button>
+                    </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        {% endblock %}
-
-        {% block javascripts %}
-            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-            
-            {# Ces scripts ne sont utiles que pour les utilisateurs normaux, pas pour les employés #}
-            {% if 'ROLE_EMPLOYE' not in app.user.roles %}
-                <script src="{{ asset('js/roles_vehicles.js') }}" defer></script>
-                <script src="{{ asset('js/add_carpool.js') }}" defer></script>
-                <script src="{{ asset('js/cancel_carpool.js') }}" defer></script>
-                <script src="{{ asset('js/display_trips.js') }}" defer></script>
-            {% endif %}
-
-        {% endblock %}
+{% endblock %}

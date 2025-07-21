@@ -1,6 +1,9 @@
 {
   "dependencies": {
+    "@hotwired/stimulus": "^3.2.2",
+    "@hotwired/turbo": "^8.0.13",
     "bootstrap": "^5.3.7",
-    "bootstrap-icons": "^1.13.1"
+    "bootstrap-icons": "^1.13.1",
+    "chart.js": "^4.5.0"
   }
 }
